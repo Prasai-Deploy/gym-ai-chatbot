@@ -8,6 +8,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { EventEmitter } from "events";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -37,7 +38,8 @@ db.exec(`
     name TEXT,
     email TEXT,
     avatar TEXT,
-    profile_context TEXT
+    profile_context TEXT,
+    chat_id TEXT
   );
 
   CREATE TABLE IF NOT EXISTS progress (
@@ -68,6 +70,9 @@ db.exec(`
 try { db.exec("ALTER TABLE progress ADD COLUMN carbs INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE progress ADD COLUMN fats INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN profile_context TEXT;"); } catch (e) { /* Ignore if it already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN chat_id TEXT;"); } catch (e) { /* Ignore if it already exists */ }
+
+const authEvents = new EventEmitter();
 
 async function startServer() {
   const app = express();
@@ -119,7 +124,13 @@ async function startServer() {
   }));
 
   // Auth Routes
-  app.get("/api/auth/google", passport.authenticate("google", { scope: ["openid", "profile", "email"] }));
+  app.get("/api/auth/google", (req, res, next) => {
+    const state = req.query.state ? String(req.query.state) : undefined;
+    passport.authenticate("google", {
+      scope: ["openid", "profile", "email"],
+      state: state
+    })(req, res, next);
+  });
 
   app.post("/api/auth/demo", (req, res) => {
     console.log("Demo login requested");
@@ -158,27 +169,71 @@ async function startServer() {
   });
 
   app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-    res.send(`
-      <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-              window.close();
-            } else {
-              window.location.href = '/';
-            }
-          </script>
-          <p>Authentication successful. This window should close automatically.</p>
-        </body>
-      </html>
-    `);
+    const state = req.query.state as string;
+    const user = (req as any).user;
+
+    if (state && user) {
+      // It's a chatbot login
+      try {
+        db.prepare("UPDATE users SET chat_id = ? WHERE id = ?").run(state, user.id);
+        console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
+        authEvents.emit(`auth_success_${state}`, user);
+      } catch (e) {
+        console.error("Failed to link chat_id:", e);
+      }
+
+      res.send(`
+        <html>
+          <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
+            <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
+              <div style="width: 64px; height: 64px; background: #10b981; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
+              <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
+              <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
+            </div>
+          </body>
+        </html>
+      `);
+    } else {
+      // Standard web application login
+      res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                window.close();
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+            <p>Authentication successful. This window should close automatically.</p>
+          </body>
+        </html>
+      `);
+    }
   });
 
   app.get("/api/me", (req, res) => {
     const user = (req as any).user;
     console.log("Checking /api/me, user found:", !!user);
     res.json(user || null);
+  });
+
+  // Web Bot Polling Endpoint
+  app.get("/api/auth/status/:chat_id", (req, res) => {
+    const chatId = req.params.chat_id;
+    const timeout = setTimeout(() => {
+      authEvents.removeAllListeners(`auth_success_${chatId}`);
+      res.json({ status: "pending" });
+    }, 30000); // 30 second long-polling
+
+    authEvents.once(`auth_success_${chatId}`, (user) => {
+      clearTimeout(timeout);
+      res.json({ status: "success", user });
+    });
   });
 
   app.get("/api/logout", (req, res) => {
