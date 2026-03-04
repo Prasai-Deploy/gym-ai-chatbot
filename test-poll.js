@@ -3,7 +3,7 @@ const http = require("http");
 async function runTest() {
     console.log("1. Starting Web Bot Long-Poll Request (will wait for 30s)...");
 
-    const pollPromise = fetch("https://sweatfixx.prasai.cloud/api/auth/status/bot_testing_123")
+    const pollPromise = fetch("https://sweatfix.prasai.cloud/api/auth/status/bot_testing_123")
         .then(r => r.json());
 
     // Wait 1 second to ensure poll is active

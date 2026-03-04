@@ -110,10 +110,14 @@ async function startServer() {
     done(null, user);
   });
 
+  const callbackURL = process.env.NODE_ENV === 'production'
+    ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
+    : `http://localhost:3000/auth/google/callback`;
+
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || "placeholder",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
-    callbackURL: `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`,
+    callbackURL: callbackURL,
   }, (accessToken, refreshToken, profile, done) => {
     let user = db.prepare("SELECT * FROM users WHERE google_id = ?").get(profile.id);
     if (!user) {
@@ -378,19 +382,12 @@ async function startServer() {
       const { message, history } = req.body;
       const user = (req as any).user;
 
-      const messages = history.map((h: any) => ({
-        role: h.role === "model" ? "assistant" : h.role,
-        content: h.parts[0].text
-      }));
-
       let userContextStr = "";
       if (user && user.profile_context) {
         userContextStr = `\n\nUSER PROFILE CONTEXT (Remember this!):\n${user.profile_context}`;
       }
 
-      messages.unshift({
-        role: "system",
-        content: `Role & Identity
+      const systemPrompt = `Role & Identity
 You are Sweat Fix Coach AI, an elite, premium fitness and wellness concierge. Your ultimate goal is to help users master their bodies, achieve peak physical condition, and experience an effortless daily routine—a state of feeling light, explosive, mobile, and effortlessly powerful. You specialize in calisthenics, plyometrics, aerial fitness, and high-performance mobility, but you are fully equipped to handle general weight loss, hypertrophy, and nutrition coaching.
 
 Tone & Voice
@@ -461,20 +458,25 @@ Example:
   }
 }
 \`\`\`
-If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`
-      });
+If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
 
-      messages.push({ role: "user", content: message });
+      const contents = history.map((h: any) => ({
+        role: h.role === "assistant" ? "model" : (h.role || "user"),
+        parts: [{ text: h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "" }]
+      }));
 
-      const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      contents.push({ role: "user", parts: [{ text: message }] });
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY || ""}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROK_API_KEY || ""}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "grok-beta",
-          messages: messages
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: contents
         })
       });
 
@@ -482,7 +484,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
         const errJson = await response.json().catch(() => ({}));
         const errorMessage = typeof errJson.error === 'string' ? errJson.error : errJson.error?.message;
 
-        console.error("Grok API Error:", errorMessage);
+        console.error("Gemini API Error:", errorMessage);
 
         // As a fallback for missing credits/licenses or model not found, return a simulated premium response 
         // to keep the frontend completely functional.
@@ -510,7 +512,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
       }
 
       const data = await response.json();
-      let aiContent = data.choices[0].message.content;
+      let aiContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "I encountered an error.";
 
       // Extract new memory from JSON if present and save it
       if (user) {
