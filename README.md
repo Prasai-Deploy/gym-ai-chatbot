@@ -19,6 +19,4 @@ AI Engine: OpenAI API (GPT-4o) / LangChain for specialized fitness context
 
 Database: MongoDB / PostgreSQL (for user profiles and workout logs)
 
-🤝 Professional Contact
 Developed by Priyanshu Kumar Paswan/Debosmita ghosh/Kinjal Dutta at Parasite Cloud
-Email: priyanshupaswan648@gmail.com
