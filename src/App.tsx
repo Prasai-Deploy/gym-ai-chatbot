@@ -73,6 +73,12 @@ export default function App() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
+  // Auth Form State
+  const [authInput, setAuthInput] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authOTP, setAuthOTP] = useState('');
+  const [authStep, setAuthStep] = useState<'INITIAL' | 'EMAIL_PASS' | 'PHONE_OTP'>('INITIAL');
+
   // Plan state
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [planForm, setPlanForm] = useState({
@@ -229,6 +235,54 @@ export default function App() {
   const handleLogout = async () => {
     await fetch('/api/logout');
     setUser(null);
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isEmail = authInput.includes('@');
+
+    if (authStep === 'INITIAL') {
+      if (isEmail) {
+        setAuthStep('EMAIL_PASS');
+      } else {
+        // Send OTP
+        try {
+          const res = await fetch('/api/auth/otp/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: authInput })
+          });
+          if (res.ok) setAuthStep('PHONE_OTP');
+          else alert((await res.json()).error || 'Failed to send OTP');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    } else if (authStep === 'EMAIL_PASS') {
+      try {
+        const res = await fetch('/api/auth/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: authInput, password: authPassword })
+        });
+        if (res.ok) fetchUser();
+        else alert((await res.json()).error || 'Login failed');
+      } catch (e) {
+        console.error(e);
+      }
+    } else if (authStep === 'PHONE_OTP') {
+      try {
+        const res = await fetch('/api/auth/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: authInput, code: authOTP })
+        });
+        if (res.ok) fetchUser();
+        else alert((await res.json()).error || 'Invalid OTP');
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const handleSubmitProgress = async (e: React.FormEvent) => {
@@ -451,26 +505,62 @@ export default function App() {
             Continue with Google
           </button>
 
-          <button
-            onClick={async () => {
-              try {
-                const res = await fetch('/api/auth/demo', { method: 'POST' });
-                if (res.ok) {
-                  await fetchUser();
-                } else {
-                  const err = await res.json();
-                  alert(`Demo login failed: ${err.error || 'Unknown error'}`);
-                }
-              } catch (e) {
-                console.error("Demo login fetch error:", e);
-                alert("Network error during demo login");
-              }
-            }}
-            className="w-full bg-zinc-900 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-95 border border-zinc-800 shadow-xl"
-          >
-            <UserIcon size={20} />
-            Try Demo Account
-          </button>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl w-full">
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {authStep === 'INITIAL' && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Email or Phone</label>
+                  <input
+                    type="text"
+                    value={authInput}
+                    onChange={(e) => setAuthInput(e.target.value)}
+                    placeholder="Enter email or phone number"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white focus:border-emerald-500/50"
+                    required
+                  />
+                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
+                    Continue
+                  </button>
+                </div>
+              )}
+              {authStep === 'EMAIL_PASS' && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Password</label>
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white focus:border-emerald-500/50"
+                    required
+                  />
+                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
+                    Login / Register
+                  </button>
+                  <button type="button" onClick={() => setAuthStep('INITIAL')} className="w-full mt-2 text-zinc-500 text-sm hover:text-white">Back</button>
+                </div>
+              )}
+              {authStep === 'PHONE_OTP' && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Enter 6-Digit OTP</label>
+                  <input
+                    type="text"
+                    value={authOTP}
+                    onChange={(e) => setAuthOTP(e.target.value)}
+                    placeholder="123456"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white text-center tracking-[0.5em] font-mono focus:border-emerald-500/50"
+                    maxLength={6}
+                    required
+                  />
+                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
+                    Verify OTP
+                  </button>
+                  <button type="button" onClick={() => setAuthStep('INITIAL')} className="w-full mt-2 text-zinc-500 text-sm hover:text-white">Back</button>
+                  <p className="mt-4 text-xs text-emerald-500/70 font-mono">Check terminal for SMS code</p>
+                </div>
+              )}
+            </form>
+          </div>
 
           <div className="mt-12 pt-12 border-t border-zinc-800">
             <button

@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { EventEmitter } from "events";
+import bcrypt from "bcryptjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +40,9 @@ db.exec(`
     email TEXT,
     avatar TEXT,
     profile_context TEXT,
-    chat_id TEXT
+    chat_id TEXT,
+    password TEXT,
+    phone TEXT UNIQUE
   );
 
   CREATE TABLE IF NOT EXISTS progress (
@@ -71,6 +74,8 @@ try { db.exec("ALTER TABLE progress ADD COLUMN carbs INTEGER DEFAULT 0;"); } cat
 try { db.exec("ALTER TABLE progress ADD COLUMN fats INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN profile_context TEXT;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN chat_id TEXT;"); } catch (e) { /* Ignore if it already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN password TEXT;"); } catch (e) { /* Ignore if it already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT UNIQUE;"); } catch (e) { /* Ignore if it already exists */ }
 
 const authEvents = new EventEmitter();
 
@@ -132,37 +137,96 @@ async function startServer() {
     })(req, res, next);
   });
 
-  app.post("/api/auth/demo", (req, res) => {
-    console.log("Demo login requested");
-    let user = db.prepare("SELECT * FROM users WHERE google_id = ?").get("demo_user");
+  // Email/Password Login & Register
+  app.post("/api/auth/email", async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+
+    let user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as any;
+
     if (!user) {
-      console.log("Creating demo user");
-      const info = db.prepare("INSERT INTO users (google_id, name, email, avatar) VALUES (?, ?, ?, ?)").run(
-        "demo_user",
-        "Demo",
-        "demo@sweatfix.com",
-        "https://picsum.photos/seed/demo/200"
+      // Register new user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const name = email.split('@')[0];
+      const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+
+      const info = db.prepare("INSERT INTO users (email, password, name, avatar) VALUES (?, ?, ?, ?)").run(
+        email,
+        hashedPassword,
+        name,
+        avatar
+      );
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
+    } else {
+      // Verify password
+      if (!user.password) {
+        return res.status(400).json({ error: "User registered with another method (e.g., Google)" });
+      }
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) return res.status(401).json({ error: "Invalid password" });
+    }
+
+    (req as any).login(user, (err: any) => {
+      if (err) return res.status(500).json({ error: "Login failed" });
+      (req as any).session.save((err: any) => {
+        if (err) return res.status(500).json({ error: "Session save failed" });
+        res.json(user);
+      });
+    });
+  });
+
+  // Phone OTP Simulation
+  const otpStore = new Map<string, { code: string, expires: number }>();
+
+  app.post("/api/auth/otp/send", (req, res) => {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: "Phone number required" });
+
+    // Generate 6-digit OTP
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    otpStore.set(phone, { code, expires });
+
+    console.log(`\n======================================`);
+    console.log(`[SIMULATED SMS to ${phone}]`);
+    console.log(`Your Sweat Fix login code is: ${code}`);
+    console.log(`======================================\n`);
+
+    res.json({ success: true, message: "OTP sent successfully" });
+  });
+
+  app.post("/api/auth/otp/verify", (req, res) => {
+    const { phone, code } = req.body;
+    if (!phone || !code) return res.status(400).json({ error: "Phone and code required" });
+
+    const storedData = otpStore.get(phone);
+    if (!storedData) return res.status(400).json({ error: "No OTP requested for this number" });
+    if (Date.now() > storedData.expires) {
+      otpStore.delete(phone);
+      return res.status(400).json({ error: "OTP expired" });
+    }
+    if (storedData.code !== code) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    otpStore.delete(phone);
+
+    let user = db.prepare("SELECT * FROM users WHERE phone = ?").get(phone) as any;
+    if (!user) {
+      // Register new user
+      const name = `User${phone.slice(-4)}`;
+      const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${phone}`;
+      const info = db.prepare("INSERT INTO users (phone, name, avatar) VALUES (?, ?, ?)").run(
+        phone, name, avatar
       );
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
     }
 
-    // Refresh demo user data every time they log in
-    if (user && user.id) {
-      db.prepare("DELETE FROM progress WHERE user_id = ?").run(user.id);
-      db.prepare("DELETE FROM daily_plans WHERE user_id = ?").run(user.id);
-    }
-
     (req as any).login(user, (err: any) => {
-      if (err) {
-        console.error("Login error:", err);
-        return res.status(500).json({ error: "Login failed" });
-      }
+      if (err) return res.status(500).json({ error: "Login failed" });
       (req as any).session.save((err: any) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ error: "Session save failed" });
-        }
-        console.log("Demo login successful for user:", user.id);
+        if (err) return res.status(500).json({ error: "Session save failed" });
         res.json(user);
       });
     });
