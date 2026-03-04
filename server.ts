@@ -86,7 +86,7 @@ async function startServer() {
   app.set('trust proxy', 1);
   app.use(express.json());
   app.use(session({
-    secret: "sweat-fix-secret",
+    secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
     resave: true,
     saveUninitialized: true,
     cookie: {
@@ -113,7 +113,7 @@ async function startServer() {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || "placeholder",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
-    callbackURL: `${process.env.APP_URL}/auth/google/callback`,
+    callbackURL: `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`,
   }, (accessToken, refreshToken, profile, done) => {
     let user = db.prepare("SELECT * FROM users WHERE google_id = ?").get(profile.id);
     if (!user) {
