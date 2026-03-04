@@ -78,6 +78,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authOTP, setAuthOTP] = useState('');
   const [authStep, setAuthStep] = useState<'INITIAL' | 'EMAIL_PASS' | 'PHONE_OTP'>('INITIAL');
+  const [otpTimer, setOtpTimer] = useState(0);
 
   // Plan state
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -114,6 +115,14 @@ export default function App() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (authStep === 'PHONE_OTP' && otpTimer > 0) {
+      interval = setInterval(() => setOtpTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [authStep, otpTimer]);
 
   useLayoutEffect(() => {
     if (!progress.length) return;
@@ -252,7 +261,10 @@ export default function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone: authInput })
           });
-          if (res.ok) setAuthStep('PHONE_OTP');
+          if (res.ok) {
+            setAuthStep('PHONE_OTP');
+            setOtpTimer(30);
+          }
           else alert((await res.json()).error || 'Failed to send OTP');
         } catch (e) {
           console.error(e);
@@ -556,7 +568,20 @@ export default function App() {
                     Verify OTP
                   </button>
                   <button type="button" onClick={() => setAuthStep('INITIAL')} className="w-full mt-2 text-zinc-500 text-sm hover:text-white">Back</button>
-                  <p className="mt-4 text-xs text-emerald-500/70 font-mono">Check terminal for SMS code</p>
+                  <p className="mt-4 text-xs text-emerald-500/70 font-mono text-center">Use simulation code: 123456</p>
+                  <div className="text-center mt-2">
+                    {otpTimer > 0 ? (
+                      <span className="text-xs text-zinc-500 font-mono">Resend OTP in {otpTimer}s</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleAuthSubmit(e as any)}
+                        className="text-xs text-emerald-500 hover:text-emerald-400 underline"
+                      >
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </form>

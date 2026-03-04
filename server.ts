@@ -186,8 +186,8 @@ async function startServer() {
     const { phone } = req.body;
     if (!phone) return res.status(400).json({ error: "Phone number required" });
 
-    // Generate 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 6-digit OTP (Hardcoded to 123456 for easy simulation on live site)
+    const code = "123456";
     const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
 
     otpStore.set(phone, { code, expires });
