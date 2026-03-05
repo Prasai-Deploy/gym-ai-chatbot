@@ -145,12 +145,22 @@ async function startServer() {
   app.post("/api/auth/demo", (req, res) => {
     let user = db.prepare("SELECT * FROM users WHERE email = ?").get("demo@sweatfix.com");
     if (!user) {
-      const info = db.prepare("INSERT INTO users (email, name, avatar) VALUES (?, ?, ?)").run(
+      const info = db.prepare("INSERT INTO users (email, name, avatar, profile_context) VALUES (?, ?, ?, ?)").run(
         "demo@sweatfix.com",
         "Demo User",
-        "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo"
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+        ""
       );
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
+    } else {
+      // Refresh the demo user's state by clearing all their data
+      try {
+        db.prepare("DELETE FROM progress WHERE user_id = ?").run(user.id);
+        db.prepare("DELETE FROM daily_plans WHERE user_id = ?").run(user.id);
+        db.prepare("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?").run(user.id);
+      } catch (e) {
+        console.error("Failed to reset demo data:", e);
+      }
     }
 
     (req as any).login(user, (err: any) => {
