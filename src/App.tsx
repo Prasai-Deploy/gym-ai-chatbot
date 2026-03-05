@@ -73,13 +73,6 @@ export default function App() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // Auth Form State
-  const [authInput, setAuthInput] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authOTP, setAuthOTP] = useState('');
-  const [authStep, setAuthStep] = useState<'INITIAL' | 'EMAIL_PASS' | 'PHONE_OTP'>('INITIAL');
-  const [otpTimer, setOtpTimer] = useState(0);
-
   // Plan state
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [planForm, setPlanForm] = useState({
@@ -115,14 +108,6 @@ export default function App() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (authStep === 'PHONE_OTP' && otpTimer > 0) {
-      interval = setInterval(() => setOtpTimer((prev) => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [authStep, otpTimer]);
 
   useLayoutEffect(() => {
     if (!progress.length) return;
@@ -246,54 +231,13 @@ export default function App() {
     setUser(null);
   };
 
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const isEmail = authInput.includes('@');
-
-    if (authStep === 'INITIAL') {
-      if (isEmail) {
-        setAuthStep('EMAIL_PASS');
-      } else {
-        // Send OTP
-        try {
-          const res = await fetch('/api/auth/otp/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: authInput })
-          });
-          if (res.ok) {
-            setAuthStep('PHONE_OTP');
-            setOtpTimer(30);
-          }
-          else alert((await res.json()).error || 'Failed to send OTP');
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    } else if (authStep === 'EMAIL_PASS') {
-      try {
-        const res = await fetch('/api/auth/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authInput, password: authPassword })
-        });
-        if (res.ok) fetchUser();
-        else alert((await res.json()).error || 'Login failed');
-      } catch (e) {
-        console.error(e);
-      }
-    } else if (authStep === 'PHONE_OTP') {
-      try {
-        const res = await fetch('/api/auth/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: authInput, code: authOTP })
-        });
-        if (res.ok) fetchUser();
-        else alert((await res.json()).error || 'Invalid OTP');
-      } catch (e) {
-        console.error(e);
-      }
+  const handleDemoLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/demo', { method: 'POST' });
+      if (res.ok) fetchUser();
+      else alert('Demo login failed');
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -518,73 +462,14 @@ export default function App() {
           </button>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl w-full">
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              {authStep === 'INITIAL' && (
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Email or Phone</label>
-                  <input
-                    type="text"
-                    value={authInput}
-                    onChange={(e) => setAuthInput(e.target.value)}
-                    placeholder="Enter email or phone number"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white focus:border-emerald-500/50"
-                    required
-                  />
-                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
-                    Continue
-                  </button>
-                </div>
-              )}
-              {authStep === 'EMAIL_PASS' && (
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Password</label>
-                  <input
-                    type="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    placeholder="Enter password"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white focus:border-emerald-500/50"
-                    required
-                  />
-                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
-                    Login / Register
-                  </button>
-                  <button type="button" onClick={() => setAuthStep('INITIAL')} className="w-full mt-2 text-zinc-500 text-sm hover:text-white">Back</button>
-                </div>
-              )}
-              {authStep === 'PHONE_OTP' && (
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-left">Enter 6-Digit OTP</label>
-                  <input
-                    type="text"
-                    value={authOTP}
-                    onChange={(e) => setAuthOTP(e.target.value)}
-                    placeholder="123456"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-white text-center tracking-[0.5em] font-mono focus:border-emerald-500/50"
-                    maxLength={6}
-                    required
-                  />
-                  <button type="submit" className="w-full mt-4 bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95">
-                    Verify OTP
-                  </button>
-                  <button type="button" onClick={() => setAuthStep('INITIAL')} className="w-full mt-2 text-zinc-500 text-sm hover:text-white">Back</button>
-                  <p className="mt-4 text-xs text-emerald-500/70 font-mono text-center">Use simulation code: 123456</p>
-                  <div className="text-center mt-2">
-                    {otpTimer > 0 ? (
-                      <span className="text-xs text-zinc-500 font-mono">Resend OTP in {otpTimer}s</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => handleAuthSubmit(e as any)}
-                        className="text-xs text-emerald-500 hover:text-emerald-400 underline"
-                      >
-                        Resend OTP
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </form>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Try the Demo</h3>
+            <p className="text-zinc-500 text-sm text-center mb-6">Experience the full platform without creating an account.</p>
+            <button
+              onClick={handleDemoLogin}
+              className="w-full bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95"
+            >
+              Explore as Demo User
+            </button>
           </div>
 
           <div className="mt-12 pt-12 border-t border-zinc-800">
