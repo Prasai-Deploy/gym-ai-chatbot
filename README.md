@@ -1,24 +1,49 @@
-🏋️‍♂️ Sweat Fix AI: Premium Fitness Chatbot
-Sweat Fix AI is a sophisticated, AI-powered assistant designed specifically for the members of Sweat Fix Gym. It moves beyond basic FAQ responses to provide personalized fitness guidance, workout tracking, and high-fidelity engagement for premium gym users.
+---
+# 🏋️ Sweat Fix Gym - AI Fitness Ecosystem
 
-🚀 Key Features
-Intelligent Workout Planning: Leveraging AI to suggest routines based on user goals (Weight loss, Muscle gain, Endurance).
+A production-ready AI coaching platform developed for **Sweat Fix Gym**. This system integrates frontier-level AI reasoning with personalized progress tracking to automate the personal training experience.
 
-Real-time Member Support: Instant answers to gym-related queries, schedule updates, and membership details.
+---
 
-Progress Tracking: Integration with databases to log user performance and provide motivational insights.
+## 🚀 Live Demo & Deployment
+* **Access:** https://sweatfix.prasai.cloud/ QR Code
+* **Infrastructure:** Hosted & Managed by **Prasai Cloud**
 
-Natural Language Processing: Built to understand and respond to fitness jargon and conversational requests naturally.
+---
 
-🛠️ Tech Stack
-Frontend: React / Next.js (for the admin dashboard/web interface)
+## ✨ Key Features
 
-Backend: Node.js & Express
+- **🤖 Frontier AI Coaching:** Powered by **Arcee Trinity Large (400B MoE)** via OpenRouter for high-density fitness reasoning and agentic planning.
+- **📊 Dynamic Progress Tracking:** Interactive bar graphs that visualize workout consistency and diet adherence.
+- **🔐 Secure User Lifecycle:** Full **Google OAuth** integration for secure, one-tap login.
+- **🗄️ Persistence Layer:** Integrated **PostgreSQL** database for long-term storage of user profiles, workout history, and custom diet plans.
+- **🛠️ Admin Control Panel:** Dedicated interface for trainers to upload custom charts and manage member data.
 
-AI Engine: OpenAI API (GPT-4o) / LangChain for specialized fitness context
+---
 
-Database: MongoDB / PostgreSQL (for user profiles and workout logs)
+## 🛠️ Technical Stack
 
+| Layer | Technology |
+| :--- | :--- |
+| **Model** | Arcee-AI Trinity Large Preview (via OpenRouter) |
+| **UI Framework** | Antigravity |
+| **Database** | PostgreSQL |
+| **Auth** | Google OAuth 2.0 |
+| **Architecture** | Agentic AI Workflow / Full-Stack Web App |
+
+---
+
+## ⚙️ Development & Migration
+Originally prototyped with Grok, the system was migrated to the **Arcee Trinity 400B** model to leverage its superior 128k context window and complex tool-calling capabilities, ensuring more accurate data synchronization with the PostgreSQL backend.
+
+---
+
+## 💼 Business Context
+Developed as a flagship product for **Prasai Cloud** to demonstrate the integration of Generative AI into traditional service industries.
+
+📧hello@prasai.cloud
+
+---
 ---
 
 ## 👥 The Team
