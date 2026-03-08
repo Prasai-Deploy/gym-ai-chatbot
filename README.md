@@ -19,4 +19,15 @@ AI Engine: OpenAI API (GPT-4o) / LangChain for specialized fitness context
 
 Database: MongoDB / PostgreSQL (for user profiles and workout logs)
 
-Developed by Priyanshu Kumar Paswan/Debosmita ghosh/Kinjal Dutta at Parasite Cloud
+---
+
+## 👥 The Team
+This project is the result of a collaborative, equal-effort initiative by the founding team at **Prasai Cloud**:
+
+* **Debosmita Ghosh**
+* **Kinjal Dutta**
+* **Priyanshu Kumar Paswan**
+
+Each member contributed equally to the research, development, AI integration, and strategic deployment of this ecosystem.
+
+---
