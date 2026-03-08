@@ -55,6 +55,13 @@ interface DailyPlan {
   completed: boolean;
 }
 
+const QUICK_ACTIONS = [
+  "🏋️ Workout Plans",
+  "🥗 Diet Chart",
+  "💪 Membership",
+  "📅 Book a Session"
+];
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +79,19 @@ export default function App() {
   const [editName, setEditName] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping, chatOpen]);
 
   // Plan state
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -321,9 +341,10 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
-    const newMessages = [...messages, { role: 'user', content: input }];
+  const handleSendMessage = async (explicitMessage?: string | React.MouseEvent | React.KeyboardEvent) => {
+    const textToSend = typeof explicitMessage === 'string' ? explicitMessage : input;
+    if (!textToSend.trim()) return;
+    const newMessages = [...messages, { role: 'user', content: textToSend }];
     setMessages(newMessages);
     setInput('');
     setIsTyping(true);
@@ -333,7 +354,7 @@ export default function App() {
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
       }));
-      let advice = await getFitnessAdvice(input, history);
+      let advice = await getFitnessAdvice(textToSend, history);
 
       // Auto-fill parsing
       const jsonMatch = advice.match(/```json\n([\s\S]*?)\n```/);
@@ -715,8 +736,9 @@ export default function App() {
 
       {/* Chat Bot Trigger */}
       <button
+        aria-label="Open Chat"
         onClick={() => setChatOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-emerald-500 text-black rounded-full shadow-2xl shadow-emerald-500/40 flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50"
+        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] bg-emerald-500 text-black rounded-full shadow-2xl shadow-emerald-500/40 flex items-center justify-center hover:scale-110 hover:bg-emerald-400 transition-all duration-200 active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-emerald-500/50"
       >
         <MessageSquare size={28} />
       </button>
@@ -740,16 +762,16 @@ export default function App() {
                   <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Always Online</p>
                 </div>
               </div>
-              <button onClick={() => setChatOpen(false)} className="text-zinc-500 hover:text-white">
+              <button aria-label="Close Chat" onClick={() => setChatOpen(false)} className="text-zinc-500 hover:text-white hover:bg-zinc-800 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
                 <Plus className="rotate-45" size={24} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-emerald-500 text-black font-medium' : 'bg-zinc-800 text-zinc-100'}`}>
-                    <div className="prose prose-invert max-w-none prose-p:leading-tight prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
+                    <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
                       <ReactMarkdown>
                         {m.content}
                       </ReactMarkdown>
@@ -759,33 +781,66 @@ export default function App() {
               ))}
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-zinc-800 p-4 rounded-2xl flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
-                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  <div className="bg-zinc-800 px-4 py-4 rounded-2xl flex gap-1.5 items-center min-h-[44px]">
+                    <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:0.4s]" />
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-6 bg-zinc-800/30 border-t border-zinc-800">
-              <div className="flex gap-2">
-                <input
+            {/* Quick Action Prompts */}
+            <div className="bg-zinc-800/20 pt-3 pb-2 px-0 border-t border-zinc-800">
+              <div className="flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar snap-x">
+                {QUICK_ACTIONS.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSendMessage(action)}
+                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full bg-zinc-800/80 text-sm font-medium text-zinc-300 border border-zinc-700 hover:bg-zinc-700 hover:border-emerald-500 hover:text-white transition-all duration-200 snap-start shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 min-h-[44px]"
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-zinc-800/30 border-t border-zinc-800">
+              <div className="flex gap-2 items-end">
+                <textarea
+                  ref={textareaRef}
                   value={input}
+                  aria-label="Chat input"
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                      setTimeout(() => {
+                        e.currentTarget.style.height = 'auto';
+                      }, 0);
+                    }
+                  }}
                   placeholder="Type a message..."
-                  className="flex-1 bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                  rows={1}
+                  className="flex-1 bg-zinc-800 border-none rounded-2xl px-4 py-3 min-h-[44px] max-h-[120px] resize-none text-sm focus:ring-2 focus:ring-emerald-500/80 focus:bg-zinc-700/50 shadow-inner outline-none transition-all duration-200 block no-scrollbar"
                 />
                 <button
+                  aria-label={isListening ? "Stop listening" : "Start voice input"}
                   onClick={toggleListening}
-                  className={`p-3 rounded-xl transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`}
+                  className={`min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 hover:text-white'}`}
                 >
                   {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                 </button>
                 <button
-                  onClick={handleSendMessage}
-                  className="bg-emerald-500 text-black p-3 rounded-xl hover:bg-emerald-400 transition-colors"
+                  aria-label="Send message"
+                  onClick={() => {
+                    handleSendMessage();
+                    const textarea = document.querySelector('textarea[aria-label="Chat input"]') as HTMLTextAreaElement;
+                    if (textarea) textarea.style.height = 'auto';
+                  }}
+                  className="min-w-[44px] w-[44px] h-[44px] flex items-center justify-center bg-emerald-500 text-black rounded-xl hover:bg-emerald-400 transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 hover:scale-105 active:scale-95 shadow-sm"
                 >
                   <ChevronRight size={20} />
                 </button>
