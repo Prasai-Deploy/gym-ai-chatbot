@@ -314,6 +314,12 @@ async function startServer() {
 
   // OpenRouter API Connector
   async function getOpenRouterResponse(userMessage: string, history: any[], systemMessage: string): Promise<string> {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+
+    if (!apiKey || apiKey.trim() === "") {
+      throw new Error("Missing Authentication: OPENROUTER_API_KEY is not defined in the environment or .env file.");
+    }
+
     const messages = [{ role: "system", content: systemMessage }];
     for (const h of history) {
       const role = h.role === "model" || h.role === "assistant" ? "assistant" : "user";
@@ -325,8 +331,10 @@ async function startServer() {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY || ""}`,
-        "Content-Type": "application/json"
+        "Authorization": `Bearer ${apiKey.trim()}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+        "X-Title": "Sweat Fix Gym"
       },
       body: JSON.stringify({
         model: "arcee-ai/trinity-large-preview:free",
