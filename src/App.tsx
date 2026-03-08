@@ -109,6 +109,20 @@ export default function App() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Poll for real-time updates from the database
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+    if (user) {
+      intervalId = setInterval(() => {
+        fetchProgress();
+        fetchPlans();
+      }, 5000); // 5 seconds polling
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user]);
+
   useLayoutEffect(() => {
     if (!progress.length) return;
 

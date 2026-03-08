@@ -278,6 +278,7 @@ async function startServer() {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
     const data = db.prepare("SELECT * FROM progress WHERE user_id = ? ORDER BY date DESC LIMIT 7").all(userId);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(data);
   });
 
@@ -296,6 +297,7 @@ async function startServer() {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
     const data = db.prepare("SELECT * FROM daily_plans WHERE user_id = ? ORDER BY date DESC LIMIT 14").all(userId);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(data);
   });
 
