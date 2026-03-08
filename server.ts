@@ -422,29 +422,8 @@ If there is no completed meal or workout to log, do not include "progress_log".$
         aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
       } catch (apiError: any) {
         console.error("OpenRouter API Error:", apiError.message);
-
-        // As a fallback for missing credits/licenses or model not found, return a simulated premium response 
-        // to keep the frontend completely functional.
-
-        const userInputLower = message.toLowerCase();
-        const seemsToHaveDetails = userInputLower.includes("weight") || userInputLower.includes("height") || userInputLower.includes("goal") || userInputLower.includes("lbs") || userInputLower.includes("kg") || userInputLower.includes("gym");
-
-        if (!seemsToHaveDetails) {
-          return res.json({
-            text: `* (Simulated Coach Mode) *\n\nI’d love to craft the perfect ** Daily Routine ** for you, but I need to understand your baseline first to ensure the protocol matches your goals and capabilities safely.\n\nCould you please share: \n1.Your current weight & height\n2.Your primary fitness goal(e.g., bodyweight mastery, cutting, bulking) \n3.Any dietary restrictions\n4.What equipment you have available\n\nOnce I have these, I'll generate a personalized plan for you to instantly track.`
-          });
-        }
-
-        const mockResponses = [
-          "💪 **Perfect, let's get to work!**\n\nBased on your details, I've generated a high-protein plan for you to get started. Focus on form and let the tension dictate the burn.\n\n```json\n{\n  \"workout_plan\": \"4x10 Close-Grip Pushups\\n3x15 Tricep Dips\\n3x12 Pike Pushups\",\n  \"diet_plan\": \"Breakfast: 3 Eggs & Oatmeal\\nLunch: Chicken Breast with Rice & Broccoli\\nDinner: Salmon & Asparagus\"\n}\n```",
-          "🔥 **Great baseline!**\n\nLet's get some active recovery and mobility work in today. Keep your joints healthy for the big lifts.\n\n```json\n{\n  \"workout_plan\": \"30 Min Deep Stretching\\n3x30s Wall Sits\\n20 Min Light Jogging\",\n  \"diet_plan\": \"Maintenance Day: Keep protein high (140g) and carbs moderate. Focus on hydration (3L Water).\"\n}\n```",
-          "🏆 **You're tracking perfectly.**\n\nHere's an explosive plyometric routine combined with a balanced diet to fuel your fast-twitch fibers based on your stats.\n\n```json\n{\n  \"workout_plan\": \"4x5 Box Jumps\\n3x8 Clapping Pushups\\n5xSprint Intervals (40m)\",\n  \"diet_plan\": \"Pre-workout: Banana & Peanut Butter\\nPost-workout: Whey Protein Shake + Dextrose\\nDinner: Lean Beef & Sweet Potatoes\"\n}\n```"
-        ];
-
-        const randomMock = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-
         return res.json({
-          text: `*(Simulated Coach Mode)*\n\n${randomMock}`
+          text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please check your API key or try again in a moment. (${apiError.message})`
         });
       }
 
