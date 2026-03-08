@@ -312,6 +312,41 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // OpenRouter API Connector
+  async function getOpenRouterResponse(userMessage: string, history: any[], systemMessage: string): Promise<string> {
+    const messages = [{ role: "system", content: systemMessage }];
+    for (const h of history) {
+      const role = h.role === "model" || h.role === "assistant" ? "assistant" : "user";
+      const content = h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "";
+      if (content) messages.push({ role, content });
+    }
+    messages.push({ role: "user", content: userMessage });
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY || ""}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "arcee-ai/trinity-large-preview:free",
+        messages,
+        temperature: 0.8,
+        top_p: 0.8,
+        top_k: 50
+      })
+    });
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      const errorMessage = typeof errJson.error === 'string' ? errJson.error : errJson.error?.message;
+      throw new Error(errorMessage || "OpenRouter API Error");
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "I encountered an error.";
+  }
+
   // Chat Route
   app.post("/api/chat", async (req, res) => {
     try {
@@ -382,31 +417,11 @@ Example:
 \`\`\`
 If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
 
-      const contents = history.map((h: any) => ({
-        role: h.role === "assistant" ? "model" : (h.role || "user"),
-        parts: [{ text: h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "" }]
-      }));
-
-      contents.push({ role: "user", parts: [{ text: message }] });
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY || ""}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          contents: contents
-        })
-      });
-
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        const errorMessage = typeof errJson.error === 'string' ? errJson.error : errJson.error?.message;
-
-        console.error("Gemini API Error:", errorMessage);
+      let aiContent: string;
+      try {
+        aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
+      } catch (apiError: any) {
+        console.error("OpenRouter API Error:", apiError.message);
 
         // As a fallback for missing credits/licenses or model not found, return a simulated premium response 
         // to keep the frontend completely functional.
@@ -432,9 +447,6 @@ If there is no completed meal or workout to log, do not include "progress_log".$
           text: `*(Simulated Coach Mode)*\n\n${randomMock}`
         });
       }
-
-      const data = await response.json();
-      let aiContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "I encountered an error.";
 
       // Extract new memory from JSON if present and save it
       if (user) {
