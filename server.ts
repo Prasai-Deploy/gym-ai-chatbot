@@ -42,7 +42,9 @@ db.exec(`
     profile_context TEXT,
     chat_id TEXT,
     password TEXT,
-    phone TEXT UNIQUE
+    phone TEXT UNIQUE,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_login TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS progress (
@@ -75,7 +77,9 @@ try { db.exec("ALTER TABLE progress ADD COLUMN fats INTEGER DEFAULT 0;"); } catc
 try { db.exec("ALTER TABLE users ADD COLUMN profile_context TEXT;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN chat_id TEXT;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN password TEXT;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT UNIQUE;"); } catch (e) { /* Ignore if it already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch (e) { /* Ignore if it already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN created_at TEXT;"); } catch (e) { /* Ignore */ }
+try { db.exec("ALTER TABLE users ADD COLUMN last_login TEXT;"); } catch (e) { /* Ignore */ }
 
 const authEvents = new EventEmitter();
 
@@ -120,14 +124,21 @@ async function startServer() {
     callbackURL: callbackURL,
   }, (accessToken, refreshToken, profile, done) => {
     let user = db.prepare("SELECT * FROM users WHERE google_id = ?").get(profile.id);
+    const now = new Date().toISOString();
     if (!user) {
-      const info = db.prepare("INSERT INTO users (google_id, name, email, avatar) VALUES (?, ?, ?, ?)").run(
+      const info = db.prepare("INSERT INTO users (google_id, name, email, avatar, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?)").run(
         profile.id,
         profile.displayName,
         profile.emails?.[0].value,
-        profile.photos?.[0].value
+        profile.photos?.[0].value,
+        now,
+        now
       );
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
+    } else {
+      // Update last login
+      db.prepare("UPDATE users SET last_login = ? WHERE id = ?").run(now, (user as any).id);
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get((user as any).id);
     }
     return done(null, user);
   }));

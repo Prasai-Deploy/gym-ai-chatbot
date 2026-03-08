@@ -229,6 +229,9 @@ export default function App() {
   const handleLogout = async () => {
     await fetch('/api/logout');
     setUser(null);
+    setProgress([]);
+    setDailyPlans([]);
+    setMessages([{ role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }]);
   };
 
   const handleDemoLogin = async () => {
