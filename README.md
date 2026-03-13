@@ -26,7 +26,7 @@ A production-ready AI coaching platform developed for **Sweat Fix Gym**. This sy
 | Layer | Technology |
 | :--- | :--- |
 | **Model** | Arcee-AI Trinity Large Preview (via OpenRouter) |
-| **UI Framework** | Antigravity |
+| **UI Framework** | Express |
 | **Database** | PostgreSQL |
 | **Auth** | Google OAuth 2.0 |
 | **Architecture** | Agentic AI Workflow / Full-Stack Web App |
