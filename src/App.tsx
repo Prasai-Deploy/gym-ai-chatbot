@@ -30,6 +30,18 @@ import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import { getFitnessAdvice } from './services/chatService';
 
+// --- START FEATURE: THEME TOGGLE ---
+import { ThemeToggle } from './components/ThemeToggle';
+// --- END FEATURE: THEME TOGGLE ---
+
+// --- START FEATURE: MACRO TRACKER ---
+import { MacroTracker } from './components/MacroTracker';
+// --- END FEATURE: MACRO TRACKER ---
+
+// --- START FEATURE: WORKOUT TRACKER ---
+import { WorkoutTracker } from './components/WorkoutTracker';
+// --- END FEATURE: WORKOUT TRACKER ---
+
 interface User {
   id: number;
   name: string;
@@ -437,21 +449,25 @@ export default function App() {
     recognition.start();
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-zinc-950 text-white">Loading...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center text-white" style={{ background: 'var(--surface-primary)' }}>Loading...</div>;
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'var(--surface-primary)' }}>
+        {/* Decorative Blobs */}
+        <div className="bg-blob bg-blob-1" />
+        <div className="bg-blob bg-blob-2" />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full"
+          className="max-w-md w-full relative z-10"
         >
-          <div className="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-500/20">
-            <Dumbbell className="text-black w-10 h-10" />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg" style={{ background: 'var(--gradient-primary)' }}>
+            <Dumbbell className="text-white w-10 h-10" />
           </div>
-          <h1 className="text-5xl font-bold text-white mb-4 tracking-tight">SWEAT FIX GYM</h1>
-          <p className="text-zinc-400 mb-12 text-lg">Your premium journey to peak performance starts here.</p>
+          <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>SWEAT FIX GYM</h1>
+          <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
 
           <button
             onClick={handleLogin}
@@ -461,21 +477,22 @@ export default function App() {
             Continue with Google
           </button>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl w-full">
-            <h3 className="text-xl font-bold text-white mb-2 text-center">Try the Demo</h3>
-            <p className="text-zinc-500 text-sm text-center mb-6">Experience the full platform without creating an account.</p>
+          <div className="glass-panel rounded-2xl p-6 shadow-xl w-full">
+            <h3 className="text-xl font-bold mb-2 text-center" style={{ color: 'var(--text-primary)' }}>Try the Demo</h3>
+            <p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>Experience the full platform without creating an account.</p>
             <button
               onClick={handleDemoLogin}
-              className="w-full bg-emerald-500 text-black font-semibold py-3 rounded-xl hover:bg-emerald-400 transition-all active:scale-95"
+              className="w-full btn-gradient py-3 rounded-xl font-semibold"
             >
               Explore as Demo User
             </button>
           </div>
 
-          <div className="mt-12 pt-12 border-t border-zinc-800">
+          <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--glass-border)' }}>
             <button
               onClick={() => setShowQR(!showQR)}
-              className="text-zinc-500 hover:text-white flex items-center gap-2 mx-auto text-sm uppercase tracking-widest font-bold"
+              className="flex items-center gap-2 mx-auto text-sm uppercase tracking-widest font-bold hover:opacity-80 transition-opacity"
+              style={{ color: 'var(--text-muted)' }}
             >
               <QrCode size={16} />
               Scan to Access
@@ -496,105 +513,121 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
+    <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
+      {/* Decorative Background Blobs */}
+      <div className="bg-blob bg-blob-1" />
+      <div className="bg-blob bg-blob-2" />
+      <div className="bg-blob bg-blob-3" />
+
       {/* Header */}
-      <header className="p-6 flex justify-between items-center border-b border-zinc-900 sticky top-0 bg-zinc-950/80 backdrop-blur-md z-40">
+      <header className="p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-            <Dumbbell size={20} className="text-black" />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+            <Dumbbell size={20} className="text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-lg leading-tight uppercase tracking-widest text-emerald-500">SWEAT FIX GYM</h2>
+            <h2 className="font-bold text-lg leading-tight uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {/* --- START FEATURE: THEME TOGGLE --- */}
+          <ThemeToggle />
+          {/* --- END FEATURE: THEME TOGGLE --- */}
           <div className="flex items-center gap-3">
             <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform">
-              <img src={user.avatar} className="w-8 h-8 rounded-full border border-zinc-700" alt={user.name} />
+              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--glass-border)' }} alt={user.name} />
             </button>
-            <button onClick={handleLogout} className="p-2 hover:bg-zinc-900 rounded-full text-zinc-500 hover:text-red-400">
+            <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
               <LogOut size={18} />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 space-y-8">
+      <main className="max-w-5xl mx-auto p-6 space-y-8 relative z-10">
         {/* Welcome Section */}
         <section>
-          <h1 className="text-3xl font-bold mb-2">Hello, {user.name.split(' ')[0]}!</h1>
-          <p className="text-zinc-500">Ready to crush your goals today?</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
         </section>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 bg-orange-500/10 rounded-md">
                 <Flame size={18} className="text-orange-500" />
               </div>
-              <span className="text-sm font-medium text-zinc-400">Calories</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Calories</span>
             </div>
-            <div className="text-2xl font-bold">{progress[progress.length - 1]?.calories || 0} <span className="text-sm font-normal text-zinc-500">kcal</span></div>
+            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.calories || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>kcal</span></div>
           </div>
-          <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 bg-purple-500/10 rounded-md">
                 <Beef size={18} className="text-purple-500" />
               </div>
-              <span className="text-sm font-medium text-zinc-400">Protein</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Protein</span>
             </div>
-            <div className="text-2xl font-bold">{progress[progress.length - 1]?.protein || 0} <span className="text-sm font-normal text-zinc-500">g</span></div>
+            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.protein || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
           </div>
-          <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 bg-yellow-500/10 rounded-md">
                 <Wheat size={18} className="text-yellow-500" />
               </div>
-              <span className="text-sm font-medium text-zinc-400">Carbs</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Carbs</span>
             </div>
-            <div className="text-2xl font-bold">{progress[progress.length - 1]?.carbs || 0} <span className="text-sm font-normal text-zinc-500">g</span></div>
+            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.carbs || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
           </div>
-          <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 bg-red-500/10 rounded-md">
                 <Activity size={18} className="text-red-500" />
               </div>
-              <span className="text-sm font-medium text-zinc-400">Fats</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Fats</span>
             </div>
-            <div className="text-2xl font-bold">{progress[progress.length - 1]?.fats || 0} <span className="text-sm font-normal text-zinc-500">g</span></div>
+            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.fats || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
           </div>
-          <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-1.5 bg-blue-500/10 rounded-md">
                 <Droplets size={18} className="text-blue-500" />
               </div>
-              <span className="text-sm font-medium text-zinc-400">Water</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Water</span>
             </div>
-            <div className="text-2xl font-bold">{progress[progress.length - 1]?.water || 0} <span className="text-sm font-normal text-zinc-500">ml</span></div>
+            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.water || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>ml</span></div>
           </div>
         </div>
 
         {/* Track Workout Section */}
-        <section className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
           <div>
-            <h3 className="text-xl font-bold text-emerald-500 mb-1">Track Workout & Macros</h3>
-            <p className="text-sm text-zinc-400">Log your recent activity to update your stats and progress chart.</p>
+            <h3 className="text-xl font-bold mb-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Track Workout & Macros</h3>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Log your recent activity to update your stats and progress chart.</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-3 rounded-2xl transition-all active:scale-95 font-bold shadow-lg shadow-emerald-500/20 whitespace-nowrap"
+            className="flex items-center gap-2 btn-gradient px-6 py-3 rounded-2xl whitespace-nowrap"
           >
             <Plus size={20} /> <span className="md:inline">Log Activity</span>
           </button>
         </section>
 
+        {/* --- START FEATURE: MACRO TRACKER --- */}
+        <MacroTracker />
+        {/* --- END FEATURE: MACRO TRACKER --- */}
+
+        {/* --- START FEATURE: WORKOUT TRACKER --- */}
+        <WorkoutTracker />
+        {/* --- END FEATURE: WORKOUT TRACKER --- */}
+
         {/* Progress Chart */}
-        <section className="bg-zinc-900/30 p-8 rounded-[40px] border border-zinc-800/50">
+        <section className="glass-panel p-8 rounded-[40px]">
           <div className="flex justify-between items-end mb-8">
             <div>
-              <h3 className="text-xl font-bold mb-1">Weekly Progress</h3>
-              <p className="text-sm text-zinc-500 italic">Calorie intake overview</p>
+              <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
+              <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Calorie intake overview</p>
             </div>
           </div>
 
@@ -606,55 +639,57 @@ export default function App() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <Bot size={24} className="text-emerald-500" />
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(124, 58, 237, 0.1)' }}>
+                  <Bot size={24} className="text-purple-500" />
                 </div>
-                <h3 className="text-xl font-bold">Workout & Diet Chart</h3>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Workout & Diet Chart</h3>
               </div>
-              <p className="text-sm text-zinc-500 mt-2">Your personalized routines generated by Sweat Fix Coach</p>
+              <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Your personalized routines generated by Sweat Fix Coach</p>
             </div>
             <button
               onClick={() => setShowPlanForm(true)}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm font-bold rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-bold rounded-xl transition-colors"
+              style={{ background: 'var(--surface-elevated)', color: 'var(--text-secondary)' }}
             >
               Update Plan
             </button>
           </div>
           <div className="space-y-4">
             {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
-              <div key={i} className={`p-6 rounded-[24px] border ${plan.completed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-zinc-900/50 border-zinc-800/50'} transition-colors`}>
+              <div key={i} className={`p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
-                    <h4 className={`text-lg font-bold mt-1 ${plan.completed ? 'text-emerald-500 line-through opacity-70' : 'text-white'}`}>Daily Routine</h4>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
+                    <h4 className={`text-lg font-bold mt-1 ${plan.completed ? 'text-emerald-500 line-through opacity-70' : ''}`} style={plan.completed ? {} : { color: 'var(--text-primary)' }}>Daily Routine</h4>
                   </div>
                   <button
                     onClick={() => handleTogglePlan(plan.id, plan.completed)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${plan.completed ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-zinc-700 text-transparent hover:border-emerald-500'}`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${plan.completed ? 'bg-emerald-500 border-emerald-500 text-black' : 'text-transparent'}`}
+                    style={plan.completed ? {} : { borderColor: 'var(--text-muted)' }}
                   >
                     <Check size={16} />
                   </button>
                 </div>
 
                 <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${plan.completed ? 'opacity-50' : ''}`}>
-                  <div className="bg-zinc-950/50 p-4 rounded-2xl">
-                    <div className="flex items-center gap-2 mb-2 text-zinc-400">
-                      <Dumbbell size={16} />
-                      <span className="text-sm font-bold uppercase tracking-widest text-emerald-500">Workout Chart</span>
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Dumbbell size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Workout Chart</span>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap">{plan.workout_plan || 'No training logged.'}</p>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.workout_plan || 'No training logged.'}</p>
                   </div>
-                  <div className="bg-zinc-950/50 p-4 rounded-2xl">
-                    <div className="flex items-center gap-2 mb-2 text-zinc-400">
-                      <Utensils size={16} />
-                      <span className="text-sm font-bold uppercase tracking-widest text-emerald-500">Diet Plan</span>
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Utensils size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Diet Plan</span>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap">{plan.diet_plan || 'No nutrition logged.'}</p>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.diet_plan || 'No nutrition logged.'}</p>
                   </div>
                 </div>
               </div>
             )) : (
-              <div className="text-center py-12 text-zinc-600 border-2 border-dashed border-zinc-800 rounded-3xl">
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
                 No daily plan set. Log your workout and diet protocols for the day.
               </div>
             )}
@@ -664,31 +699,31 @@ export default function App() {
         {/* Recent Workouts */}
         <section>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold">Recent Activity</h3>
-            <button className="text-emerald-500 text-sm font-bold flex items-center gap-1">
-              View All <ChevronRight size={16} />
+            <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
+            <button className="text-sm font-bold flex items-center gap-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              View All <ChevronRight size={16} className="text-purple-500" />
             </button>
           </div>
           <div className="space-y-3">
             {progress.slice().reverse().map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
+              <div key={i} className="flex items-center justify-between p-4 glass-panel glass-panel-hover rounded-2xl">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center">
-                    <Dumbbell size={20} className="text-zinc-400" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-elevated)' }}>
+                    <Dumbbell size={20} style={{ color: 'var(--text-muted)' }} />
                   </div>
                   <div>
-                    <h4 className="font-bold">{item.workout_name || 'General Training'}</h4>
-                    <p className="text-xs text-zinc-500">{item.date}</p>
+                    <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.workout_name || 'General Training'}</h4>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.date}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-emerald-500">+{item.calories} kcal</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Burned</div>
+                  <div className="font-bold text-purple-400">+{item.calories} kcal</div>
+                  <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-muted)' }}>Burned</div>
                 </div>
               </div>
             ))}
             {progress.length === 0 && (
-              <div className="text-center py-12 text-zinc-600 border-2 border-dashed border-zinc-800 rounded-3xl">
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
                 No activity logged yet. Start your journey today!
               </div>
             )}
@@ -699,7 +734,8 @@ export default function App() {
       {/* Chat Bot Trigger */}
       <button
         onClick={() => setChatOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-emerald-500 text-black rounded-full shadow-2xl shadow-emerald-500/40 flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50"
+        className="fixed bottom-8 right-8 w-16 h-16 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50"
+        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
       >
         <MessageSquare size={28} />
       </button>
@@ -711,19 +747,19 @@ export default function App() {
             initial={{ opacity: 0, y: 100, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.9 }}
-            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] bg-zinc-900 border border-zinc-800 md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] glass-panel md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
           >
-            <div className="p-6 bg-zinc-800/50 flex justify-between items-center border-b border-zinc-800">
+            <div className="p-6 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--glass-border)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <TrendingUp size={20} className="text-black" />
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+                  <TrendingUp size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold">Sweat Fix Coach</h3>
-                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Always Online</p>
+                  <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Sweat Fix Coach</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400">Always Online</p>
                 </div>
               </div>
-              <button onClick={() => setChatOpen(false)} className="text-zinc-500 hover:text-white">
+              <button onClick={() => setChatOpen(false)} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--text-muted)' }}>
                 <Plus className="rotate-45" size={24} />
               </button>
             </div>
@@ -731,7 +767,7 @@ export default function App() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-emerald-500 text-black font-medium' : 'bg-zinc-800 text-zinc-100'}`}>
+                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium`} style={{ background: m.role === 'user' ? 'var(--gradient-primary)' : 'var(--surface-elevated)', color: m.role === 'user' ? 'white' : 'var(--text-primary)' }}>
                     <div className="prose prose-invert max-w-none prose-p:leading-tight prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
                       <ReactMarkdown>
                         {m.content}
@@ -742,7 +778,7 @@ export default function App() {
               ))}
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-zinc-800 p-4 rounded-2xl flex gap-1">
+                  <div className="p-4 rounded-2xl flex gap-1" style={{ background: 'var(--surface-elevated)' }}>
                     <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
                     <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
                     <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
@@ -751,14 +787,15 @@ export default function App() {
               )}
             </div>
 
-            <div className="p-6 bg-zinc-800/30 border-t border-zinc-800">
+            <div className="p-6" style={{ background: 'var(--surface-elevated)', borderTop: '1px solid var(--glass-border)' }}>
               <div className="flex gap-2">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Type a message..."
-                  className="flex-1 bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                  className="flex-1 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                  style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
                 />
                 <button
                   onClick={toggleListening}
@@ -768,7 +805,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={handleSendMessage}
-                  className="bg-emerald-500 text-black p-3 rounded-xl hover:bg-emerald-400 transition-colors"
+                  className="btn-gradient p-3 rounded-xl"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -785,7 +822,7 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-zinc-900 w-full max-w-md rounded-[32px] border border-zinc-800 overflow-hidden shadow-2xl"
+              className="glass-panel w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
             >
               <div className="p-8">
                 <div className="flex justify-between items-center mb-8">
@@ -860,7 +897,7 @@ export default function App() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-5 rounded-2xl transition-all active:scale-95 shadow-xl shadow-emerald-500/20 mt-4"
+                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
                   >
                     Save Entry
                   </button>
@@ -878,10 +915,10 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-zinc-900 w-full max-w-lg rounded-[32px] border border-zinc-800 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              className="glass-panel w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 flex-shrink-0 flex justify-between items-center border-b border-zinc-800/50">
-                <h3 className="text-2xl font-bold">Daily Protocol</h3>
+              <div className="p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Daily Protocol</h3>
                 <button onClick={() => setShowPlanForm(false)} className="text-zinc-500 hover:text-white">
                   <Plus className="rotate-45" size={28} />
                 </button>
@@ -915,7 +952,7 @@ export default function App() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-5 rounded-2xl transition-all active:scale-95 shadow-xl shadow-emerald-500/20 mt-4"
+                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
                   >
                     Lock In Plan
                   </button>
@@ -933,7 +970,7 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-zinc-900 border border-zinc-800 p-8 rounded-[40px] text-center max-w-sm w-full shadow-2xl"
+              className="glass-panel p-8 rounded-[40px] text-center max-w-sm w-full shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-end mb-4">
@@ -971,7 +1008,7 @@ export default function App() {
                 </div>
               )}
 
-              <div className="bg-zinc-800/50 rounded-2xl p-4 mb-8 text-left">
+              <div className="rounded-2xl p-4 mb-8 text-left" style={{ background: 'var(--surface-elevated)' }}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-zinc-400 text-sm">Member ID</span>
                   <span className="text-white font-mono text-sm">#{user.id.toString().padStart(4, '0')}</span>
