@@ -74,6 +74,135 @@ const QUICK_ACTIONS = [
   "📅 Book a Session"
 ];
 
+// ─── Daily Water Tracker Component ───────────────────────────────────────────
+const GLASS_ML = 250;
+const TOTAL_GLASSES = 8;
+
+function WaterTracker() {
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  const getInitial = (): boolean[] => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('waterLog') || '{}');
+      return saved.date === todayKey ? (saved.filled as boolean[]) : Array(TOTAL_GLASSES).fill(false);
+    } catch { return Array(TOTAL_GLASSES).fill(false); }
+  };
+
+  const [filled, setFilled] = React.useState<boolean[]>(getInitial);
+
+  const toggle = (idx: number) => {
+    setFilled(prev => {
+      const next = [...prev];
+      next[idx] = !next[idx];
+      localStorage.setItem('waterLog', JSON.stringify({ date: todayKey, filled: next }));
+      return next;
+    });
+  };
+
+  const reset = () => {
+    const fresh = Array(TOTAL_GLASSES).fill(false);
+    setFilled(fresh);
+    localStorage.setItem('waterLog', JSON.stringify({ date: todayKey, filled: fresh }));
+  };
+
+  const count = filled.filter(Boolean).length;
+  const totalMl = count * GLASS_ML;
+  const pct = Math.round((count / TOTAL_GLASSES) * 100);
+
+  const status =
+    count === 0 ? 'Start hydrating! 💧' :
+    count < 3   ? 'Keep it up! 🌊'     :
+    count < 6   ? 'Great progress! 💪'  :
+    count < 8   ? 'Almost there! 🏆'   :
+                  'Goal reached! 🎉';
+
+  return (
+    <section className="glass-panel p-6 rounded-[40px] flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.12)' }}>
+            <Droplets size={20} className="text-blue-400" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base leading-tight" style={{ color: 'var(--text-primary)' }}>Daily Water Log</h3>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-400">{format(new Date(), 'MMM dd')}</p>
+          </div>
+        </div>
+        <button
+          onClick={reset}
+          className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+          style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Total + Status */}
+      <div className="text-center mb-5">
+        <div className="text-4xl font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+          {(totalMl / 1000).toFixed(2)}
+          <span className="text-lg font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>L</span>
+        </div>
+        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{count} / {TOTAL_GLASSES} glasses · {pct}%</div>
+        <div className="text-sm font-semibold mt-1 text-blue-400">{status}</div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full h-2 rounded-full mb-6 overflow-hidden" style={{ background: 'var(--surface-elevated)' }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
+        />
+      </div>
+
+      {/* Glass Grid */}
+      <div className="grid grid-cols-4 gap-3 flex-1">
+        {filled.map((isFilled, i) => (
+          <button
+            key={i}
+            onClick={() => toggle(i)}
+            title={`Glass ${i + 1} – ${GLASS_ML} ml`}
+            className="flex flex-col items-center gap-1 focus:outline-none"
+          >
+            <div
+              className="relative w-full rounded-xl overflow-hidden transition-all duration-300"
+              style={{
+                aspectRatio: '3/4',
+                background: isFilled ? 'rgba(59,130,246,0.15)' : 'var(--surface-elevated)',
+                border: isFilled ? '1.5px solid rgba(59,130,246,0.5)' : '1.5px solid var(--glass-border)',
+                boxShadow: isFilled ? '0 0 12px rgba(59,130,246,0.2)' : 'none',
+              }}
+            >
+              <div
+                className="absolute bottom-0 left-0 w-full transition-all duration-500"
+                style={{
+                  height: isFilled ? '75%' : '0%',
+                  background: 'linear-gradient(180deg, rgba(56,189,248,0.4) 0%, rgba(37,99,235,0.7) 100%)',
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Droplets
+                  size={18}
+                  className={`transition-colors duration-300 ${isFilled ? 'text-blue-300' : 'text-zinc-500'}`}
+                />
+              </div>
+            </div>
+            <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: isFilled ? '#60a5fa' : 'var(--text-muted)' }}>
+              {GLASS_ML}ml
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <p className="text-center text-[10px] mt-4 font-medium" style={{ color: 'var(--text-muted)' }}>
+        Daily goal · {(TOTAL_GLASSES * GLASS_ML / 1000).toFixed(1)} L
+      </p>
+    </section>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -589,54 +718,9 @@ export default function App() {
           <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
         </section>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-orange-500/10 rounded-md">
-                <Flame size={18} className="text-orange-500" />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Calories</span>
-            </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.calories || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>kcal</span></div>
-          </div>
-          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-purple-500/10 rounded-md">
-                <Beef size={18} className="text-purple-500" />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Protein</span>
-            </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.protein || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
-          </div>
-          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-yellow-500/10 rounded-md">
-                <Wheat size={18} className="text-yellow-500" />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Carbs</span>
-            </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.carbs || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
-          </div>
-          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-red-500/10 rounded-md">
-                <Activity size={18} className="text-red-500" />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Fats</span>
-            </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.fats || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>g</span></div>
-          </div>
-          <div className="glass-panel glass-panel-hover p-4 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-blue-500/10 rounded-md">
-                <Droplets size={18} className="text-blue-500" />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Water</span>
-            </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{progress[progress.length - 1]?.water || 0} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>ml</span></div>
-          </div>
-        </div>
+        {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
+        <MacroTracker />
+        {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
         <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
@@ -652,25 +736,26 @@ export default function App() {
           </button>
         </section>
 
-        {/* --- START FEATURE: MACRO TRACKER --- */}
-        <MacroTracker />
-        {/* --- END FEATURE: MACRO TRACKER --- */}
-
         {/* --- START FEATURE: WORKOUT TRACKER --- */}
         <WorkoutTracker />
         {/* --- END FEATURE: WORKOUT TRACKER --- */}
 
-        {/* Progress Chart */}
-        <section className="glass-panel p-8 rounded-[40px]">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
-              <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Calorie intake overview</p>
+        {/* Progress Chart + Water Log Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Weekly Progress Chart */}
+          <section className="glass-panel p-8 rounded-[40px] md:col-span-2">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Calorie intake overview</p>
+              </div>
             </div>
-          </div>
+            <div id="chartdiv" className="h-[300px] w-full" />
+          </section>
 
-          <div id="chartdiv" className="h-[300px] w-full" />
-        </section>
+          {/* Daily Water Log */}
+          <WaterTracker />
+        </div>
 
         {/* Diet & Workout Chart Section */}
         <section>
