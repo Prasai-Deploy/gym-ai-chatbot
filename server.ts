@@ -80,6 +80,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN password TEXT;"); } catch (e) { /* I
 try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch (e) { /* Ignore if it already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN created_at TEXT;"); } catch (e) { /* Ignore */ }
 try { db.exec("ALTER TABLE users ADD COLUMN last_login TEXT;"); } catch (e) { /* Ignore */ }
+try { db.exec("ALTER TABLE users ADD COLUMN water_goal INTEGER DEFAULT 2000;"); } catch (e) { /* Ignore */ }
 
 const authEvents = new EventEmitter();
 
@@ -156,11 +157,12 @@ async function startServer() {
   app.post("/api/auth/demo", (req, res) => {
     let user = db.prepare("SELECT * FROM users WHERE email = ?").get("demo@sweatfix.com");
     if (!user) {
-      const info = db.prepare("INSERT INTO users (email, name, avatar, profile_context) VALUES (?, ?, ?, ?)").run(
+      const info = db.prepare("INSERT INTO users (email, name, avatar, profile_context, water_goal) VALUES (?, ?, ?, ?, ?)").run(
         "demo@sweatfix.com",
         "Demo User",
         "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-        ""
+        "",
+        2000
       );
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
     } else {
@@ -259,13 +261,15 @@ async function startServer() {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-    const { name } = req.body;
-    if (!name || typeof name !== "string") {
-      return res.status(400).json({ error: "Invalid name" });
-    }
+    const { name, water_goal } = req.body;
 
     try {
-      db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name.trim(), user.id);
+      if (name && typeof name === "string") {
+        db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name.trim(), user.id);
+      }
+      if (water_goal !== undefined) {
+        db.prepare("UPDATE users SET water_goal = ? WHERE id = ?").run(Number(water_goal), user.id);
+      }
       const updatedUser = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
       res.json(updatedUser);
     } catch (e: any) {

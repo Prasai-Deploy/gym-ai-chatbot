@@ -47,6 +47,7 @@ interface User {
   name: string;
   email: string;
   avatar: string;
+  water_goal?: number;
 }
 
 interface ProgressData {
@@ -75,46 +76,42 @@ const QUICK_ACTIONS = [
 ];
 
 // ─── Daily Water Tracker Component ───────────────────────────────────────────
-const GLASS_ML = 250;
-const TOTAL_GLASSES = 8;
+interface WaterTrackerProps {
+  currentWater: number;
+  waterGoal: number;
+  onAddWater: (amount: number) => void;
+  onUpdateGoal: (newGoal: number) => void;
+}
 
-function WaterTracker() {
-  const todayKey = new Date().toISOString().slice(0, 10);
+function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: WaterTrackerProps) {
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState((waterGoal || 2000).toString());
+  const [customAmount, setCustomAmount] = useState('');
 
-  const getInitial = (): boolean[] => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('waterLog') || '{}');
-      return saved.date === todayKey ? (saved.filled as boolean[]) : Array(TOTAL_GLASSES).fill(false);
-    } catch { return Array(TOTAL_GLASSES).fill(false); }
-  };
-
-  const [filled, setFilled] = React.useState<boolean[]>(getInitial);
-
-  const toggle = (idx: number) => {
-    setFilled(prev => {
-      const next = [...prev];
-      next[idx] = !next[idx];
-      localStorage.setItem('waterLog', JSON.stringify({ date: todayKey, filled: next }));
-      return next;
-    });
-  };
-
-  const reset = () => {
-    const fresh = Array(TOTAL_GLASSES).fill(false);
-    setFilled(fresh);
-    localStorage.setItem('waterLog', JSON.stringify({ date: todayKey, filled: fresh }));
-  };
-
-  const count = filled.filter(Boolean).length;
-  const totalMl = count * GLASS_ML;
-  const pct = Math.round((count / TOTAL_GLASSES) * 100);
+  const pct = Math.min(Math.round((currentWater / (waterGoal || 2000)) * 100), 100);
 
   const status =
-    count === 0 ? 'Start hydrating! 💧' :
-    count < 3   ? 'Keep it up! 🌊'     :
-    count < 6   ? 'Great progress! 💪'  :
-    count < 8   ? 'Almost there! 🏆'   :
+    currentWater === 0 ? 'Start hydrating! 💧' :
+    pct < 30   ? 'Keep it up! 🌊'     :
+    pct < 60   ? 'Great progress! 💪'  :
+    pct < 100   ? 'Almost there! 🏆'   :
                   'Goal reached! 🎉';
+
+  const handleSaveGoal = () => {
+    const goal = parseInt(tempGoal, 10);
+    if (!isNaN(goal) && goal > 0) {
+      onUpdateGoal(goal);
+    }
+    setIsEditingGoal(false);
+  };
+
+  const handleCustomAdd = () => {
+    const amount = parseInt(customAmount, 10);
+    if (!isNaN(amount) && amount > 0) {
+      onAddWater(amount);
+      setCustomAmount('');
+    }
+  };
 
   return (
     <section className="glass-panel p-6 rounded-[40px] flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
@@ -129,22 +126,39 @@ function WaterTracker() {
             <p className="text-[10px] uppercase tracking-widest font-bold text-blue-400">{format(new Date(), 'MMM dd')}</p>
           </div>
         </div>
-        <button
-          onClick={reset}
-          className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-          style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}
-        >
-          Reset
-        </button>
+        
+        {isEditingGoal ? (
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              value={tempGoal} 
+              onChange={e => setTempGoal(e.target.value)} 
+              className="w-16 px-2 py-1 text-xs rounded bg-zinc-800 text-white outline-none" 
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
+            />
+            <button onClick={handleSaveGoal} className="text-xs text-blue-400 font-bold">Save</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setTempGoal((waterGoal || 2000).toString()); setIsEditingGoal(true); }}
+            className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 flex items-center gap-1"
+            style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}
+          >
+            <Edit2 size={12} /> Goal
+          </button>
+        )}
       </div>
 
       {/* Total + Status */}
       <div className="text-center mb-5">
         <div className="text-4xl font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>
-          {(totalMl / 1000).toFixed(2)}
+          {(currentWater / 1000).toFixed(2)}
           <span className="text-lg font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>L</span>
         </div>
-        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{count} / {TOTAL_GLASSES} glasses · {pct}%</div>
+        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          {currentWater} / {waterGoal || 2000} ml · {pct}%
+        </div>
         <div className="text-sm font-semibold mt-1 text-blue-400">{status}</div>
       </div>
 
@@ -156,48 +170,44 @@ function WaterTracker() {
         />
       </div>
 
-      {/* Glass Grid */}
-      <div className="grid grid-cols-4 gap-3 flex-1">
-        {filled.map((isFilled, i) => (
+      {/* Quick Add Buttons */}
+      <div className="flex gap-2 mb-4">
+        {[250, 500].map(amount => (
           <button
-            key={i}
-            onClick={() => toggle(i)}
-            title={`Glass ${i + 1} – ${GLASS_ML} ml`}
-            className="flex flex-col items-center gap-1 focus:outline-none"
+            key={amount}
+            onClick={() => onAddWater(amount)}
+            className="flex-1 py-2 rounded-xl text-xs font-bold transition-colors hover:opacity-80"
+            style={{ background: 'var(--surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}
           >
-            <div
-              className="relative w-full rounded-xl overflow-hidden transition-all duration-300"
-              style={{
-                aspectRatio: '3/4',
-                background: isFilled ? 'rgba(59,130,246,0.15)' : 'var(--surface-elevated)',
-                border: isFilled ? '1.5px solid rgba(59,130,246,0.5)' : '1.5px solid var(--glass-border)',
-                boxShadow: isFilled ? '0 0 12px rgba(59,130,246,0.2)' : 'none',
-              }}
-            >
-              <div
-                className="absolute bottom-0 left-0 w-full transition-all duration-500"
-                style={{
-                  height: isFilled ? '75%' : '0%',
-                  background: 'linear-gradient(180deg, rgba(56,189,248,0.4) 0%, rgba(37,99,235,0.7) 100%)',
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Droplets
-                  size={18}
-                  className={`transition-colors duration-300 ${isFilled ? 'text-blue-300' : 'text-zinc-500'}`}
-                />
-              </div>
-            </div>
-            <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: isFilled ? '#60a5fa' : 'var(--text-muted)' }}>
-              {GLASS_ML}ml
-            </span>
+            +{amount}ml
           </button>
         ))}
       </div>
 
-      <p className="text-center text-[10px] mt-4 font-medium" style={{ color: 'var(--text-muted)' }}>
-        Daily goal · {(TOTAL_GLASSES * GLASS_ML / 1000).toFixed(1)} L
-      </p>
+      {/* Custom Amount Input */}
+      <div className="flex gap-2 flex-1 items-end">
+        <div className="flex-1 relative">
+          <input
+            type="number"
+            value={customAmount}
+            onChange={e => setCustomAmount(e.target.value)}
+            placeholder="Custom amount"
+            className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-zinc-600"
+            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+            onKeyDown={e => e.key === 'Enter' && handleCustomAdd()}
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
+            ml
+          </span>
+        </div>
+        <button
+          onClick={handleCustomAdd}
+          className="btn-gradient px-4 py-3 rounded-xl flex items-center justify-center text-sm font-bold"
+          style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
+        >
+          Add
+        </button>
+      </div>
     </section>
   );
 }
@@ -482,6 +492,39 @@ export default function App() {
     }
   };
 
+  const handleUpdateWaterGoal = async (newGoal: number) => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ water_goal: newGoal })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddWater = async (amount: number) => {
+    await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workout_name: `Drank Water`,
+        water: amount,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0,
+        date: format(new Date(), 'MMM dd')
+      })
+    });
+    fetchProgress();
+  };
+
   const handleSendMessage = async (explicitMessage?: string | React.MouseEvent | React.KeyboardEvent) => {
     const textToSend = typeof explicitMessage === 'string' ? explicitMessage : input;
     if (!textToSend.trim()) return;
@@ -679,6 +722,14 @@ export default function App() {
     );
   }
 
+  const today1 = format(new Date(), 'MMM dd');
+  const today2 = new Date().toISOString().split('T')[0];
+  const todaysProgress = progress.filter(p => p.date === today1 || p.date === today2);
+  const totalProtein = todaysProgress.reduce((sum, p) => sum + (p.protein || 0), 0);
+  const totalCarbs = todaysProgress.reduce((sum, p) => sum + (p.carbs || 0), 0);
+  const totalFats = todaysProgress.reduce((sum, p) => sum + (p.fats || 0), 0);
+  const totalWater = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
+
   return (
     <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
       {/* Decorative Background Blobs */}
@@ -719,7 +770,7 @@ export default function App() {
         </section>
 
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
-        <MacroTracker />
+        <MacroTracker protein={totalProtein} carbs={totalCarbs} fats={totalFats} />
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
@@ -754,7 +805,12 @@ export default function App() {
           </section>
 
           {/* Daily Water Log */}
-          <WaterTracker />
+          <WaterTracker 
+            currentWater={totalWater} 
+            waterGoal={user.water_goal || 2000} 
+            onAddWater={handleAddWater} 
+            onUpdateGoal={handleUpdateWaterGoal} 
+          />
         </div>
 
         {/* Diet & Workout Chart Section */}

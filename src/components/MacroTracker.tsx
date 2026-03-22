@@ -70,10 +70,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
   );
 }
 
-export function MacroTracker() {
-  const [protein, setProtein] = useState(120);
-  const [carbs, setCarbs] = useState(180);
-  const [fats, setFats] = useState(45);
+export function MacroTracker({ protein = 0, carbs = 0, fats = 0 }: { protein?: number, carbs?: number, fats?: number }) {
   const [weight, setWeight] = useState('');
   const [weightLog, setWeightLog] = useState<{ value: number; date: string }[]>([]);
 
@@ -145,45 +142,6 @@ export function MacroTracker() {
         />
       </div>
 
-      {/* Quick Macro Input */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>
-            Protein (g)
-          </label>
-          <input
-            type="number"
-            value={protein}
-            onChange={e => setProtein(Number(e.target.value) || 0)}
-            className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-purple-500/50"
-            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
-          />
-        </div>
-        <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>
-            Carbs (g)
-          </label>
-          <input
-            type="number"
-            value={carbs}
-            onChange={e => setCarbs(Number(e.target.value) || 0)}
-            className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500/50"
-            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
-          />
-        </div>
-        <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>
-            Fats (g)
-          </label>
-          <input
-            type="number"
-            value={fats}
-            onChange={e => setFats(Number(e.target.value) || 0)}
-            className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-rose-500/50"
-            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
-          />
-        </div>
-      </div>
 
       {/* Weight Logger */}
       <div className="border-t pt-6" style={{ borderColor: 'var(--glass-border)' }}>
