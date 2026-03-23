@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Beef, Wheat, Activity, Scale, TrendingDown, TrendingUp } from 'lucide-react';
+import { Beef, Wheat, Activity, Scale, TrendingDown, TrendingUp, Flame } from 'lucide-react';
 
 interface MacroRingProps {
   label: string;
   current: number;
-  goal: number;
+  goal?: number;
   unit: string;
   color: string;
   gradientId: string;
@@ -16,7 +16,7 @@ interface MacroRingProps {
 function MacroRing({ label, current, goal, unit, color, gradientId, gradientColors, icon }: MacroRingProps) {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(current / goal, 1);
+  const progress = goal && goal > 0 ? Math.min(current / goal, 1) : 1;
   const offset = circumference - progress * circumference;
 
   return (
@@ -49,7 +49,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={offset}
+            strokeDashoffset={goal && goal > 0 ? offset : 0}
             className="progress-ring-circle"
           />
         </svg>
@@ -63,14 +63,22 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
         {icon}
         <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
       </div>
-      <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
-        Goal: {goal}{unit}
-      </span>
+      {goal ? (
+        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+          Goal: {goal}{unit}
+        </span>
+      ) : null}
     </div>
   );
 }
 
-export function MacroTracker({ protein = 0, carbs = 0, fats = 0 }: { protein?: number, carbs?: number, fats?: number }) {
+export function MacroTracker({ 
+  protein = 0, carbs = 0, fats = 0, calories = 0,
+  proteinGoal, carbsGoal, fatsGoal, caloriesGoal
+}: { 
+  protein?: number, carbs?: number, fats?: number, calories?: number,
+  proteinGoal?: number, carbsGoal?: number, fatsGoal?: number, caloriesGoal?: number
+}) {
   const [weight, setWeight] = useState('');
   const [weightLog, setWeightLog] = useState<{ value: number; date: string }[]>([]);
 
@@ -108,12 +116,38 @@ export function MacroTracker({ protein = 0, carbs = 0, fats = 0 }: { protein?: n
         </div>
       </div>
 
+      {/* Calories Count */}
+      <div className="mb-6 p-4 rounded-2xl border" style={{ background: 'var(--surface-elevated)', borderColor: 'var(--glass-border)' }}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Flame size={16} className="text-orange-400" />
+            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Total Calories</span>
+          </div>
+          <div className="text-right flex items-baseline gap-1">
+            <span className="text-3xl font-bold text-orange-400">{calories.toFixed(0)}</span>
+            {caloriesGoal && caloriesGoal > 0 ? (
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>/ {caloriesGoal} kcal</span>
+            ) : (
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>kcal</span>
+            )}
+          </div>
+        </div>
+        {caloriesGoal && caloriesGoal > 0 ? (
+          <div className="h-2 mt-3 rounded-full overflow-hidden" style={{ background: 'var(--surface-input)' }}>
+            <div 
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min((calories / caloriesGoal) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
+            />
+          </div>
+        ) : null}
+      </div>
+
       {/* Macro Rings */}
       <div className="grid grid-cols-3 gap-4 md:gap-6 mb-8">
         <MacroRing
           label="Protein"
           current={protein}
-          goal={180}
+          goal={proteinGoal}
           unit="g"
           color="text-purple-400"
           gradientId="protein-grad"
@@ -123,7 +157,7 @@ export function MacroTracker({ protein = 0, carbs = 0, fats = 0 }: { protein?: n
         <MacroRing
           label="Carbs"
           current={carbs}
-          goal={250}
+          goal={carbsGoal}
           unit="g"
           color="text-amber-400"
           gradientId="carbs-grad"
@@ -133,7 +167,7 @@ export function MacroTracker({ protein = 0, carbs = 0, fats = 0 }: { protein?: n
         <MacroRing
           label="Fats"
           current={fats}
-          goal={65}
+          goal={fatsGoal}
           unit="g"
           color="text-rose-400"
           gradientId="fats-grad"

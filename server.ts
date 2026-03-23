@@ -81,6 +81,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch (e) { /* Igno
 try { db.exec("ALTER TABLE users ADD COLUMN created_at TEXT;"); } catch (e) { /* Ignore */ }
 try { db.exec("ALTER TABLE users ADD COLUMN last_login TEXT;"); } catch (e) { /* Ignore */ }
 try { db.exec("ALTER TABLE users ADD COLUMN water_goal INTEGER DEFAULT 2000;"); } catch (e) { /* Ignore */ }
+try { db.exec("ALTER TABLE users ADD COLUMN calorie_goal INTEGER DEFAULT 0;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN protein_goal INTEGER DEFAULT 0;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN carb_goal INTEGER DEFAULT 0;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN fat_goal INTEGER DEFAULT 0;"); } catch (e) {}
 
 const authEvents = new EventEmitter();
 
@@ -408,10 +412,16 @@ Whenever you generate this specific plan for the day, YOU MUST append a JSON blo
 \`\`\`json
 {
   "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency"
+  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
+  "macro_goals": {
+    "calories": 2500,
+    "protein": 180,
+    "carbs": 250,
+    "fats": 65
+  }
 }
 \`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan" and "diet_plan", providing realistic autofill data based on the conversation.
+This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
 
 Memory Extraction Context:
 Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
@@ -467,6 +477,13 @@ If there is no completed meal or workout to log, do not include "progress_log".$
               // Update user object in memory just to keep it synced for potential subsequent calls
               user.profile_context = newContext;
               console.log("Saved new memory for user", user.id, ":", parsed.memory);
+            }
+            if (parsed.macro_goals) {
+              const mg = parsed.macro_goals;
+              db.prepare("UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?").run(
+                mg.calories || 0, mg.protein || 0, mg.carbs || 0, mg.fats || 0, user.id
+              );
+              console.log("Saved new macro goals for user", user.id, ":", mg);
             }
             if (parsed.progress_log) {
               const p = parsed.progress_log;

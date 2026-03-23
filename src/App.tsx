@@ -48,6 +48,10 @@ interface User {
   email: string;
   avatar: string;
   water_goal?: number;
+  calorie_goal?: number;
+  protein_goal?: number;
+  carb_goal?: number;
+  fat_goal?: number;
 }
 
 interface ProgressData {
@@ -569,6 +573,9 @@ export default function App() {
             });
             fetchPlans();
           }
+          if (planData.macro_goals) {
+            fetchUser();
+          }
           if (planData.progress_log) {
             fetchProgress();
             advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
@@ -729,6 +736,7 @@ export default function App() {
   const totalCarbs = todaysProgress.reduce((sum, p) => sum + (p.carbs || 0), 0);
   const totalFats = todaysProgress.reduce((sum, p) => sum + (p.fats || 0), 0);
   const totalWater = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
+  const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
 
   return (
     <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
@@ -770,7 +778,10 @@ export default function App() {
         </section>
 
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
-        <MacroTracker protein={totalProtein} carbs={totalCarbs} fats={totalFats} />
+        <MacroTracker 
+          protein={totalProtein} carbs={totalCarbs} fats={totalFats} calories={totalCalories} 
+          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal} caloriesGoal={user.calorie_goal}
+        />
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
