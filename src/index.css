@@ -224,3 +224,19 @@ body {
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
+/* ========================================
+   CHAT PROSE OVERRIDES
+   ======================================== */
+.chat-prose {
+  color: inherit !important;
+}
+.chat-prose p, 
+.chat-prose h1, 
+.chat-prose h2, 
+.chat-prose h3, 
+.chat-prose ul, 
+.chat-prose ol, 
+.chat-prose li {
+  color: inherit !important;
+}

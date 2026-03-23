@@ -21,7 +21,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative w-24 h-24 md:w-28 md:h-28">
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -143,7 +143,7 @@ export function MacroTracker({
       </div>
 
       {/* Macro Rings */}
-      <div className="grid grid-cols-3 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-8">
         <MacroRing
           label="Protein"
           current={protein}

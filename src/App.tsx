@@ -32,6 +32,7 @@ import { getFitnessAdvice } from './services/chatService';
 
 // --- START FEATURE: THEME TOGGLE ---
 import { ThemeToggle } from './components/ThemeToggle';
+import { useTheme } from './hooks/useTheme';
 // --- END FEATURE: THEME TOGGLE ---
 
 // --- START FEATURE: MACRO TRACKER ---
@@ -218,6 +219,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  useTheme(); // Initialize theme from localStorage on load
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<ProgressData[]>([]);
@@ -666,7 +668,7 @@ export default function App() {
     recognition.start();
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center text-white" style={{ background: 'var(--surface-primary)' }}>Loading...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center font-bold" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>Loading...</div>;
 
   if (!user) {
     return (
@@ -746,13 +748,13 @@ export default function App() {
       <div className="bg-blob bg-blob-3" />
 
       {/* Header */}
-      <header className="p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-            <Dumbbell size={20} className="text-white" />
+      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+            <Dumbbell className="text-white w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h2 className="font-bold text-lg leading-tight uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
+          <div className="min-w-0 flex-shrink">
+            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -770,7 +772,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 space-y-8 relative z-10">
+      <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}
         <section>
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
@@ -846,7 +848,7 @@ export default function App() {
           </div>
           <div className="space-y-4">
             {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
-              <div key={i} className={`p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
+              <div key={i} className={`p-5 sm:p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
@@ -959,7 +961,7 @@ export default function App() {
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium`} style={{ background: m.role === 'user' ? 'var(--gradient-primary)' : 'var(--surface-elevated)', color: m.role === 'user' ? 'white' : 'var(--text-primary)' }}>
-                    <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
+                    <div className="prose chat-prose max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
                       <ReactMarkdown>
                         {m.content}
                       </ReactMarkdown>
@@ -1049,7 +1051,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               className="glass-panel w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
             >
-              <div className="p-8">
+              <div className="p-6 sm:p-8">
                 <div className="flex justify-between items-center mb-8">
                   <h3 className="text-2xl font-bold">Log Progress</h3>
                   <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-white">
@@ -1142,14 +1144,14 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               className="glass-panel w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+              <div className="p-6 sm:p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--glass-border)' }}>
                 <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Daily Protocol</h3>
                 <button onClick={() => setShowPlanForm(false)} className="text-zinc-500 hover:text-white">
                   <Plus className="rotate-45" size={28} />
                 </button>
               </div>
 
-              <div className="p-8 overflow-y-auto">
+              <div className="p-6 sm:p-8 overflow-y-auto">
                 <form onSubmit={handleSavePlan} className="space-y-6">
                   <div>
                     <label className="flex items-center gap-2 text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">
@@ -1195,7 +1197,7 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-panel p-8 rounded-[40px] text-center max-w-sm w-full shadow-2xl"
+              className="glass-panel p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] text-center max-w-sm w-full shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-end mb-4">
