@@ -275,6 +275,19 @@ export default function App() {
     water: ''
   });
 
+  // Prevent background scrolling when modals are open
+  useEffect(() => {
+    const isModalOpen = chatOpen || showForm || showPlanForm || showProfile;
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [chatOpen, showForm, showPlanForm, showProfile]);
+
   useEffect(() => {
     fetchUser();
     const handleMessage = (event: MessageEvent) => {
