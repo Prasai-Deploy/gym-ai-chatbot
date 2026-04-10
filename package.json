@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "server.js",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "start": "tsx server.ts",
-    "build": "vite build",
+    "start": "node server.js",
+    "build": "vite build && tsc server.ts --outDir . --module NodeNext --moduleResolution NodeNext --esModuleInterop",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
@@ -35,6 +36,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.5.0",
+    "typescript": "~5.8.2",
     "vite": "^6.2.0"
   },
   "devDependencies": {
@@ -45,7 +47,6 @@
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
 }
