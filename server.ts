@@ -3,13 +3,13 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import Database from "better-sqlite3";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { EventEmitter } from "events";
 import bcrypt from "bcryptjs";
+import db from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,66 +29,87 @@ declare global {
   }
 }
 
-const db = new Database("gym.db");
-
-// Initialize Database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    google_id TEXT UNIQUE,
-    name TEXT,
-    email TEXT,
-    avatar TEXT,
-    profile_context TEXT,
-    chat_id TEXT,
-    password TEXT,
-    phone TEXT UNIQUE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    last_login TEXT DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS progress (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    workout_name TEXT,
-    calories INTEGER,
-    protein INTEGER,
-    water INTEGER,
-    carbs INTEGER DEFAULT 0,
-    fats INTEGER DEFAULT 0,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS daily_plans (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    workout_plan TEXT,
-    diet_plan TEXT,
-    completed BOOLEAN DEFAULT 0,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    UNIQUE(user_id, date)
-  );
-`);
-
-try { db.exec("ALTER TABLE progress ADD COLUMN carbs INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE progress ADD COLUMN fats INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN profile_context TEXT;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN chat_id TEXT;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN password TEXT;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch (e) { /* Ignore if it already exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN created_at TEXT;"); } catch (e) { /* Ignore */ }
-try { db.exec("ALTER TABLE users ADD COLUMN last_login TEXT;"); } catch (e) { /* Ignore */ }
-try { db.exec("ALTER TABLE users ADD COLUMN water_goal INTEGER DEFAULT 2000;"); } catch (e) { /* Ignore */ }
-try { db.exec("ALTER TABLE users ADD COLUMN calorie_goal INTEGER DEFAULT 0;"); } catch (e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN protein_goal INTEGER DEFAULT 0;"); } catch (e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN carb_goal INTEGER DEFAULT 0;"); } catch (e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN fat_goal INTEGER DEFAULT 0;"); } catch (e) {}
-
 const authEvents = new EventEmitter();
 
+async function initDB() {
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      google_id VARCHAR(255) UNIQUE,
+      name VARCHAR(255),
+      email VARCHAR(255),
+      avatar VARCHAR(255),
+      profile_context TEXT,
+      chat_id VARCHAR(255),
+      password VARCHAR(255),
+      phone VARCHAR(255) UNIQUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_login DATETIME DEFAULT CURRENT_TIMESTAMP,
+      water_goal INT DEFAULT 2000,
+      calorie_goal INT DEFAULT 0,
+      protein_goal INT DEFAULT 0,
+      carb_goal INT DEFAULT 0,
+      fat_goal INT DEFAULT 0
+    );`,
+    `CREATE TABLE IF NOT EXISTS progress (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT,
+      date VARCHAR(255),
+      workout_name VARCHAR(255),
+      calories INT,
+      protein INT,
+      water INT,
+      carbs INT DEFAULT 0,
+      fats INT DEFAULT 0,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );`,
+    `CREATE TABLE IF NOT EXISTS daily_plans (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT,
+      date VARCHAR(255),
+      workout_plan TEXT,
+      diet_plan TEXT,
+      completed BOOLEAN DEFAULT 0,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_user_date (user_id, date)
+    );`
+  ];
+
+  for (const sql of statements) {
+    try {
+      await db.query(sql);
+    } catch (e) {
+      console.error("Error creating table:", e, "\nQuery:", sql);
+    }
+  }
+
+  const alterStatements = [
+    "ALTER TABLE progress ADD COLUMN carbs INT DEFAULT 0;",
+    "ALTER TABLE progress ADD COLUMN fats INT DEFAULT 0;",
+    "ALTER TABLE users ADD COLUMN profile_context TEXT;",
+    "ALTER TABLE users ADD COLUMN chat_id VARCHAR(255);",
+    "ALTER TABLE users ADD COLUMN password VARCHAR(255);",
+    "ALTER TABLE users ADD COLUMN phone VARCHAR(255);",
+    "ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;",
+    "ALTER TABLE users ADD COLUMN last_login DATETIME DEFAULT CURRENT_TIMESTAMP;",
+    "ALTER TABLE users ADD COLUMN water_goal INT DEFAULT 2000;",
+    "ALTER TABLE users ADD COLUMN calorie_goal INT DEFAULT 0;",
+    "ALTER TABLE users ADD COLUMN protein_goal INT DEFAULT 0;",
+    "ALTER TABLE users ADD COLUMN carb_goal INT DEFAULT 0;",
+    "ALTER TABLE users ADD COLUMN fat_goal INT DEFAULT 0;"
+  ];
+  for (const sql of alterStatements) {
+    try {
+      await db.query(sql);
+    } catch (e) {
+      // Ignore if it already exists
+    }
+  }
+}
+
 async function startServer() {
+  await initDB();
+
   const app = express();
   const PORT = 3000;
 
@@ -113,10 +134,15 @@ async function startServer() {
     console.log("Serializing user:", user.id);
     done(null, user.id);
   });
-  passport.deserializeUser((id: number, done) => {
+  
+  passport.deserializeUser(async (id: number, done) => {
     console.log("Deserializing user ID:", id);
-    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
-    done(null, user);
+    try {
+      const [rows]: any = await db.execute("SELECT * FROM users WHERE id = ?", [id]);
+      done(null, rows[0]);
+    } catch (e) {
+      done(e, null);
+    }
   });
 
   const callbackURL = process.env.NODE_ENV === 'production'
@@ -127,28 +153,29 @@ async function startServer() {
     clientID: process.env.GOOGLE_CLIENT_ID || "placeholder",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
     callbackURL: callbackURL,
-  }, (accessToken, refreshToken, profile, done) => {
-    let user = db.prepare("SELECT * FROM users WHERE google_id = ?").get(profile.id);
-    const now = new Date().toISOString();
-    if (!user) {
-      const info = db.prepare("INSERT INTO users (google_id, name, email, avatar, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?)").run(
-        profile.id,
-        profile.displayName,
-        profile.emails?.[0].value,
-        profile.photos?.[0].value,
-        now,
-        now
-      );
-      user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
-    } else {
-      // Update last login
-      db.prepare("UPDATE users SET last_login = ? WHERE id = ?").run(now, (user as any).id);
-      user = db.prepare("SELECT * FROM users WHERE id = ?").get((user as any).id);
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      let [rows]: any = await db.execute("SELECT * FROM users WHERE google_id = ?", [profile.id]);
+      let user = rows[0];
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      if (!user) {
+        const [info]: any = await db.execute(
+          "INSERT INTO users (google_id, name, email, avatar, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?)",
+          [profile.id, profile.displayName, profile.emails?.[0].value, profile.photos?.[0].value, now, now]
+        );
+        const [newRows]: any = await db.execute("SELECT * FROM users WHERE id = ?", [info.insertId]);
+        user = newRows[0];
+      } else {
+        await db.execute("UPDATE users SET last_login = ? WHERE id = ?", [now, user.id]);
+        const [updatedRows]: any = await db.execute("SELECT * FROM users WHERE id = ?", [user.id]);
+        user = updatedRows[0];
+      }
+      return done(null, user);
+    } catch (e) {
+      return done(e, undefined);
     }
-    return done(null, user);
   }));
 
-  // Auth Routes
   app.get("/api/auth/google", (req, res, next) => {
     const state = req.query.state ? String(req.query.state) : undefined;
     passport.authenticate("google", {
@@ -157,46 +184,47 @@ async function startServer() {
     })(req, res, next);
   });
 
-  // Demo Login
-  app.post("/api/auth/demo", (req, res) => {
-    let user = db.prepare("SELECT * FROM users WHERE email = ?").get("demo@sweatfix.com");
-    if (!user) {
-      const info = db.prepare("INSERT INTO users (email, name, avatar, profile_context, water_goal) VALUES (?, ?, ?, ?, ?)").run(
-        "demo@sweatfix.com",
-        "Demo User",
-        "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-        "",
-        2000
-      );
-      user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
-    } else {
-      // Refresh the demo user's state by clearing all their data
-      try {
-        db.prepare("DELETE FROM progress WHERE user_id = ?").run(user.id);
-        db.prepare("DELETE FROM daily_plans WHERE user_id = ?").run(user.id);
-        db.prepare("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?").run(user.id);
-      } catch (e) {
-        console.error("Failed to reset demo data:", e);
+  app.post("/api/auth/demo", async (req, res) => {
+    try {
+      let [rows]: any = await db.execute("SELECT * FROM users WHERE email = ?", ["demo@sweatfix.com"]);
+      let user = rows[0];
+      if (!user) {
+        const [info]: any = await db.execute(
+          "INSERT INTO users (email, name, avatar, profile_context, water_goal) VALUES (?, ?, ?, ?, ?)",
+          ["demo@sweatfix.com", "Demo User", "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo", "", 2000]
+        );
+        const [newRows]: any = await db.execute("SELECT * FROM users WHERE id = ?", [info.insertId]);
+        user = newRows[0];
+      } else {
+        try {
+          await db.execute("DELETE FROM progress WHERE user_id = ?", [user.id]);
+          await db.execute("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+          await db.execute("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
+        } catch (e) {
+          console.error("Failed to reset demo data:", e);
+        }
       }
-    }
 
-    (req as any).login(user, (err: any) => {
-      if (err) return res.status(500).json({ error: "Login failed" });
-      (req as any).session.save((err: any) => {
-        if (err) return res.status(500).json({ error: "Session save failed" });
-        res.json(user);
+      (req as any).login(user, (err: any) => {
+        if (err) return res.status(500).json({ error: "Login failed" });
+        (req as any).session.save((err: any) => {
+          if (err) return res.status(500).json({ error: "Session save failed" });
+          res.json(user);
+        });
       });
-    });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Server error" });
+    }
   });
 
-  app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+  app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), async (req, res) => {
     const state = req.query.state as string;
     const user = (req as any).user;
 
     if (state && user) {
-      // It's a chatbot login
       try {
-        db.prepare("UPDATE users SET chat_id = ? WHERE id = ?").run(state, user.id);
+        await db.execute("UPDATE users SET chat_id = ? WHERE id = ?", [state, user.id]);
         console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
         authEvents.emit(`auth_success_${state}`, user);
       } catch (e) {
@@ -218,7 +246,6 @@ async function startServer() {
         </html>
       `);
     } else {
-      // Standard web application login
       res.send(`
         <html>
           <body>
@@ -243,13 +270,12 @@ async function startServer() {
     res.json(user || null);
   });
 
-  // Web Bot Polling Endpoint
   app.get("/api/auth/status/:chat_id", (req, res) => {
     const chatId = req.params.chat_id;
     const timeout = setTimeout(() => {
       authEvents.removeAllListeners(`auth_success_${chatId}`);
       res.json({ status: "pending" });
-    }, 30000); // 30 second long-polling
+    }, 30000);
 
     authEvents.once(`auth_success_${chatId}`, (user) => {
       clearTimeout(timeout);
@@ -261,7 +287,7 @@ async function startServer() {
     (req as any).logout(() => res.json({ success: true }));
   });
 
-  app.put("/api/user", (req, res) => {
+  app.put("/api/user", async (req, res) => {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
@@ -269,71 +295,89 @@ async function startServer() {
 
     try {
       if (name && typeof name === "string") {
-        db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name.trim(), user.id);
+        await db.execute("UPDATE users SET name = ? WHERE id = ?", [name.trim(), user.id]);
       }
       if (water_goal !== undefined) {
-        db.prepare("UPDATE users SET water_goal = ? WHERE id = ?").run(Number(water_goal), user.id);
+        await db.execute("UPDATE users SET water_goal = ? WHERE id = ?", [Number(water_goal), user.id]);
       }
-      const updatedUser = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
-      res.json(updatedUser);
+      const [rows]: any = await db.execute("SELECT * FROM users WHERE id = ?", [user.id]);
+      res.json(rows[0]);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
   });
 
-  // Progress Routes
-  app.get("/api/progress", (req, res) => {
+  app.get("/api/progress", async (req, res) => {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
-    const data = db.prepare("SELECT * FROM progress WHERE user_id = ? ORDER BY date DESC LIMIT 7").all(userId);
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json(data);
+    try {
+      const [data]: any = await db.execute("SELECT * FROM progress WHERE user_id = ? ORDER BY date DESC LIMIT 7", [userId]);
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.json(data);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.post("/api/progress", (req, res) => {
+  app.post("/api/progress", async (req, res) => {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
     const { date, workout_name, calories, protein, water, carbs, fats } = req.body;
-    db.prepare("INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-      userId, date, workout_name, calories, protein, water, carbs || 0, fats || 0
-    );
-    res.json({ success: true });
+    try {
+      await db.execute(
+        "INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [userId, date, workout_name, calories, protein, water, carbs || 0, fats || 0]
+      );
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  // Daily Plans Routes
-  app.get("/api/plans", (req, res) => {
+  app.get("/api/plans", async (req, res) => {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
-    const data = db.prepare("SELECT * FROM daily_plans WHERE user_id = ? ORDER BY date DESC LIMIT 14").all(userId);
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json(data);
+    try {
+      const [data]: any = await db.execute("SELECT * FROM daily_plans WHERE user_id = ? ORDER BY date DESC LIMIT 14", [userId]);
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.json(data);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.post("/api/plans", (req, res) => {
+  app.post("/api/plans", async (req, res) => {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
     const { date, workout_plan, diet_plan } = req.body;
-    db.prepare(`
-      INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
-      VALUES (?, ?, ?, ?, 0)
-      ON CONFLICT(user_id, date) DO UPDATE SET 
-        workout_plan = excluded.workout_plan, 
-        diet_plan = excluded.diet_plan
-    `).run(userId, date, workout_plan, diet_plan);
-    res.json({ success: true });
+    try {
+      await db.execute(`
+        INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
+        VALUES (?, ?, ?, ?, 0)
+        ON DUPLICATE KEY UPDATE 
+          workout_plan = VALUES(workout_plan), 
+          diet_plan = VALUES(diet_plan)
+      `, [userId, date, workout_plan, diet_plan]);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.put("/api/plans/:id/complete", (req, res) => {
+  app.put("/api/plans/:id/complete", async (req, res) => {
     if (!(req as any).user) return res.status(401).json({ error: "Unauthorized" });
     const userId = ((req as any).user as any).id;
     const { completed } = req.body;
-    db.prepare("UPDATE daily_plans SET completed = ? WHERE id = ? AND user_id = ?").run(
-      completed ? 1 : 0, req.params.id, userId
-    );
-    res.json({ success: true });
+    try {
+      await db.execute("UPDATE daily_plans SET completed = ? WHERE id = ? AND user_id = ?", [
+        completed ? 1 : 0, req.params.id, userId
+      ]);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  // OpenRouter API Connector
   async function getOpenRouterResponse(userMessage: string, history: any[], systemMessage: string): Promise<string> {
     const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -376,7 +420,6 @@ async function startServer() {
     return data.choices?.[0]?.message?.content || "I encountered an error.";
   }
 
-  // Chat Route
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
@@ -464,32 +507,32 @@ If there is no completed meal or workout to log, do not include "progress_log".$
         });
       }
 
-      // Extract new memory from JSON if present and save it
       if (user) {
         const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
         if (jsonMatch) {
           try {
             const parsed = JSON.parse(jsonMatch[1]);
             if (parsed.memory) {
-              const currentContext = user.profile_context ? user.profile_context + "\\n" : "";
+              const currentContext = user.profile_context ? user.profile_context + "\n" : "";
               const newContext = currentContext + "- " + parsed.memory;
-              db.prepare("UPDATE users SET profile_context = ? WHERE id = ?").run(newContext, user.id);
-              // Update user object in memory just to keep it synced for potential subsequent calls
+              await db.execute("UPDATE users SET profile_context = ? WHERE id = ?", [newContext, user.id]);
               user.profile_context = newContext;
               console.log("Saved new memory for user", user.id, ":", parsed.memory);
             }
             if (parsed.macro_goals) {
               const mg = parsed.macro_goals;
-              db.prepare("UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?").run(
-                mg.calories || 0, mg.protein || 0, mg.carbs || 0, mg.fats || 0, user.id
+              await db.execute(
+                "UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?",
+                [mg.calories || 0, mg.protein || 0, mg.carbs || 0, mg.fats || 0, user.id]
               );
               console.log("Saved new macro goals for user", user.id, ":", mg);
             }
             if (parsed.progress_log) {
               const p = parsed.progress_log;
               const today = new Date().toISOString().split('T')[0];
-              db.prepare("INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-                user.id, today, p.workout_name || "Log", p.calories || 0, p.protein || 0, p.water || 0, p.carbs || 0, p.fats || 0
+              await db.execute(
+                "INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [user.id, today, p.workout_name || "Log", p.calories || 0, p.protein || 0, p.water || 0, p.carbs || 0, p.fats || 0]
               );
               console.log("Saved new progress log for user", user.id, ":", p);
             }
@@ -506,7 +549,6 @@ If there is no completed meal or workout to log, do not include "progress_log".$
     }
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
