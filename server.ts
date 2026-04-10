@@ -172,9 +172,9 @@ async function startServer() {
     } else {
       // Refresh the demo user's state by clearing all their data
       try {
-        db.prepare("DELETE FROM progress WHERE user_id = ?").run(user.id);
-        db.prepare("DELETE FROM daily_plans WHERE user_id = ?").run(user.id);
-        db.prepare("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?").run(user.id);
+        db.prepare("DELETE FROM progress WHERE user_id = ?").run((user as any).id);
+        db.prepare("DELETE FROM daily_plans WHERE user_id = ?").run((user as any).id);
+        db.prepare("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?").run((user as any).id);
       } catch (e) {
         console.error("Failed to reset demo data:", e);
       }
