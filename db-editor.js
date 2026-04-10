@@ -1,20 +1,15 @@
 import express from 'express';
-import db from './db.js';
+import Database from 'better-sqlite3';
 
 const app = express();
+const db = new Database('gym.db');
 const port = 8080;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', async (req, res) => {
-    let tables = [];
-    try {
-        const [tableRows] = await db.query("SHOW TABLES");
-        tables = tableRows.map(t => ({ name: Object.values(t)[0] }));
-    } catch (e) {
-        console.error("Failed to fetch tables:", e);
-    }
+app.get('/', (req, res) => {
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
 
     let html = `
     <html>
@@ -47,7 +42,7 @@ app.get('/', async (req, res) => {
       <body>
         <div class="container">
           <div class="header-flex">
-            <h2 style="margin:0;">MySQL Editor PRO</h2>
+            <h2 style="margin:0;">gym.db Editor PRO</h2>
           </div>
           
           <div class="nav-links" style="margin-bottom: 20px;">
@@ -65,18 +60,14 @@ app.get('/', async (req, res) => {
     if (req.query.error) html += `<div class="error">${req.query.error}</div>`;
 
     const tableName = req.query.table;
-    if (tableName && typeof tableName === 'string') {
+    if (tableName) {
         try {
             if (!/^[a-zA-Z0-9_]+$/.test(tableName)) throw new Error("Invalid table name");
 
-            // SHOW COLUMNS FROM tableName is safe because we regex checked tableName
-            const [tableInfo] = await db.query(`SHOW COLUMNS FROM ${tableName}`);
-            const primaryKeyColObj = tableInfo.find(c => c.Key === 'PRI');
-            const primaryKeyCol = primaryKeyColObj ? primaryKeyColObj.Field : null;
+            const tableInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
+            const primaryKeyCol = tableInfo.find(c => c.pk === 1)?.name;
 
-            // ORDER BY required PK or fallback to general limit without order if no PK
-            let orderClause = primaryKeyCol ? `ORDER BY ${primaryKeyCol} DESC` : '';
-            const [rows] = await db.query(`SELECT * FROM ${tableName} ${orderClause} LIMIT 100`);
+            const rows = db.prepare(`SELECT * FROM ${tableName} ORDER BY ${primaryKeyCol || 'rowid'} DESC LIMIT 100`).all();
 
             html += `
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -108,7 +99,7 @@ app.get('/', async (req, res) => {
                     <td>
                       ${c === primaryKeyCol
                         ? `<strong>${row[c]}</strong><input type="hidden" name="col_${c}" value="${row[c]}">`
-                        : `<textarea name="col_${c}" rows="1" style="min-height:30px resize:vertical;">${row[c] !== null && row[c] !== undefined ? row[c] : ''}</textarea>`
+                        : `<textarea name="col_${c}" rows="1" style="min-height:30px resize:vertical;">${row[c] !== null ? row[c] : ''}</textarea>`
                     }
                     </td>
                   `).join('')}
@@ -131,8 +122,6 @@ app.get('/', async (req, res) => {
         } catch (e) {
             html += `<div class="error">Error: ${e.message}</div>`;
         }
-    } else if (tableName) {
-        html += `<div class="error">Invalid table parameter.</div>`;
     } else {
         html += `<div style="text-align:center; padding: 40px; color:#71717a;">Select a table above to view and edit data.</div>`;
     }
@@ -146,29 +135,26 @@ app.get('/', async (req, res) => {
     res.send(html);
 });
 
-app.post('/update', async (req, res) => {
+app.post('/update', (req, res) => {
     const { table, pkCol, pkVal, ...cols } = req.body;
     if (!table || !pkCol || !pkVal) return res.redirect(`/?error=Missing primary key to update`);
 
     try {
         if (!/^[a-zA-Z0-9_]+$/.test(table)) throw new Error("Invalid table name");
-        if (!/^[a-zA-Z0-9_]+$/.test(pkCol)) throw new Error("Invalid primary key column");
 
         let updates = [];
         let values = [];
 
         for (const [key, val] of Object.entries(cols)) {
             if (key.startsWith('col_') && key.substring(4) !== pkCol) {
-                const colName = key.substring(4);
-                if (!/^[a-zA-Z0-9_]+$/.test(colName)) throw new Error("Invalid column name");
-                updates.push(`${colName} = ?`);
-                values.push(val === '' ? null : val);
+                updates.push(`${key.substring(4)} = ?`);
+                values.push(val === '' ? null : val); // treat empty string as null or empty string depending on need
             }
         }
 
         if (updates.length > 0) {
             values.push(pkVal);
-            await db.execute(`UPDATE ${table} SET ${updates.join(', ')} WHERE ${pkCol} = ?`, values);
+            db.prepare(`UPDATE ${table} SET ${updates.join(', ')} WHERE ${pkCol} = ?`).run(...values);
         }
 
         res.redirect(`/?table=${table}&success=Row updated successfully`);
@@ -177,25 +163,21 @@ app.post('/update', async (req, res) => {
     }
 });
 
-app.post('/delete', async (req, res) => {
+app.post('/delete', (req, res) => {
     const { table, pkCol, pkVal } = req.body;
     if (!table || !pkCol || !pkVal) return res.redirect(`/?error=Missing primary key to delete`);
 
     try {
         if (!/^[a-zA-Z0-9_]+$/.test(table)) throw new Error("Invalid table name");
-        if (!/^[a-zA-Z0-9_]+$/.test(pkCol)) throw new Error("Invalid primary key column");
-
-        await db.execute(`DELETE FROM ${table} WHERE ${pkCol} = ?`, [pkVal]);
+        db.prepare(`DELETE FROM ${table} WHERE ${pkCol} = ?`).run(pkVal);
         res.redirect(`/?table=${table}&success=Row deleted successfully`);
     } catch (e) {
         res.redirect(`/?table=${table}&error=${encodeURIComponent(e.message)}`);
     }
 });
 
-app.post('/query', async (req, res) => {
+app.post('/query', (req, res) => {
     const query = req.body.query;
-    if (!query) return res.redirect('/?error=No query provided');
-
     let resultHtml = `
     <html>
       <head>
@@ -220,17 +202,16 @@ app.post('/query', async (req, res) => {
   `;
 
     try {
-        const isSelect = query.trim().toUpperCase().startsWith('SELECT') || query.trim().toUpperCase().startsWith('SHOW');
-        if (isSelect) {
-            const [rows] = await db.query(query);
-            if (Array.isArray(rows) && rows.length > 0) {
+        if (query.trim().toUpperCase().startsWith('SELECT') || query.trim().toUpperCase().startsWith('PRAGMA')) {
+            const rows = db.prepare(query).all();
+            if (rows.length > 0) {
                 const cols = Object.keys(rows[0]);
                 resultHtml += `
           <div style="overflow-x:auto;">
           <table>
             <tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>
             ${rows.map(row => `
-              <tr>${cols.map(c => `<td>${row[c] !== null && row[c] !== undefined ? String(row[c]).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<em>NULL</em>'}</td>`).join('')}</tr>
+              <tr>${cols.map(c => `<td>${row[c] !== null ? String(row[c]).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<em>NULL</em>'}</td>`).join('')}</tr>
             `).join('')}
           </table>
           </div>
@@ -240,9 +221,8 @@ app.post('/query', async (req, res) => {
                 resultHtml += `<p>0 rows returned.</p>`;
             }
         } else {
-            const [info] = await db.query(query);
-            const affected = (info && info.affectedRows !== undefined) ? info.affectedRows : 0;
-            resultHtml += `<div class="success">Query executed successfully. Rows affected: ${affected}</div>`;
+            const info = db.prepare(query).run();
+            resultHtml += `<div class="success">Query executed successfully. Changes: ${info.changes}</div>`;
         }
     } catch (e) {
         resultHtml += `<div class="error">Error: ${e.message}</div>`;
@@ -259,7 +239,7 @@ app.post('/query', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`===============================================`);
-    console.log(`  🔥 MYSQL DB EDITOR PRO is running 🔥 `);
+    console.log(`  🔥 GYM.DB EDITOR PRO is running 🔥 `);
     console.log(`  URL: http://localhost:${port}  `);
     console.log(`===============================================`);
 });
