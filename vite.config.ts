@@ -21,13 +21,16 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
               if (id.includes('@amcharts')) {
                 return 'vendor-charts';
+              }
+              if (id.includes('lucide') || id.includes('motion')) {
+                return 'vendor-ui';
               }
               return 'vendor';
             }
