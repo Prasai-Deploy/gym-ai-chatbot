@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { EventEmitter } from "events";
 import bcrypt from "bcryptjs";
+import cron from "node-cron";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,6 +35,14 @@ declare global {
       protein_goal?: number;
       carb_goal?: number;
       fat_goal?: number;
+      age?: number;
+      weight?: number;
+      height?: number;
+      gender?: string;
+      fitness_goal?: string;
+      role: 'free' | 'premium' | 'admin';
+      streak: number;
+      last_activity?: string;
     }
   }
 }
@@ -323,6 +332,41 @@ async function startServer() {
   });
 
   // ───────────────────────────────────────────────────────────────────────────
+  // Middleware: Role Security
+  // ───────────────────────────────────────────────────────────────────────────
+  const checkRole = (roles: string[]) => {
+    return (req: any, res: any, next: any) => {
+      const user = req.user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      if (!roles.includes(user.role)) {
+        return res.status(403).json({ error: "Premium feature. Please upgrade your role." });
+      }
+      next();
+    };
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Onboarding & Profile Updates
+  // ───────────────────────────────────────────────────────────────────────────
+  app.put("/api/onboarding", async (req, res) => {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { age, weight, height, gender, fitness_goal } = req.body;
+
+    try {
+      await dbRun(
+        `UPDATE users SET age = ?, weight = ?, height = ?, gender = ?, fitness_goal = ? WHERE id = ?`,
+        [age, weight, height, gender, fitness_goal, user.id]
+      );
+      const updatedUser = await dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+      res.json(updatedUser);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
   // User update
   // ───────────────────────────────────────────────────────────────────────────
   app.put("/api/user", async (req, res) => {
@@ -454,10 +498,140 @@ async function startServer() {
         "UPDATE daily_plans SET completed = ? WHERE id = ? AND user_id = ?",
         [completed ? 1 : 0, req.params.id, userId]
       );
+      
+      // Update streak logic
+      if (completed) {
+        const today = new Date().toISOString().split("T")[0];
+        const user = await dbGet("SELECT last_activity, streak FROM users WHERE id = ?", [userId]);
+        let newStreak = (user.streak || 0) + 1;
+        
+        if (user.last_activity) {
+          const last = new Date(user.last_activity);
+          const diff = Math.floor((new Date(today).getTime() - last.getTime()) / (1000 * 3600 * 24));
+          if (diff > 1) {
+            newStreak = 1; // Streak broken
+          } else if (diff === 0) {
+            newStreak = user.streak; // Already updated today
+          }
+        }
+        
+        await dbRun("UPDATE users SET streak = ?, last_activity = ? WHERE id = ?", [newStreak, today, userId]);
+      }
+      
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Achievements Helper
+  // ───────────────────────────────────────────────────────────────────────────
+  async function awardAchievement(userId: number, badgeName: string, icon: string) {
+    try {
+      // Check if already earned
+      const existing = await dbGet(
+        "SELECT id FROM achievements WHERE user_id = ? AND badge_name = ?",
+        [userId, badgeName]
+      );
+      if (existing) return;
+
+      await dbRun(
+        "INSERT INTO achievements (user_id, badge_name, badge_icon) VALUES (?, ?, ?)",
+        [userId, badgeName, icon]
+      );
+      console.log(`User ${userId} earned badge: ${badgeName}`);
+    } catch (e) {
+      console.error("Error awarding achievement:", e);
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Food Logs (Premium)
+  // ───────────────────────────────────────────────────────────────────────────
+  app.get("/api/food-logs", checkRole(['premium', 'admin']), async (req, res) => {
+    const userId = (req as any).user.id;
+    try {
+      const logs = await dbAll(
+        "SELECT * FROM food_logs WHERE user_id = ? ORDER BY logged_at DESC LIMIT 50",
+        [userId]
+      );
+      res.json(logs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/food-logs", async (req, res) => {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { food_name, calories, protein, carbs, fats, meal_type } = req.body;
+    try {
+      await dbRun(
+        `INSERT INTO food_logs (user_id, food_name, calories, protein, carbs, fats, meal_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [user.id, food_name, calories, protein, carbs, fats, meal_type]
+      );
+      
+      // Award "Nutrient Ninja" on first food log
+      await awardAchievement(user.id, "Nutrient Ninja", "Utensils");
+      
+      // Also update the general progress for the charts
+      const today = new Date().toISOString().split("T")[0];
+      await dbRun(
+        `INSERT INTO progress (user_id, date, workout_name, calories, protein, carbs, fats)
+         VALUES (?, ?, 'Daily Nutrients', ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           calories = calories + VALUES(calories),
+           protein = protein + VALUES(protein),
+           carbs = carbs + VALUES(carbs),
+           fats = fats + VALUES(fats)`,
+        [user.id, today, calories, protein, carbs, fats]
+      );
+      
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Stats & Weekly Reports
+  // ───────────────────────────────────────────────────────────────────────────
+  app.get("/api/stats/weekly", async (req, res) => {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const stats = await dbAll(
+        `SELECT date, SUM(calories) as total_calories, SUM(protein) as total_protein 
+         FROM progress 
+         WHERE user_id = ? 
+         AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+         GROUP BY date 
+         ORDER BY date ASC`,
+        [user.id]
+      );
+      res.json(stats);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Scheduler: Reminders
+  // ───────────────────────────────────────────────────────────────────────────
+  // Every day at 9 AM: Workout reminder
+  cron.schedule("0 9 * * *", async () => {
+    console.log("[CRON] Sending daily morning motivation...");
+    // In a real app, this would send an FCM notification or email.
+    // For now, we'll log it or store it in a notifications table if we had one.
+  });
+
+  // Every day at 2 PM: Water reminder
+  cron.schedule("0 14 * * *", async () => {
+    console.log("[CRON] Sending hydration reminder...");
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -530,76 +704,39 @@ async function startServer() {
       const user = (req as any).user;
 
       let userContextStr = "";
-      if (user?.profile_context) {
-        userContextStr = `\n\nUSER PROFILE CONTEXT (Remember this!):\n${user.profile_context}`;
+      if (user) {
+        userContextStr = `\n\nUSER PROFILE:\n- Name: ${user.name}\n- Goal: ${user.fitness_goal || 'Not set'}\n- Biometrics: ${user.age || '?'} yrs, ${user.weight || '?'} kg, ${user.height || '?'} cm\n- Current Streak: ${user.streak} days\n- Context: ${user.profile_context || 'None'}`;
       }
 
       const systemPrompt = `Role & Identity
-You are the high-energy, motivating virtual assistant for Sweat Fix Gym.
-Your goal is to help members with gym information, membership details, and general fitness motivation.
+You are the world-class AI Fitness Coach for Sweat Fix Gym.
+Your goal is to transform users into their best selves through data-driven personalization.
 
-Rules to follow strictly:
-1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
-2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
-3. Brevity: Keep all general responses under 3 to 4 sentences. However, when asked to generate a workout or diet plan, provide a highly detailed, comprehensive response.
+Tone: Professional, motivating, data-centric, and punchy.
 
-Interaction Structure
-Onboarding & Details Gathering: Before creating any diet or workout plan, you MUST politely ask the user to provide their current details if they haven't already. Specifically, ask for:
-1. Current weight & height
-2. Primary fitness goal (e.g., cut, bulk, bodyweight mastery)
-3. Dietary restrictions
-4. Available equipment
-5. Preferred meal frequency (how many times they prefer to eat per day)
-DO NOT generate a plan until you have this information.
+Data Integration Rules:
+1. Personalization: Use the user's BIOMETRICS (age, weight, height) and GOAL (fat loss, muscle gain) to tailor every response.
+2. Proactive Suggestions: If the user hasn't logged enough protein or calories for their goal, proactively suggest specific adjustments.
+   - Example: "I see your protein is low today. For muscle gain, try adding 30g of protein in your next meal."
+3. Memory: Continue using the "memory" JSON property for long-term facts.
 
-Auto-Fill Protocol:
-ONLY ONCE you have gathered the user's details, you can generate a highly accurate, customized diet and workout plan.
-The generated plans must be highly detailed. The workout chart must be a detailed per-day plan, and the diet plan must be broken down specifically by their preferred number of meals per day with full macro details.
-Whenever you generate this specific plan for the day, YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Interactive Structure:
+- Onboarding: If biometrics are missing (marked as '?'), gently encourage the user to visit their Profile/Dashboard to complete onboarding.
+- Detailed Plans: Generate detailed workout/diet plans only when requested.
+
+JSON Protocol (Strict):
+Append a JSON block for ANY updates:
 \`\`\`json
 {
-  "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
-  "macro_goals": {
-    "calories": 2500,
-    "protein": 180,
-    "carbs": 250,
-    "fats": 65
-  }
+  "workout_plan": "string",
+  "diet_plan": "string",
+  "macro_goals": { "calories": number, "protein": number, "carbs": number, "fats": number },
+  "memory": "string (new fact only)",
+  "progress_log": { "food_name": "string", "calories": number, "protein": number, "carbs": number, "fats": number, "meal_type": "string" },
+  "suggestion": "string (proactive tip)"
 }
 \`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
-
-Memory Extraction Context:
-Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "memory": "User has a bad left knee and only has access to dumbbells."
-}
-\`\`\`
-If there is no new fact to save in this message, do not include the "memory" property. Do not just repeat existing memory.
-
-Progress & Macro Extraction Protocol:
-If the user indicates they just completed a workout, drank water, or ate a meal, YOU MUST estimate the caloric/nutritional value and add a "progress_log" property to the JSON block.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "progress_log": {
-    "workout_name": "Chicken Breast & Rice",
-    "calories": 450,
-    "protein": 45,
-    "carbs": 50,
-    "fats": 5,
-    "water": 0
-  }
-}
-\`\`\`
-If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
+Provide realistic estimations if the user describes a meal loosely. ${userContextStr}`;
 
       let aiContent: string;
       try {

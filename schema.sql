@@ -21,6 +21,14 @@ CREATE TABLE IF NOT EXISTS users (
   fat_goal         INT            DEFAULT 0,
   created_at       DATETIME       DEFAULT CURRENT_TIMESTAMP,
   last_login       DATETIME       DEFAULT CURRENT_TIMESTAMP,
+  age              INT            DEFAULT NULL,
+  weight           FLOAT          DEFAULT NULL,
+  height           FLOAT          DEFAULT NULL,
+  gender           VARCHAR(20)    DEFAULT NULL,
+  fitness_goal     VARCHAR(100)   DEFAULT NULL,
+  role             ENUM('free', 'premium', 'admin') DEFAULT 'free',
+  streak           INT            DEFAULT 0,
+  last_activity    DATE           DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -34,6 +42,30 @@ CREATE TABLE IF NOT EXISTS progress (
   water         INT  DEFAULT 0,
   carbs         INT  DEFAULT 0,
   fats          INT  DEFAULT 0,
+  PRIMARY KEY (id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS food_logs (
+  id            INT            NOT NULL AUTO_INCREMENT,
+  user_id       INT            NOT NULL,
+  food_name     VARCHAR(255)   NOT NULL,
+  calories      INT            DEFAULT 0,
+  protein       INT            DEFAULT 0,
+  carbs         INT            DEFAULT 0,
+  fats          INT            DEFAULT 0,
+  meal_type     VARCHAR(50),
+  logged_at     DATETIME       DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS achievements (
+  id            INT            NOT NULL AUTO_INCREMENT,
+  user_id       INT            NOT NULL,
+  badge_name    VARCHAR(255)   NOT NULL,
+  badge_icon    VARCHAR(255),
+  earned_at     DATETIME       DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
