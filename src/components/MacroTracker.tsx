@@ -20,9 +20,9 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
   const offset = circumference - progress * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28">
-        <svg className="w-full h-full" viewBox="0 0 100 100">
+    <div className="flex flex-col items-center gap-1.5 lg:gap-2">
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-28 lg:h-28 transition-all">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={gradientColors[0]} />
@@ -36,7 +36,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
             r={radius}
             fill="none"
             stroke="currentColor"
-            strokeWidth="6"
+            strokeWidth="8"
             className="text-zinc-800/30"
           />
           {/* Progress arc */}
@@ -46,25 +46,25 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
             r={radius}
             fill="none"
             stroke={`url(#${gradientId})`}
-            strokeWidth="6"
+            strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={goal && goal > 0 ? offset : 0}
-            className="progress-ring-circle"
+            className="transition-all duration-1000 ease-out"
           />
         </svg>
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-lg md:text-xl font-bold ${color}`}>{current}</span>
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{unit}</span>
+          <span className={`text-sm sm:text-lg lg:text-xl font-black ${color}`}>{current}</span>
+          <span className="text-[8px] lg:text-[10px] uppercase font-black tracking-widest text-zinc-500">{unit}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 lg:gap-1.5 min-w-0">
         {icon}
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+        <span className="text-[10px] lg:text-xs font-black uppercase tracking-widest text-zinc-400 truncate">{label}</span>
       </div>
       {goal ? (
-        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+        <span className="text-[9px] lg:text-[10px] font-bold text-zinc-600">
           Goal: {goal}{unit}
         </span>
       ) : null}

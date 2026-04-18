@@ -20,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user,
   ];
 
   return (
-    <div className="fixed left-0 top-0 bottom-0 w-20 lg:w-64 bg-zinc-950 border-r border-zinc-900 z-50 flex flex-col p-4">
+    <div className="fixed left-0 top-0 bottom-0 w-20 lg:w-64 bg-zinc-950 border-r border-zinc-900 z-50 flex flex-col p-4 hidden lg:flex">
       <div className="flex items-center gap-3 px-2 mb-10">
         <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
           <Dumbbell className="text-white" size={20} />

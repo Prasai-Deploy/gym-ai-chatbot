@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Plus, MessageSquare, Mic, MicOff, ChevronRight, Check, Dumbbell, Utensils, TrendingUp
+  Plus, MessageSquare, Mic, MicOff, ChevronRight, Check, Dumbbell, Utensils, TrendingUp,
+  LayoutDashboard, Award, User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -223,23 +224,23 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-20 lg:ml-64 p-4 lg:p-10">
-        <div className="max-w-6xl mx-auto space-y-10">
+      <main className="flex-1 lg:ml-64 p-4 lg:p-10 pb-24 lg:pb-10 transition-all duration-300">
+        <div className="max-w-6xl mx-auto space-y-6 lg:space-y-10">
           
-          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-4xl font-black tracking-tight italic">
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <h1 className="text-2xl lg:text-4xl font-black tracking-tight italic">
                 {activeTab === 'dashboard' ? 'MY PERFORMANCE' : 
                  activeTab === 'chat' ? 'AI COACH' : 
                  activeTab === 'achievements' ? 'ACCOLADES' : 'MY PROFILE'}
               </h1>
-              <p className="text-zinc-500 font-medium">Tracking your journey to greatness.</p>
+              <p className="text-xs lg:text-sm text-zinc-500 font-medium">Tracking your journey to greatness.</p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
               <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 border-emerald-500/20">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-bold tracking-widest text-emerald-500 uppercase">{user.streak} DAY STREAK</span>
+                <span className="text-[10px] lg:text-sm font-bold tracking-widest text-emerald-500 uppercase">{user.streak} DAY STREAK</span>
               </div>
               <ThemeToggle />
             </div>
@@ -323,13 +324,13 @@ export default function App() {
                 key="chat"
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="h-[calc(100vh-200px)] flex flex-col glass-panel rounded-[40px] overflow-hidden"
+                className="h-[calc(100vh-280px)] lg:h-[calc(100vh-240px)] flex flex-col glass-panel rounded-[24px] lg:rounded-[40px] overflow-hidden transition-all duration-300"
               >
-                <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-6">
+                <div className="flex-1 overflow-y-auto p-4 lg:p-10 space-y-4 lg:space-y-6 scroll-smooth">
                   {messages.map((m, i) => (
                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] lg:max-w-[70%] p-6 rounded-3xl ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-zinc-900/50 border border-zinc-900 text-zinc-100'}`}>
-                        <div className="prose prose-invert max-w-none text-sm lg:text-base leading-relaxed">
+                      <div className={`max-w-[90%] lg:max-w-[75%] p-4 lg:p-6 rounded-[20px] lg:rounded-3xl ${m.role === 'user' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-zinc-900/50 border border-zinc-900 text-zinc-100'}`}>
+                        <div className="prose prose-invert max-w-none text-xs lg:text-base leading-relaxed font-medium">
                           <ReactMarkdown>{m.content}</ReactMarkdown>
                         </div>
                       </div>
@@ -337,17 +338,18 @@ export default function App() {
                   ))}
                   {isTyping && (
                     <div className="flex justify-start">
-                      <div className="bg-zinc-900/50 p-6 rounded-3xl flex gap-1.5 items-center">
+                      <div className="bg-zinc-900/50 px-4 py-3 lg:p-6 rounded-2xl lg:rounded-3xl flex gap-1.5 items-center">
                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-6 bg-zinc-900/30 border-t border-zinc-900">
-                  <div className="flex gap-4 items-end max-w-4xl mx-auto">
+                <div className="p-4 lg:p-6 bg-zinc-900/30 border-t border-zinc-900">
+                  <div className="flex gap-3 lg:gap-4 items-end max-w-4xl mx-auto">
                     <div className="flex-1 relative">
                       <textarea
                         value={input}
@@ -359,15 +361,15 @@ export default function App() {
                           }
                         }}
                         placeholder="Ask your coach anything..."
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 outline-none focus:ring-2 ring-blue-500/50 resize-none max-h-32 min-h-[56px]"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl lg:rounded-2xl px-4 lg:px-6 py-3 lg:py-4 outline-none focus:ring-2 ring-blue-500/50 resize-none max-h-32 min-h-[48px] lg:min-h-[56px] text-sm lg:text-base"
                         rows={1}
                       />
                     </div>
                     <button 
                       onClick={() => handleSendMessage()}
-                      className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/30"
+                      className="w-12 h-12 lg:w-14 lg:h-14 bg-blue-600 rounded-xl lg:rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/30 flex-shrink-0"
                     >
-                      <ChevronRight size={24} />
+                      <ChevronRight size={20} className="lg:w-6 lg:h-6" />
                     </button>
                   </div>
                 </div>
@@ -445,6 +447,24 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-900 px-6 pb-6 pt-2 z-50 flex items-center justify-between">
+        {[
+          { id: 'dashboard', icon: LayoutDashboard, label: 'Stats' },
+          { id: 'chat', icon: MessageSquare, label: 'Coach' },
+          { id: 'achievements', icon: Award, label: 'Badges' },
+          { id: 'profile', icon: UserIcon, label: 'Me' }
+        ].map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id as any)}
+            className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-blue-500 scale-110' : 'text-zinc-500'}`}
+          >
+            <item.icon size={20} fill={activeTab === item.id ? 'currentColor' : 'none'} fillOpacity={0.2} />
+            <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -457,13 +477,13 @@ function StatCard({ label, value, unit, sub, color }: any) {
     purple: 'text-purple-500 bg-purple-500/10',
   };
   return (
-    <div className="glass-panel p-6 rounded-[32px] space-y-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{label}</p>
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-black tracking-tight italic">{value}</span>
-        <span className="text-xs font-bold text-zinc-500 uppercase">{unit}</span>
+    <div className="glass-panel p-5 lg:p-6 rounded-[24px] lg:rounded-[32px] space-y-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 truncate">{label}</p>
+      <div className="flex items-baseline flex-wrap gap-1">
+        <span className="text-2xl lg:text-3xl font-black tracking-tight italic">{value}</span>
+        <span className="text-[10px] font-bold text-zinc-500 uppercase">{unit}</span>
       </div>
-      <p className={`text-xs font-bold px-2 py-1 rounded-lg inline-block ${colors[color]}`}>{sub}</p>
+      <p className={`text-[10px] lg:text-xs font-bold px-2 py-1 rounded-lg inline-block ${colors[color]}`}>{sub}</p>
     </div>
   );
 }
