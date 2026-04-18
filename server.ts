@@ -259,21 +259,24 @@ async function startServer() {
       const state = req.query.state as string;
       const user = (req as any).user;
 
-      if (state && user) {
+      // Only enter the "Chat Link" flow if a state is explicitly provided 
+      // AND it's likely a Telegram/Chat ID (usually numeric or formatted)
+      if (state && user && !isNaN(Number(state))) {
         try {
           await dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
             state,
             user.id,
           ]);
           console.log(
-            `[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`
+            `[BOT AUTH] Linked Chat ID: ${state} to User: ${user.name}`
           );
           authEvents.emit(`auth_success_${state}`, user);
         } catch (e) {
           console.error("Failed to link chat_id:", e);
         }
 
-        res.send(`
+        // For Chat linking flow, we show a success page (often opened FROM Telegram)
+        return res.send(`
           <html>
             <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
               <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
@@ -287,23 +290,11 @@ async function startServer() {
             </body>
           </html>
         `);
-      } else {
-        res.send(`
-          <html>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                  window.close();
-                } else {
-                  window.location.href = '/';
-                }
-              </script>
-              <p>Authentication successful. This window should close automatically.</p>
-            </body>
-          </html>
-        `);
       }
+
+      // Default behavior for Web App users: redirect to Dashboard
+      // This prevents the tab from closing unexpectedly.
+      res.redirect("/");
     }
   );
 
