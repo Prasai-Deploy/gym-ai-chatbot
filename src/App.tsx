@@ -1,35 +1,53 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Plus, MessageSquare, Mic, MicOff, ChevronRight, Check, Dumbbell, Utensils, TrendingUp,
-  LayoutDashboard, Award, User as UserIcon
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import {
+  Dumbbell,
+  Utensils,
+  TrendingUp,
+  MessageSquare,
+  LogOut,
+  QrCode,
+  Plus,
+  ChevronRight,
+  User as UserIcon,
+  Flame,
+  Droplets,
+  Beef,
+  Wheat,
+  Activity,
+  Edit2,
+  Check,
+  Bot,
+  Mic,
+  MicOff
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import * as am5 from "@amcharts/amcharts5";
+import * as am5xy from "@amcharts/amcharts5/xy";
+import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import am5themes_Dark from "@amcharts/amcharts5/themes/Dark";
+import { QRCodeSVG } from 'qrcode.react';
+import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
-
-// Components
-import { ThemeToggle } from './components/ThemeToggle';
-import { MacroTracker } from './components/MacroTracker';
-import { WorkoutTracker } from './components/WorkoutTracker';
-import { OnboardingFlow } from './components/OnboardingFlow';
-import { Sidebar } from './components/Sidebar';
-import { OverviewCharts } from './components/OverviewCharts';
-
-// Hooks & Services
-import { useTheme } from './hooks/useTheme';
 import { getFitnessAdvice } from './services/chatService';
+
+// --- START FEATURE: THEME TOGGLE ---
+import { ThemeToggle } from './components/ThemeToggle';
+import { useTheme } from './hooks/useTheme';
+// --- END FEATURE: THEME TOGGLE ---
+
+// --- START FEATURE: MACRO TRACKER ---
+import { MacroTracker } from './components/MacroTracker';
+// --- END FEATURE: MACRO TRACKER ---
+
+// --- START FEATURE: WORKOUT TRACKER ---
+import { WorkoutTracker } from './components/WorkoutTracker';
+// --- END FEATURE: WORKOUT TRACKER ---
 
 interface User {
   id: number;
   name: string;
   email: string;
   avatar: string;
-  role: 'free' | 'premium' | 'admin';
-  streak: number;
-  fitness_goal?: string;
-  weight?: number;
-  height?: number;
-  age?: number;
   water_goal?: number;
   calorie_goal?: number;
   protein_goal?: number;
@@ -62,42 +80,325 @@ const QUICK_ACTIONS = [
   "📅 Book a Session"
 ];
 
+// ─── Daily Water Tracker Component ───────────────────────────────────────────
+interface WaterTrackerProps {
+  currentWater: number;
+  waterGoal: number;
+  onAddWater: (amount: number) => void;
+  onUpdateGoal: (newGoal: number) => void;
+}
+
+function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: WaterTrackerProps) {
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState((waterGoal || 2000).toString());
+  const [customAmount, setCustomAmount] = useState('');
+
+  const pct = Math.min(Math.round((currentWater / (waterGoal || 2000)) * 100), 100);
+
+  const status =
+    currentWater === 0 ? 'Start hydrating! 💧' :
+    pct < 30   ? 'Keep it up! 🌊'     :
+    pct < 60   ? 'Great progress! 💪'  :
+    pct < 100   ? 'Almost there! 🏆'   :
+                  'Goal reached! 🎉';
+
+  const handleSaveGoal = () => {
+    const goal = parseInt(tempGoal, 10);
+    if (!isNaN(goal) && goal > 0) {
+      onUpdateGoal(goal);
+    }
+    setIsEditingGoal(false);
+  };
+
+  const handleCustomAdd = () => {
+    const amount = parseInt(customAmount, 10);
+    if (!isNaN(amount) && amount > 0) {
+      onAddWater(amount);
+      setCustomAmount('');
+    }
+  };
+
+  return (
+    <section className="glass-panel p-6 rounded-[40px] flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.12)' }}>
+            <Droplets size={20} className="text-blue-400" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base leading-tight" style={{ color: 'var(--text-primary)' }}>Daily Water Log</h3>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-400">{format(new Date(), 'MMM dd')}</p>
+          </div>
+        </div>
+        
+        {isEditingGoal ? (
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              value={tempGoal} 
+              onChange={e => setTempGoal(e.target.value)} 
+              className="w-16 px-2 py-1 text-xs rounded bg-zinc-800 text-white outline-none" 
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
+            />
+            <button onClick={handleSaveGoal} className="text-xs text-blue-400 font-bold">Save</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setTempGoal((waterGoal || 2000).toString()); setIsEditingGoal(true); }}
+            className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 flex items-center gap-1"
+            style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}
+          >
+            <Edit2 size={12} /> Goal
+          </button>
+        )}
+      </div>
+
+      {/* Total + Status */}
+      <div className="text-center mb-5">
+        <div className="text-4xl font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+          {(currentWater / 1000).toFixed(2)}
+          <span className="text-lg font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>L</span>
+        </div>
+        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          {currentWater} / {waterGoal || 2000} ml · {pct}%
+        </div>
+        <div className="text-sm font-semibold mt-1 text-blue-400">{status}</div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full h-2 rounded-full mb-6 overflow-hidden" style={{ background: 'var(--surface-elevated)' }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
+        />
+      </div>
+
+      {/* Quick Add Buttons */}
+      <div className="flex gap-2 mb-4">
+        {[250, 500].map(amount => (
+          <button
+            key={amount}
+            onClick={() => onAddWater(amount)}
+            className="flex-1 py-2 rounded-xl text-xs font-bold transition-colors hover:opacity-80"
+            style={{ background: 'var(--surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}
+          >
+            +{amount}ml
+          </button>
+        ))}
+      </div>
+
+      {/* Custom Amount Input */}
+      <div className="flex gap-2 flex-1 items-end">
+        <div className="flex-1 relative">
+          <input
+            type="number"
+            value={customAmount}
+            onChange={e => setCustomAmount(e.target.value)}
+            placeholder="Custom amount"
+            className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-zinc-600"
+            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+            onKeyDown={e => e.key === 'Enter' && handleCustomAdd()}
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
+            ml
+          </span>
+        </div>
+        <button
+          onClick={handleCustomAdd}
+          className="btn-gradient px-4 py-3 rounded-xl flex items-center justify-center text-sm font-bold"
+          style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
+        >
+          Add
+        </button>
+      </div>
+    </section>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function App() {
-  useTheme();
+  useTheme(); // Initialize theme from localStorage on load
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'profile' | 'achievements'>('dashboard');
   const [progress, setProgress] = useState<ProgressData[]>([]);
-  const [weeklyStats, setWeeklyStats] = useState<any[]>([]);
   const [dailyPlans, setDailyPlans] = useState<DailyPlan[]>([]);
+  const [showQR, setShowQR] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([
-    { role: 'model', content: "Welcome to your Premium AI Fitness Hub. How can I assist you today?" }
+    { role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  
+  const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping, chatOpen]);
+
+  // Plan state
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [planForm, setPlanForm] = useState({
+    workout_plan: '',
+    diet_plan: ''
+  });
+
+  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState<{
+    workout_name: string;
+    calories: number | '';
+    protein: number | '';
+    carbs: number | '';
+    fats: number | '';
+    water: number | '';
+  }>({
+    workout_name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fats: '',
+    water: ''
+  });
+
+  // Prevent background scrolling when modals are open
+  useEffect(() => {
+    const isModalOpen = chatOpen || showForm || showPlanForm || showProfile;
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [chatOpen, showForm, showPlanForm, showProfile]);
 
   useEffect(() => {
     fetchUser();
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        fetchUser();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Poll for real-time updates from the database
   useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
     if (user) {
-      fetchProgress();
-      fetchWeeklyStats();
-      fetchPlans();
+      intervalId = setInterval(() => {
+        fetchProgress();
+        fetchPlans();
+      }, 5000); // 5 seconds polling
     }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [user]);
+
+  useLayoutEffect(() => {
+    if (!progress.length) return;
+
+    let root = am5.Root.new("chartdiv");
+
+    root.setThemes([
+      am5themes_Animated.new(root),
+      am5themes_Dark.new(root)
+    ]);
+
+    let chart = root.container.children.push(am5xy.XYChart.new(root, {
+      panX: true,
+      panY: true,
+      wheelX: "panX",
+      wheelY: "zoomX",
+      pinchZoomX: true
+    }));
+
+    let cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
+      behavior: "none"
+    }));
+    cursor.lineY.set("visible", false);
+
+    let xAxisRenderer = am5xy.AxisRendererX.new(root, {});
+    xAxisRenderer.grid.template.set("strokeOpacity", 0);
+
+    let xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+      categoryField: "date",
+      renderer: xAxisRenderer,
+      tooltip: am5.Tooltip.new(root, {})
+    }));
+    xAxis.data.setAll(progress);
+
+    let yAxisRenderer = am5xy.AxisRendererY.new(root, {});
+    yAxisRenderer.grid.template.set("strokeOpacity", 0.1);
+    yAxisRenderer.grid.template.set("strokeDasharray", [3, 3]);
+
+    let yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      renderer: yAxisRenderer
+    }));
+
+    let series = chart.series.push(am5xy.LineSeries.new(root, {
+      name: "Calories",
+      xAxis: xAxis,
+      yAxis: yAxis,
+      valueYField: "calories",
+      categoryXField: "date",
+      tooltip: am5.Tooltip.new(root, {
+        labelText: "{valueY} kcal"
+      })
+    }));
+
+    series.strokes.template.setAll({
+      strokeWidth: 4,
+      stroke: am5.color(0x10b981) // emerald-500
+    });
+
+    series.bullets.push(function () {
+      return am5.Bullet.new(root, {
+        sprite: am5.Circle.new(root, {
+          radius: 5,
+          fill: am5.color(0x18181b),
+          stroke: am5.color(0x10b981),
+          strokeWidth: 2
+        })
+      });
+    });
+
+    series.data.setAll(progress);
+    series.appear(1000);
+    chart.appear(1000, 100);
+
+    return () => {
+      root.dispose();
+    };
+  }, [progress]);
 
   const fetchUser = async () => {
     try {
       const res = await fetch('/api/me');
       const data = await res.json();
       setUser(data);
+      if (data) {
+        fetchProgress();
+        fetchPlans();
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -105,30 +406,117 @@ export default function App() {
     }
   };
 
-  const fetchProgress = async () => {
-    const res = await fetch('/api/progress');
-    const data = await res.json();
-    setProgress(data);
-  };
-
-  const fetchWeeklyStats = async () => {
-    const res = await fetch('/api/stats/weekly');
-    const data = await res.json();
-    setWeeklyStats(data);
-  };
-
   const fetchPlans = async () => {
-    const res = await fetch('/api/plans');
-    const data = await res.json();
-    setDailyPlans(data);
+    try {
+      const res = await fetch('/api/plans');
+      const data = await res.json();
+      setDailyPlans(data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleOnboardingComplete = async (data: any) => {
+  const fetchProgress = async () => {
     try {
-      const res = await fetch('/api/onboarding', {
+      const res = await fetch('/api/progress');
+      const data = await res.json();
+      setProgress(data.reverse());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleLogin = () => {
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/logout');
+    setUser(null);
+    setProgress([]);
+    setDailyPlans([]);
+    setMessages([{ role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }]);
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/demo', { method: 'POST' });
+      if (res.ok) fetchUser();
+      else alert('Demo login failed');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSubmitProgress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...formData,
+        calories: Number(formData.calories) || 0,
+        protein: Number(formData.protein) || 0,
+        carbs: Number(formData.carbs) || 0,
+        fats: Number(formData.fats) || 0,
+        water: Number(formData.water) || 0,
+        date: format(new Date(), 'MMM dd')
+      })
+    });
+    setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
+    setShowForm(false);
+    fetchProgress();
+  };
+
+  const handleSavePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/plans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...planForm,
+        date: format(new Date(), 'MMM dd')
+      })
+    });
+    setPlanForm({ workout_plan: '', diet_plan: '' });
+    setShowPlanForm(false);
+    fetchPlans();
+  };
+
+  const handleTogglePlan = async (id: number, currentStatus: boolean) => {
+    await fetch(`/api/plans/${id}/complete`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !currentStatus })
+    });
+    fetchPlans();
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) return;
+    try {
+      const res = await fetch('/api/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ name: editName })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsEditingProfile(false);
+    }
+  };
+
+  const handleUpdateWaterGoal = async (newGoal: number) => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ water_goal: newGoal })
       });
       if (res.ok) {
         const updatedUser = await res.json();
@@ -139,17 +527,28 @@ export default function App() {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/logout');
-    window.location.reload();
+  const handleAddWater = async (amount: number) => {
+    await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workout_name: `Drank Water`,
+        water: amount,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0,
+        date: format(new Date(), 'MMM dd')
+      })
+    });
+    fetchProgress();
   };
 
-  const handleSendMessage = async (explicitMessage?: string) => {
-    const text = explicitMessage || input;
-    if (!text.trim()) return;
-
-    const newMsgs = [...messages, { role: 'user', content: text }];
-    setMessages(newMsgs);
+  const handleSendMessage = async (explicitMessage?: string | React.MouseEvent | React.KeyboardEvent) => {
+    const textToSend = typeof explicitMessage === 'string' ? explicitMessage : input;
+    if (!textToSend.trim()) return;
+    const newMessages = [...messages, { role: 'user', content: textToSend }];
+    setMessages(newMessages);
     setInput('');
     setIsTyping(true);
 
@@ -158,347 +557,719 @@ export default function App() {
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
       }));
-      const advice = await getFitnessAdvice(text, history);
-      setMessages([...newMsgs, { role: 'model', content: advice }]);
-    } catch (e) {
+      let advice = await getFitnessAdvice(textToSend, history);
+
+      // Auto-fill parsing
+      const jsonMatch = advice.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        try {
+          const planData = JSON.parse(jsonMatch[1]);
+          if (planData.workout_plan || planData.diet_plan) {
+            advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
+
+            let planMarkdown = `\n\n### 📝 Your Generated Protocol\n\n`;
+            if (planData.workout_plan) {
+              planMarkdown += `**Workout Plan:**\n${planData.workout_plan}\n\n`;
+            }
+            if (planData.diet_plan) {
+              planMarkdown += `**Diet Plan:**\n${planData.diet_plan}\n\n`;
+            }
+
+            advice += planMarkdown + "*(I have automatically attached this plan to your Daily Protocol!)*";
+
+            await fetch('/api/plans', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                workout_plan: planData.workout_plan || '',
+                diet_plan: planData.diet_plan || '',
+                date: format(new Date(), 'MMM dd')
+              })
+            });
+            fetchPlans();
+          }
+          if (planData.macro_goals) {
+            fetchUser();
+          }
+          if (planData.progress_log) {
+            fetchProgress();
+            advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
+            advice += `\n\n*(I have automatically logged your progress!)*`;
+          }
+        } catch (err) {
+          console.error("Auto-fill parsing failed:", err);
+        }
+      }
+
+      setMessages([...newMessages, { role: 'model', content: advice || 'I am here to help!' }]);
+    } catch (e: any) {
       console.error(e);
+      setMessages([...newMessages, { role: 'model', content: `**Error:** ${e.message}` }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  if (loading) return <div className="h-screen bg-zinc-950 flex items-center justify-center text-white font-bold">Initializing Platform...</div>;
+  const toggleListening = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.intentionallyStopped = true;
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Please use Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.intentionallyStopped = false;
+    recognitionRef.current = recognition;
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    let originalInput = input; // Capture what they already typed
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      // Update the input field with the original text + whatever is definitively transcribed + whatever they are currently saying
+      if (finalTranscript) {
+        originalInput = (originalInput + ' ' + finalTranscript).trim();
+      }
+
+      setInput((originalInput + ' ' + interimTranscript).trim());
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== 'no-speech') {
+        recognition.intentionallyStopped = true;
+        setIsListening(false);
+      }
+    };
+
+    recognition.onend = () => {
+      if (!recognition.intentionallyStopped) {
+        try {
+          recognition.start();
+        } catch (e) {
+          setIsListening(false);
+        }
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognition.start();
+  };
+
+  if (loading) return <div className="h-screen flex items-center justify-center font-bold" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>Loading...</div>;
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        <div className="bg-blob bg-blob-1 opacity-30" />
-        <div className="bg-blob bg-blob-2 opacity-30" />
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'var(--surface-primary)' }}>
+        {/* Decorative Blobs */}
+        <div className="bg-blob bg-blob-1" />
+        <div className="bg-blob bg-blob-2" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full text-center relative z-10"
+          className="max-w-md w-full relative z-10"
         >
-          <div className="w-20 h-20 rounded-3xl bg-blue-600 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-600/40">
-            <Dumbbell className="text-white" size={40} />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg" style={{ background: 'var(--gradient-primary)' }}>
+            <Dumbbell className="text-white w-10 h-10" />
           </div>
-          <h1 className="text-5xl font-black tracking-tighter mb-4 text-white uppercase italic">Sweat Fix AI</h1>
-          <p className="text-zinc-400 text-lg mb-12">The next generation of personalized fitness and nutrition intelligence.</p>
-          
-          <button 
-            onClick={() => window.location.href = '/api/auth/google'}
-            className="w-full bg-white text-zinc-950 font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all active:scale-95 shadow-xl"
+          <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>SWEAT FIX GYM</h1>
+          <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
+
+          <button
+            onClick={handleLogin}
+            className="w-full bg-white text-black font-semibold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all active:scale-95 shadow-xl mb-4"
           >
-            <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="" />
-            GET STARTED WITH GOOGLE
+            <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+            Continue with Google
           </button>
 
-          <button 
-            onClick={async () => {
-              const res = await fetch('/api/auth/demo', { method: 'POST' });
-              if (res.ok) fetchUser();
-            }}
-            className="w-full mt-4 bg-zinc-900 text-zinc-400 font-bold py-4 rounded-2xl hover:bg-zinc-800 transition-all"
-          >
-            TRY THE LIVE DEMO
-          </button>
+          <div className="glass-panel rounded-2xl p-6 shadow-xl w-full">
+            <h3 className="text-xl font-bold mb-2 text-center" style={{ color: 'var(--text-primary)' }}>Try the Demo</h3>
+            <p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>Experience the full platform without creating an account.</p>
+            <button
+              onClick={handleDemoLogin}
+              className="w-full btn-gradient py-3 rounded-xl font-semibold"
+            >
+              Explore as Demo User
+            </button>
+          </div>
+
+          <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--glass-border)' }}>
+            <button
+              onClick={() => setShowQR(!showQR)}
+              className="flex items-center gap-2 mx-auto text-sm uppercase tracking-widest font-bold hover:opacity-80 transition-opacity"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <QrCode size={16} />
+              Scan to Access
+            </button>
+            {showQR && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-6 p-4 bg-white rounded-2xl inline-block"
+              >
+                <QRCodeSVG value={window.location.href} size={150} />
+              </motion.div>
+            )}
+          </div>
         </motion.div>
       </div>
     );
   }
 
-  // Show onboarding if essential data is missing
-  if (!user.fitness_goal) {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
-  }
+  const today1 = format(new Date(), 'MMM dd');
+  const today2 = new Date().toISOString().split('T')[0];
+  const todaysProgress = progress.filter(p => p.date === today1 || p.date === today2);
+  const totalProtein = todaysProgress.reduce((sum, p) => sum + (p.protein || 0), 0);
+  const totalCarbs = todaysProgress.reduce((sum, p) => sum + (p.carbs || 0), 0);
+  const totalFats = todaysProgress.reduce((sum, p) => sum + (p.fats || 0), 0);
+  const totalWater = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
+  const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex">
-      {/* SaaS Sidebar */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        user={user} 
-        onLogout={handleLogout} 
-      />
+    <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
+      {/* Decorative Background Blobs */}
+      <div className="bg-blob bg-blob-1" />
+      <div className="bg-blob bg-blob-2" />
+      <div className="bg-blob bg-blob-3" />
 
-      {/* Main Content Area */}
-      <main className="flex-1 lg:ml-64 p-4 lg:p-10 pb-24 lg:pb-10 transition-all duration-300">
-        <div className="max-w-6xl mx-auto space-y-6 lg:space-y-10">
-          
-          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="space-y-1">
-              <h1 className="text-2xl lg:text-4xl font-black tracking-tight italic">
-                {activeTab === 'dashboard' ? 'MY PERFORMANCE' : 
-                 activeTab === 'chat' ? 'AI COACH' : 
-                 activeTab === 'achievements' ? 'ACCOLADES' : 'MY PROFILE'}
-              </h1>
-              <p className="text-xs lg:text-sm text-zinc-500 font-medium">Tracking your journey to greatness.</p>
-            </div>
-            
-            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-              <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 border-emerald-500/20">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] lg:text-sm font-bold tracking-widest text-emerald-500 uppercase">{user.streak} DAY STREAK</span>
-              </div>
-              <ThemeToggle />
-            </div>
-          </header>
-
-          <AnimatePresence mode="wait">
-            {activeTab === 'dashboard' && (
-              <motion.div 
-                key="dashboard"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-10"
-              >
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <StatCard label="Daily Calories" value="1,850" unit="kcal" sub="75% of goal" color="emerald" />
-                  <StatCard label="Protein Logged" value="142" unit="g" sub="+12g from yesterday" color="blue" />
-                  <StatCard label="Water Intake" value="2.4" unit="L" sub="Almost there!" color="cyan" />
-                  <StatCard label="Workout Score" value="A+" unit="" sub="Consistent week" color="purple" />
-                </div>
-
-                {/* Macro Tracker Integration */}
-                <section className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-black uppercase tracking-widest italic">Macro Breakdown</h2>
-                    <button onClick={() => setShowForm(true)} className="btn-gradient px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
-                      <Plus size={16} /> LOG MEAL
-                    </button>
-                  </div>
-                  <MacroTracker 
-                    protein={progress.reduce((s, p) => s + (p.protein || 0), 0)} 
-                    carbs={progress.reduce((s, p) => s + (p.carbs || 0), 0)} 
-                    fats={progress.reduce((s, p) => s + (p.fats || 0), 0)} 
-                    calories={progress.reduce((s, p) => s + (p.calories || 0), 0)}
-                    proteinGoal={user.protein_goal} 
-                    carbsGoal={user.carb_goal} 
-                    fatsGoal={user.fat_goal} 
-                    caloriesGoal={user.calorie_goal}
-                  />
-                </section>
-
-                {/* High-Value Charts */}
-                <section className="space-y-6">
-                  <h2 className="text-xl font-black uppercase tracking-widest italic">Performance Trends</h2>
-                  <OverviewCharts data={weeklyStats} />
-                </section>
-
-                {/* Protocol Section */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black uppercase tracking-widest italic">Workout Protocol</h2>
-                    <div className="glass-panel p-6 rounded-[32px] min-h-[200px]">
-                      {dailyPlans[0]?.workout_plan ? (
-                        <div className="whitespace-pre-wrap text-zinc-400 leading-relaxed font-medium capitalize">
-                          {dailyPlans[0].workout_plan}
-                        </div>
-                      ) : (
-                        <p className="text-zinc-600 italic">No workout logged for today. Ask your AI coach!</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black uppercase tracking-widest italic">Nutrition Protocol</h2>
-                    <div className="glass-panel p-6 rounded-[32px] min-h-[200px]">
-                      {dailyPlans[0]?.diet_plan ? (
-                        <div className="whitespace-pre-wrap text-zinc-400 leading-relaxed font-medium">
-                          {dailyPlans[0].diet_plan}
-                        </div>
-                      ) : (
-                        <p className="text-zinc-600 italic">No nutrition logged for today. Ask your AI coach!</p>
-                      )}
-                    </div>
-                  </div>
-                </section>
-              </motion.div>
-            )}
-
-            {activeTab === 'chat' && (
-              <motion.div 
-                key="chat"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="h-[calc(100vh-280px)] lg:h-[calc(100vh-240px)] flex flex-col glass-panel rounded-[24px] lg:rounded-[40px] overflow-hidden transition-all duration-300"
-              >
-                <div className="flex-1 overflow-y-auto p-4 lg:p-10 space-y-4 lg:space-y-6 scroll-smooth">
-                  {messages.map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[90%] lg:max-w-[75%] p-4 lg:p-6 rounded-[20px] lg:rounded-3xl ${m.role === 'user' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-zinc-900/50 border border-zinc-900 text-zinc-100'}`}>
-                        <div className="prose prose-invert max-w-none text-xs lg:text-base leading-relaxed font-medium">
-                          <ReactMarkdown>{m.content}</ReactMarkdown>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isTyping && (
-                    <div className="flex justify-start">
-                      <div className="bg-zinc-900/50 px-4 py-3 lg:p-6 rounded-2xl lg:rounded-3xl flex gap-1.5 items-center">
-                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
-                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="p-4 lg:p-6 bg-zinc-900/30 border-t border-zinc-900">
-                  <div className="flex gap-3 lg:gap-4 items-end max-w-4xl mx-auto">
-                    <div className="flex-1 relative">
-                      <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        placeholder="Ask your coach anything..."
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl lg:rounded-2xl px-4 lg:px-6 py-3 lg:py-4 outline-none focus:ring-2 ring-blue-500/50 resize-none max-h-32 min-h-[48px] lg:min-h-[56px] text-sm lg:text-base"
-                        rows={1}
-                      />
-                    </div>
-                    <button 
-                      onClick={() => handleSendMessage()}
-                      className="w-12 h-12 lg:w-14 lg:h-14 bg-blue-600 rounded-xl lg:rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/30 flex-shrink-0"
-                    >
-                      <ChevronRight size={20} className="lg:w-6 lg:h-6" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'achievements' && (
-              <motion.div 
-                key="achievements"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-              >
-                <BadgeCard title="First Rep" description="Log your first workout" icon={<Dumbbell />} date="Yesterday" unlocked />
-                <BadgeCard title="Macro Master" description="Hit your protein goal 7 days in a row" icon={<Utensils />} locked />
-                <BadgeCard title="Hydration Hero" description="Drink 3L of water for 3 days" icon={<TrendingUp />} locked />
-                <BadgeCard title="Early Bird" description="Log a workout before 7 AM" icon={<TrendingUp />} locked />
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {/* Header */}
+      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+            <Dumbbell className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <div className="min-w-0 flex-shrink">
+            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
+          </div>
         </div>
+        <div className="flex items-center gap-4">
+          {/* --- START FEATURE: THEME TOGGLE --- */}
+          <ThemeToggle />
+          {/* --- END FEATURE: THEME TOGGLE --- */}
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform">
+              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--glass-border)' }} alt={user.name} />
+            </button>
+            <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
+        {/* Welcome Section */}
+        <section>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
+        </section>
+
+        {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
+        <MacroTracker 
+          protein={totalProtein} carbs={totalCarbs} fats={totalFats} calories={totalCalories} 
+          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal} caloriesGoal={user.calorie_goal}
+        />
+        {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
+
+        {/* Track Workout Section */}
+        <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+          <div>
+            <h3 className="text-xl font-bold mb-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Track Workout & Macros</h3>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Log your recent activity to update your stats and progress chart.</p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 btn-gradient px-6 py-3 rounded-2xl whitespace-nowrap"
+          >
+            <Plus size={20} /> <span className="md:inline">Log Activity</span>
+          </button>
+        </section>
+
+        {/* --- START FEATURE: WORKOUT TRACKER --- */}
+        <WorkoutTracker />
+        {/* --- END FEATURE: WORKOUT TRACKER --- */}
+
+        {/* Progress Chart + Water Log Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Weekly Progress Chart */}
+          <section className="glass-panel p-8 rounded-[40px] md:col-span-2">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Calorie intake overview</p>
+              </div>
+            </div>
+            <div id="chartdiv" className="h-[300px] w-full" />
+          </section>
+
+          {/* Daily Water Log */}
+          <WaterTracker 
+            currentWater={totalWater} 
+            waterGoal={user.water_goal || 2000} 
+            onAddWater={handleAddWater} 
+            onUpdateGoal={handleUpdateWaterGoal} 
+          />
+        </div>
+
+        {/* Diet & Workout Chart Section */}
+        <section>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(124, 58, 237, 0.1)' }}>
+                  <Bot size={24} className="text-purple-500" />
+                </div>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Workout & Diet Chart</h3>
+              </div>
+              <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Your personalized routines generated by Sweat Fix Coach</p>
+            </div>
+            <button
+              onClick={() => setShowPlanForm(true)}
+              className="px-4 py-2 text-sm font-bold rounded-xl transition-colors"
+              style={{ background: 'var(--surface-elevated)', color: 'var(--text-secondary)' }}
+            >
+              Update Plan
+            </button>
+          </div>
+          <div className="space-y-4">
+            {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
+              <div key={i} className={`p-5 sm:p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
+                    <h4 className={`text-lg font-bold mt-1 ${plan.completed ? 'text-emerald-500 line-through opacity-70' : ''}`} style={plan.completed ? {} : { color: 'var(--text-primary)' }}>Daily Routine</h4>
+                  </div>
+                  <button
+                    onClick={() => handleTogglePlan(plan.id, plan.completed)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${plan.completed ? 'bg-emerald-500 border-emerald-500 text-black' : 'text-transparent'}`}
+                    style={plan.completed ? {} : { borderColor: 'var(--text-muted)' }}
+                  >
+                    <Check size={16} />
+                  </button>
+                </div>
+
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${plan.completed ? 'opacity-50' : ''}`}>
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Dumbbell size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Workout Chart</span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.workout_plan || 'No training logged.'}</p>
+                  </div>
+                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Utensils size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Diet Plan</span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.diet_plan || 'No nutrition logged.'}</p>
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
+                No daily plan set. Log your workout and diet protocols for the day.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Recent Workouts */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
+            <button className="text-sm font-bold flex items-center gap-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              View All <ChevronRight size={16} className="text-purple-500" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            {progress.slice().reverse().map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-4 glass-panel glass-panel-hover rounded-2xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-elevated)' }}>
+                    <Dumbbell size={20} style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.workout_name || 'General Training'}</h4>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.date}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-purple-400">+{item.calories} kcal</div>
+                  <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-muted)' }}>Burned</div>
+                </div>
+              </div>
+            ))}
+            {progress.length === 0 && (
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
+                No activity logged yet. Start your journey today!
+              </div>
+            )}
+          </div>
+        </section>
       </main>
 
-      {/* Legacy Modals Integration */}
+      {/* Chat Bot Trigger */}
+      <button
+        aria-label="Open Chat"
+        onClick={() => setChatOpen(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-purple-500/50"
+        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
+      >
+        <MessageSquare size={28} />
+      </button>
+
+      {/* Chat Window */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] glass-panel md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
+          >
+            <div className="p-6 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--glass-border)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+                  <TrendingUp size={20} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Sweat Fix Coach</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400">Always Online</p>
+                </div>
+              </div>
+              <button aria-label="Close Chat" onClick={() => setChatOpen(false)} className="hover:opacity-70 transition-opacity min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none" style={{ color: 'var(--text-muted)' }}>
+                <Plus className="rotate-45" size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium`} style={{ background: m.role === 'user' ? 'var(--gradient-primary)' : 'var(--surface-elevated)', color: m.role === 'user' ? 'white' : 'var(--text-primary)' }}>
+                    <div className="prose chat-prose max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
+                      <ReactMarkdown>
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="p-4 rounded-2xl flex gap-1.5 items-center min-h-[44px]" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Action Prompts */}
+            <div className="pt-3 pb-2 px-0" style={{ borderTop: '1px solid var(--glass-border)' }}>
+              <div className="flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar snap-x">
+                {QUICK_ACTIONS.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSendMessage(action)}
+                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 snap-start shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[44px]"
+                    style={{ background: 'var(--surface-input)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)' }}
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4" style={{ background: 'var(--surface-elevated)', borderTop: '1px solid var(--glass-border)' }}>
+              <div className="flex gap-2 items-end">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  aria-label="Chat input"
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                      setTimeout(() => {
+                        e.currentTarget.style.height = 'auto';
+                      }, 0);
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  rows={1}
+                  className="flex-1 border-none rounded-2xl px-4 py-3 min-h-[44px] max-h-[120px] resize-none text-sm focus:ring-2 focus:ring-purple-500 shadow-inner outline-none transition-all duration-200 block no-scrollbar"
+                  style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+                />
+                <button
+                  aria-label={isListening ? "Stop listening" : "Start voice input"}
+                  onClick={toggleListening}
+                  className={`min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 hover:text-white'}`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+                <button
+                  aria-label="Send message"
+                  onClick={() => {
+                    handleSendMessage();
+                    const textarea = document.querySelector('textarea[aria-label="Chat input"]') as HTMLTextAreaElement;
+                    if (textarea) textarea.style.height = 'auto';
+                  }}
+                  className="btn-gradient min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:scale-105 active:scale-95"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Log Progress Modal */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }}
-              className="glass-panel w-full max-w-md p-8 rounded-[32px]"
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-panel w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold italic uppercase tracking-widest">Log Nutrient</h2>
-                <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-white"><Plus className="rotate-45" size={24} /></button>
+              <div className="p-6 sm:p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-bold">Log Progress</h3>
+                  <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-white">
+                    <Plus className="rotate-45" size={28} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmitProgress} className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Workout Name</label>
+                    <input
+                      required
+                      value={formData.workout_name}
+                      onChange={e => setFormData({ ...formData, workout_name: e.target.value })}
+                      placeholder="e.g. Chest Day"
+                      className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Calories (kcal)</label>
+                      <input
+                        type="number"
+                        value={formData.calories}
+                        onChange={e => setFormData({ ...formData, calories: e.target.value ? parseInt(e.target.value) : '' })}
+                        className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder-zinc-600"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Protein (g)</label>
+                      <input
+                        type="number"
+                        value={formData.protein}
+                        onChange={e => setFormData({ ...formData, protein: e.target.value ? parseInt(e.target.value) : '' })}
+                        className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder-zinc-600"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Carbs (g)</label>
+                      <input
+                        type="number"
+                        value={formData.carbs}
+                        onChange={e => setFormData({ ...formData, carbs: e.target.value ? parseInt(e.target.value) : '' })}
+                        className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder-zinc-600"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Fats (g)</label>
+                      <input
+                        type="number"
+                        value={formData.fats}
+                        onChange={e => setFormData({ ...formData, fats: e.target.value ? parseInt(e.target.value) : '' })}
+                        className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder-zinc-600"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Water (ml)</label>
+                    <input
+                      type="number"
+                      value={formData.water}
+                      onChange={e => setFormData({ ...formData, water: e.target.value ? parseInt(e.target.value) : '' })}
+                      className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder-zinc-600"
+                      placeholder="0"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
+                  >
+                    Save Entry
+                  </button>
+                </form>
               </div>
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const data = {
-                  food_name: (form.elements.namedItem('food_name') as HTMLInputElement).value,
-                  calories: Number((form.elements.namedItem('calories') as HTMLInputElement).value),
-                  protein: Number((form.elements.namedItem('protein') as HTMLInputElement).value),
-                  carbs: Number((form.elements.namedItem('carbs') as HTMLInputElement).value),
-                  fats: Number((form.elements.namedItem('fats') as HTMLInputElement).value),
-                  meal_type: (form.elements.namedItem('meal_type') as HTMLSelectElement).value,
-                };
-                await fetch('/api/food-logs', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(data)
-                });
-                setShowForm(false);
-                fetchProgress();
-                fetchWeeklyStats();
-              }} className="space-y-4">
-                <input name="food_name" placeholder="What did you eat?" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none" required />
-                <div className="grid grid-cols-2 gap-4">
-                  <input name="calories" type="number" placeholder="Calories" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none" required />
-                  <input name="protein" type="number" placeholder="Protein (g)" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none" required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <input name="carbs" type="number" placeholder="Carbs (g)" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none" required />
-                  <input name="fats" type="number" placeholder="Fats (g)" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none" required />
-                </div>
-                <select name="meal_type" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 outline-none">
-                  <option value="breakfast">Breakfast</option>
-                  <option value="lunch">Lunch</option>
-                  <option value="dinner">Dinner</option>
-                  <option value="snack">Snack</option>
-                </select>
-                <button type="submit" className="w-full btn-gradient py-4 rounded-xl font-black uppercase tracking-widest text-sm italic">Lock In Meal</button>
-              </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-      {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-900 px-6 pb-6 pt-2 z-50 flex items-center justify-between">
-        {[
-          { id: 'dashboard', icon: LayoutDashboard, label: 'Stats' },
-          { id: 'chat', icon: MessageSquare, label: 'Coach' },
-          { id: 'achievements', icon: Award, label: 'Badges' },
-          { id: 'profile', icon: UserIcon, label: 'Me' }
-        ].map(item => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id as any)}
-            className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-blue-500 scale-110' : 'text-zinc-500'}`}
-          >
-            <item.icon size={20} fill={activeTab === item.id ? 'currentColor' : 'none'} fillOpacity={0.2} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function StatCard({ label, value, unit, sub, color }: any) {
-  const colors: any = {
-    emerald: 'text-emerald-500 bg-emerald-500/10',
-    blue: 'text-blue-500 bg-blue-500/10',
-    cyan: 'text-cyan-500 bg-cyan-500/10',
-    purple: 'text-purple-500 bg-purple-500/10',
-  };
-  return (
-    <div className="glass-panel p-5 lg:p-6 rounded-[24px] lg:rounded-[32px] space-y-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 truncate">{label}</p>
-      <div className="flex items-baseline flex-wrap gap-1">
-        <span className="text-2xl lg:text-3xl font-black tracking-tight italic">{value}</span>
-        <span className="text-[10px] font-bold text-zinc-500 uppercase">{unit}</span>
-      </div>
-      <p className={`text-[10px] lg:text-xs font-bold px-2 py-1 rounded-lg inline-block ${colors[color]}`}>{sub}</p>
-    </div>
-  );
-}
+      {/* Daily Plan Modal */}
+      <AnimatePresence>
+        {showPlanForm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-panel w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 sm:p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Daily Protocol</h3>
+                <button onClick={() => setShowPlanForm(false)} className="text-zinc-500 hover:text-white">
+                  <Plus className="rotate-45" size={28} />
+                </button>
+              </div>
 
-function BadgeCard({ title, description, icon, date, unlocked, locked }: any) {
-  return (
-    <div className={`glass-panel p-6 rounded-[32px] text-center space-y-4 ${locked ? 'opacity-40 grayscale' : ''}`}>
-      <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center ${unlocked ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 shadow-lg shadow-yellow-500/20' : 'bg-zinc-900 text-zinc-600'}`}>
-        {React.cloneElement(icon, { size: 32 })}
-      </div>
-      <div>
-        <h4 className="font-black uppercase tracking-widest text-sm italic">{title}</h4>
-        <p className="text-xs text-zinc-500 mt-1">{description}</p>
-      </div>
-      {date && <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">{date}</p>}
+              <div className="p-6 sm:p-8 overflow-y-auto">
+                <form onSubmit={handleSavePlan} className="space-y-6">
+                  <div>
+                    <label className="flex items-center gap-2 text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">
+                      <Dumbbell size={16} /> Workout Plan
+                    </label>
+                    <textarea
+                      required
+                      value={planForm.workout_plan}
+                      onChange={e => setPlanForm({ ...planForm, workout_plan: e.target.value })}
+                      placeholder="E.g., 4x10 Pull-ups, 3x15 Push-ups"
+                      className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none min-h-[120px] resize-y"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">
+                      <Utensils size={16} /> Nutrition Plan
+                    </label>
+                    <textarea
+                      required
+                      value={planForm.diet_plan}
+                      onChange={e => setPlanForm({ ...planForm, diet_plan: e.target.value })}
+                      placeholder="E.g., Breakfast: Oatmeal & Eggs. Lunch: Chicken & Rice."
+                      className="w-full bg-zinc-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-emerald-500 outline-none min-h-[120px] resize-y"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
+                  >
+                    Lock In Plan
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {showProfile && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-6" onClick={() => setShowProfile(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-panel p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] text-center max-w-sm w-full shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-end mb-4">
+                <button onClick={() => setShowProfile(false)} className="text-zinc-500 hover:text-white transition-colors">
+                  <Plus className="rotate-45" size={24} />
+                </button>
+              </div>
+              <img src={user.avatar} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-zinc-800 shadow-xl" />
+
+              {isEditingProfile ? (
+                <div className="flex items-center gap-2 mb-6">
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="flex-1 bg-zinc-800 text-white font-bold text-xl rounded-xl px-4 py-2 border border-emerald-500/50 outline-none focus:border-emerald-500 text-center"
+                    autoFocus
+                  />
+                  <button onClick={handleSaveProfile} className="p-2 bg-emerald-500 text-black rounded-xl hover:bg-emerald-400">
+                    <Check size={20} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center mb-6 relative group">
+                  <h3 className="text-white text-2xl font-bold">{user.name}</h3>
+                  <button
+                    onClick={() => {
+                      setEditName(user.name);
+                      setIsEditingProfile(true);
+                    }}
+                    className="absolute -right-2 top-0 p-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <p className="text-zinc-500 mt-1">{user.email}</p>
+                </div>
+              )}
+
+              <div className="rounded-2xl p-4 mb-8 text-left" style={{ background: 'var(--surface-elevated)' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-zinc-400 text-sm">Member ID</span>
+                  <span className="text-white font-mono text-sm">#{user.id.toString().padStart(4, '0')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400 text-sm">Status</span>
+                  <span className="text-emerald-500 font-bold text-sm tracking-widest uppercase">Active</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <LogOut size={20} />
+                Sign Out
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
