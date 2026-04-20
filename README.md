@@ -6,7 +6,7 @@ A production-ready AI coaching platform developed for **Sweat Fix Gym**. This sy
 ---
 
 ## 🚀 Live Demo & Deployment
-* **Access:** https://sweatfix.prasai.cloud/ QR Code
+* **Access:** https://sweat.prasai.cloud/
 * **Infrastructure:** Hosted & Managed by **Prasai Cloud**
 
 ---
