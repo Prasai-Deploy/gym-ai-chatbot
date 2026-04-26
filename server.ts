@@ -544,7 +544,7 @@ async function startServer() {
           "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-          model: "openrouter/auto:free",
+          model: "nvidia/nemotron-3-super-120b-a12b:free",
           messages,
           temperature: 0.8,
           top_p: 0.8,
