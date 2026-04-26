@@ -531,7 +531,7 @@ async function startServer() {
           "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-          model: "nvidia/nemotron-3-super-120b-a12b:free",
+          model: "tencent/hy3-preview:free",
           messages,
           temperature: 0.8,
           top_p: 0.8,
@@ -638,15 +638,6 @@ async function startServer() {
           await savePlan(user.id, today, generatedPlan, prompt);
 
           const formatted = formatWorkoutForChat(generatedPlan);
-
-          // Auto-feed to daily tracker
-          await dbRun(
-            `INSERT INTO daily_plans (user_id, date, workout_plan, completed)
-             VALUES (?, ?, ?, 0)
-             ON DUPLICATE KEY UPDATE workout_plan = VALUES(workout_plan)`,
-            [user.id, today, formatted]
-          );
-
           return res.json({ text: formatted });
         } catch (workoutErr: any) {
           console.error("[Chat/Workout trigger] Error:", workoutErr.message);
@@ -666,20 +657,12 @@ async function startServer() {
 
           const { generateMealPlan } = await import("./services/nutrition.service.js");
           const plan = await generateMealPlan(user.id);
-          const today = new Date().toISOString().split("T")[0];
+          
           let responseText = `🍳 **Your Personalized Meal Plan** (Target: ${plan.calories_target} kcal)\n\n`;
           plan.meals.forEach((m: any) => {
             responseText += `**${m.type}** (${m.calories} kcal)\n- ${m.items.join("\n- ")}\n\n`;
           });
           
-          // Auto-feed to daily tracker
-          await dbRun(
-            `INSERT INTO daily_plans (user_id, date, diet_plan, completed)
-             VALUES (?, ?, ?, 0)
-             ON DUPLICATE KEY UPDATE diet_plan = VALUES(diet_plan)`,
-            [user.id, today, responseText]
-          );
-
           return res.json({ text: responseText });
         } catch (nutriErr: any) {
           console.error("[Chat/Nutrition Gen] Error:", nutriErr.message);

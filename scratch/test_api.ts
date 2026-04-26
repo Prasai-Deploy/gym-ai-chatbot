@@ -17,7 +17,7 @@ async function testAI() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "nvidia/nemotron-3-super-120b-a12b:free",
+        model: "tencent/hy3-preview:free",
         messages: [{ role: "user", content: "hi" }]
       })
     });

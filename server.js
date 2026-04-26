@@ -416,7 +416,7 @@ async function startServer() {
                 "X-Title": "Sweat Fix Gym",
             },
             body: JSON.stringify({
-                model: "openrouter/auto:free",
+                model: "tencent/hy3-preview:free",
                 messages,
                 temperature: 0.8,
                 top_p: 0.8,
