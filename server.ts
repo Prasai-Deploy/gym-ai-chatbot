@@ -14,6 +14,7 @@ import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
+import pool from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -62,21 +63,7 @@ declare global {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MySQL connection pool
-// ─────────────────────────────────────────────────────────────────────────────
-const pool = mysql.createPool({
-  host:     process.env.DB_HOST,
-  user:     process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port:     Number(process.env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  timezone: "+00:00",
-  decimalNumbers: true,
-});
+// Helper functions for DB access using the shared pool
 
 // Helpers – thin wrappers so the rest of the code stays readable
 async function dbGet(sql: string, params: any[] = []): Promise<any> {

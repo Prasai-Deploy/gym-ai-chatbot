@@ -10,7 +10,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port:     Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
   timezone: "+00:00",        // store/return UTC
   decimalNumbers: true,
