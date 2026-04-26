@@ -821,7 +821,7 @@ export default function App() {
 
         {/* --- START FEATURE: WORKOUT TRACKER --- */}
         <div className="lg:col-span-12">
-          <WorkoutTracker />
+          <WorkoutTracker customPlanString={dailyPlans[0]?.workout_plan} />
         </div>
         {/* --- END FEATURE: WORKOUT TRACKER --- */}
 

@@ -25,7 +25,7 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-export function WorkoutTracker() {
+export function WorkoutTracker({ customPlanString }: { customPlanString?: string }) {
   const [isActive, setIsActive] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>(DEFAULT_EXERCISES);
@@ -43,10 +43,31 @@ export function WorkoutTracker() {
     };
   }, [isActive, isFinished]);
 
+  const parseCustomPlan = (planStr: string): Exercise[] => {
+    const lines = planStr.split(/[\n,]/).map(s => s.trim()).filter(s => s.length > 0 && !s.toLowerCase().includes('workout plan'));
+    if (lines.length === 0) return DEFAULT_EXERCISES;
+    return lines.map((line, i) => {
+      const match = line.match(/(\d+\s*[x×*]\s*\d+)/i) || line.match(/(\d+\s*sets\s*(of)?\s*\d+)/i);
+      let sets = "";
+      let name = line;
+      if (match) {
+        sets = match[1];
+        name = line.replace(match[1], "").replace(/^[-*•\d.:]+\s*/, "").trim();
+      } else {
+        name = line.replace(/^[-*•\d.:]+\s*/, "").trim();
+      }
+      return { id: `custom-${i}`, name: name || 'Exercise', sets, done: false };
+    });
+  };
+
   const handleStart = () => {
     setIsActive(true);
     setIsFinished(false);
-    setExercises(DEFAULT_EXERCISES);
+    if (customPlanString) {
+      setExercises(parseCustomPlan(customPlanString));
+    } else {
+      setExercises(DEFAULT_EXERCISES);
+    }
     setElapsed(0);
   };
 
@@ -64,7 +85,11 @@ export function WorkoutTracker() {
   const handleReset = () => {
     setIsActive(false);
     setIsFinished(false);
-    setExercises(DEFAULT_EXERCISES);
+    if (customPlanString) {
+      setExercises(parseCustomPlan(customPlanString));
+    } else {
+      setExercises(DEFAULT_EXERCISES);
+    }
     setElapsed(0);
     if (timerRef.current) clearInterval(timerRef.current);
   };
@@ -123,7 +148,6 @@ export function WorkoutTracker() {
         {/* ---- STATE: ACTIVE ---- */}
         {isActive && !isFinished && (
           <motion.div
-            key="active"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -240,7 +264,6 @@ export function WorkoutTracker() {
         {/* ---- STATE: FINISHED ---- */}
         {isFinished && (
           <motion.div
-            key="finished"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
