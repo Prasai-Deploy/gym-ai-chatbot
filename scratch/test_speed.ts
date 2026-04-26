@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const models = [
+  "google/gemini-2.0-flash-exp:free",
   "google/gemini-2.0-flash-lite-preview-02-05:free",
-  "meta-llama/llama-3-8b-instruct:free",
   "openrouter/auto:free"
 ];
 

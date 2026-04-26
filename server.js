@@ -416,7 +416,7 @@ async function startServer() {
                 "X-Title": "Sweat Fix Gym",
             },
             body: JSON.stringify({
-                model: "baidu/qianfan-ocr-fast:free",
+                model: "openrouter/auto:free",
                 messages,
                 temperature: 0.8,
                 top_p: 0.8,
