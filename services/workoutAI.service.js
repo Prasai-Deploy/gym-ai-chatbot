@@ -160,7 +160,7 @@ export async function callWorkoutAI(prompt) {
             "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-            model: "nvidia/nemotron-3-super-120b-a12b:free",
+            model: "baidu/qianfan-ocr-fast:free",
             messages: [{ role: "user", content: prompt }],
             temperature: 0.6, // slightly lower for deterministic JSON
             top_p: 0.8,

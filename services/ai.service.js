@@ -28,7 +28,7 @@ export async function callAI(userMessage, systemMessage, history = []) {
             "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-            model: "nvidia/nemotron-3-super-120b-a12b:free",
+            model: "baidu/qianfan-ocr-fast:free",
             messages,
             temperature: 0.7,
         }),

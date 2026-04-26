@@ -31,6 +31,7 @@ import ReactMarkdown from 'react-markdown';
 import { getFitnessAdvice } from './services/chatService';
 
 // --- START FEATURE: THEME TOGGLE ---
+import { DashboardInsights } from './components/DashboardInsights';
 import { ThemeToggle } from './components/ThemeToggle';
 import { useTheme } from './hooks/useTheme';
 // --- END FEATURE: THEME TOGGLE ---
@@ -785,22 +786,27 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
-        {/* Welcome Section */}
-        <section>
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
-        </section>
+      <main className="max-w-[1400px] mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 pb-32">
+        {/* Simulated Hero Dashboard Insights */}
+        <div className="lg:col-span-12">
+          <DashboardInsights 
+            userName={user.name} 
+            caloriesBurned={progress.reduce((acc, curr) => acc + (curr.calories || 0), 0)} 
+            caloriesGoal={user.calorie_goal} 
+          />
+        </div>
 
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
+        <div className="lg:col-span-12">
         <MacroTracker 
           protein={totalProtein} carbs={totalCarbs} fats={totalFats} calories={totalCalories} 
           proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal} caloriesGoal={user.calorie_goal}
         />
+        </div>
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
-        <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+        <section className="lg:col-span-12 glass-panel p-6 rounded-[32px] flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'var(--glass-border)' }}>
           <div>
             <h3 className="text-xl font-bold mb-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Track Workout & Macros</h3>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Log your recent activity to update your stats and progress chart.</p>
@@ -814,13 +820,16 @@ export default function App() {
         </section>
 
         {/* --- START FEATURE: WORKOUT TRACKER --- */}
-        <WorkoutTracker />
+        <div className="lg:col-span-12">
+          <WorkoutTracker />
+        </div>
         {/* --- END FEATURE: WORKOUT TRACKER --- */}
 
         {/* Progress Chart + Water Log Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Weekly Progress Chart */}
-          <section className="glass-panel p-8 rounded-[40px] md:col-span-2">
+          <section className="glass-panel p-8 rounded-[40px] lg:col-span-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blob-2 rounded-full blur-3xl opacity-20 pointer-events-none" />
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
@@ -830,17 +839,19 @@ export default function App() {
             <div id="chartdiv" className="h-[300px] w-full" />
           </section>
 
-          {/* Daily Water Log */}
-          <WaterTracker 
-            currentWater={totalWater} 
+          <div className="lg:col-span-4 h-full">
+            <WaterTracker 
+              currentWater={totalWater} 
             waterGoal={user.water_goal || 2000} 
             onAddWater={handleAddWater} 
             onUpdateGoal={handleUpdateWaterGoal} 
           />
         </div>
 
+        </div>
+
         {/* Diet & Workout Chart Section */}
-        <section>
+        <section className="lg:col-span-7 glass-panel p-8 rounded-[40px] flex flex-col h-full">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <div className="flex items-center gap-3">
@@ -902,7 +913,7 @@ export default function App() {
         </section>
 
         {/* Recent Workouts */}
-        <section>
+        <section className="lg:col-span-5 glass-panel p-8 rounded-[40px] flex flex-col h-full">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
             <button className="text-sm font-bold flex items-center gap-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -936,15 +947,39 @@ export default function App() {
         </section>
       </main>
 
-      {/* Chat Bot Trigger */}
-      <button
-        aria-label="Open Chat"
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-purple-500/50"
-        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
-      >
-        <MessageSquare size={28} />
-      </button>
+      {/* AI Voice Waveform Background */}
+      <div className="fixed bottom-0 left-0 right-0 h-32 pointer-events-none z-30 flex items-end justify-center pb-8 opacity-40">
+        <div className="flex gap-1.5 items-end h-16">
+          {[...Array(30)].map((_, i) => (
+            <div 
+              key={i}
+              className={`w-1 sm:w-1.5 rounded-t-full animate-waveform`}
+              style={{ 
+                background: 'var(--accent-lime)',
+                height: `${Math.max(20, Math.random() * 100)}%`,
+                animationDelay: `${i * 0.05}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Floating Bottom Navigation */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 glass-panel px-8 py-4 rounded-full shadow-2xl flex items-center gap-10 z-50">
+        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="flex flex-col items-center gap-1 hover:scale-110 transition-transform active:scale-95" style={{ color: 'var(--accent-lime)' }}>
+          <Activity size={24} />
+          <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block">Home</span>
+        </button>
+        <button onClick={() => setChatOpen(true)} className="flex flex-col items-center gap-1 hover:scale-110 transition-transform active:scale-95 relative group" style={{ color: 'var(--text-muted)' }}>
+          <div className="absolute -inset-4 bg-lime-400 opacity-0 group-hover:opacity-10 blur-xl rounded-full transition-opacity" />
+          <MessageSquare size={24} className="group-hover:text-white transition-colors" />
+          <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block group-hover:text-white transition-colors">Coach</span>
+        </button>
+        <button onClick={() => setShowProfile(true)} className="flex flex-col items-center gap-1 hover:scale-110 transition-transform active:scale-95 group" style={{ color: 'var(--text-muted)' }}>
+          <UserIcon size={24} className="group-hover:text-white transition-colors" />
+          <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block group-hover:text-white transition-colors">Profile</span>
+        </button>
+      </nav>
 
       {/* Chat Window */}
       <AnimatePresence>

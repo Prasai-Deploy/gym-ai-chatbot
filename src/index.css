@@ -11,33 +11,38 @@
    ======================================== */
 
 :root {
-  /* Gradient Accents */
-  --gradient-primary: linear-gradient(135deg, #7c3aed, #ec4899);
-  --gradient-accent: linear-gradient(135deg, #3b82f6, #06b6d4);
-  --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
-  --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
+  /* Premium Cyber Aesthetic Colors */
+  --surface-primary: #05070a; /* Midnight Navy */
+  --surface-card: rgba(15, 15, 15, 0.6); /* Deep Charcoal with transparency */
+  --surface-elevated: rgba(30, 30, 34, 0.7);
+  --surface-input: rgba(40, 40, 45, 0.8);
 
-  /* Glass Colors — Dark Mode (default) */
-  --glass-bg: rgba(24, 24, 27, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --glass-blur: 16px;
-
-  /* Surface Colors */
-  --surface-primary: #09090b;
-  --surface-card: rgba(24, 24, 27, 0.5);
-  --surface-elevated: rgba(39, 39, 42, 0.5);
-  --surface-input: rgba(39, 39, 42, 0.8);
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #1e3a8a, #4338ca); /* Violet to Cobalt */
+  --gradient-accent: linear-gradient(135deg, #ccff00, #a3e635); /* Electric Lime glow */
+  --gradient-warm: linear-gradient(135deg, #ff5e62, #ff9966); /* Sunset Coral */
+  --gradient-success: linear-gradient(135deg, #ccff00, #10b981); /* Electric Lime to Emerald */
+  
+  /* Glassmorphism - Neomorphism-lite */
+  --glass-bg: rgba(15, 15, 15, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-border-active: rgba(204, 255, 0, 0.3); /* Electric Lime border */
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --glass-blur: 24px;
 
   /* Text Colors */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  
+  /* Cyber Accent Colors */
+  --accent-lime: #ccff00;
+  --accent-coral: #ff5e62;
 
-  /* Blob Colors */
-  --blob-1: rgba(124, 58, 237, 0.15);
-  --blob-2: rgba(236, 72, 153, 0.10);
-  --blob-3: rgba(6, 182, 212, 0.08);
+  /* Blob Colors - Neon shifts */
+  --blob-1: rgba(30, 58, 138, 0.2);
+  --blob-2: rgba(67, 56, 202, 0.15);
+  --blob-3: rgba(204, 255, 0, 0.05);
 }
 
 .light {
@@ -90,12 +95,14 @@ body {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
-  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 32px; /* Bento grid soft corners */
 }
 
 .glass-panel-hover:hover {
-  border-color: rgba(124, 58, 237, 0.3);
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.1);
+  border-color: var(--glass-border-active);
+  box-shadow: 0 12px 40px rgba(204, 255, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 /* ========================================
@@ -103,21 +110,22 @@ body {
    ======================================== */
 
 .btn-gradient {
-  background: var(--gradient-primary);
-  color: white;
-  font-weight: 700;
+  background: var(--accent-lime);
+  color: #05070a; /* Dark text on lime button */
+  font-weight: 800;
   border: none;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 24px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-gradient::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -127,12 +135,34 @@ body {
 }
 
 .btn-gradient:hover {
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
-  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(204, 255, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 .btn-gradient:active {
-  transform: scale(0.97);
+  transform: scale(0.95); /* Tactile press */
+  box-shadow: 0 4px 16px rgba(204, 255, 0, 0.3);
+}
+
+/* Animations */
+@keyframes pulse-waveform {
+  0% { transform: scaleY(0.4); opacity: 0.6; }
+  50% { transform: scaleY(1.2); opacity: 1; }
+  100% { transform: scaleY(0.4); opacity: 0.6; }
+}
+
+.animate-waveform {
+  animation: pulse-waveform 1.2s ease-in-out infinite;
+}
+
+@keyframes radial-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(204, 255, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0); }
+}
+
+.animate-radial-pulse {
+  animation: radial-pulse 1.5s infinite;
 }
 
 /* ========================================

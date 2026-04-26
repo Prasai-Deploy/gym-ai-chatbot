@@ -78,7 +78,7 @@ export function WorkoutTracker() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-panel rounded-3xl p-6 md:p-8"
+      className="glass-panel rounded-[32px] md:rounded-[40px] p-6 md:p-8 h-full flex flex-col"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -89,8 +89,8 @@ export function WorkoutTracker() {
             {isActive ? (isFinished ? 'Workout complete!' : 'In progress...') : 'Ready to train?'}
           </p>
         </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-accent)' }}>
-          <Dumbbell size={20} className="text-white" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-lime)' }}>
+          <Dumbbell size={20} className="text-black" />
         </div>
       </div>
 
@@ -109,9 +109,9 @@ export function WorkoutTracker() {
               className="btn-gradient px-10 py-5 rounded-2xl text-lg font-bold inline-flex items-center gap-3 mx-auto"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              style={{ background: 'var(--gradient-accent)' }}
+              style={{ background: 'var(--accent-lime)', color: '#000' }}
             >
-              <Play size={22} fill="white" />
+              <Play size={22} fill="black" className="text-black" />
               Start Workout
             </motion.button>
             <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
