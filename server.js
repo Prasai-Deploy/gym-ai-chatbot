@@ -9,6 +9,16 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { EventEmitter } from "events";
+import profileRouter from "./routes/profile.routes.js";
+import workoutRouter from "./routes/workout.routes.js";
+import nutritionRouter from "./routes/nutrition.routes.js";
+import dashboardRouter from "./routes/dashboard.routes.js";
+import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
+import { buildSystemContext } from "./services/chatContext.service.js";
+import { extractProfileUpdate } from "./services/updateExtractor.service.js";
+import { decideSplit, buildWorkoutPrompt, callWorkoutAI, formatWorkoutForChat, } from "./services/workoutAI.service.js";
+import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, } from "./services/workout.service.js";
+import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -160,6 +170,7 @@ async function startServer() {
                 // Refresh demo user state
                 await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
                 await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+                await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
                 await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
             }
             req.login(user, (err) => {
@@ -363,6 +374,22 @@ async function startServer() {
         }
     });
     // ───────────────────────────────────────────────────────────────────────────
+    // Profile routes (modular)
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/profile", profileRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Workout routes (modular)
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/workout", workoutRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Nutrition routes (modular)
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/nutrition", nutritionRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Dashboard routes (modular) — GET /api/dashboard/:userId, POST /api/progress/metrics
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api", dashboardRouter);
+    // ───────────────────────────────────────────────────────────────────────────
     // OpenRouter AI connector
     // ───────────────────────────────────────────────────────────────────────────
     async function getOpenRouterResponse(userMessage, history, systemMessage) {
@@ -409,14 +436,127 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
+    // ── Progress chat trigger regex ────────────────────────────────────────────
+    // Matches: "show my progress", "how am I improving?", "check my streak", etc.
+    const PROGRESS_TRIGGER_RE = /(show|see|check|view|get|what(?:'s| is)|how(?:'s| is| am i))\s*.*(progress|improvement|streak|stats|dashboard|improving|doing|gains?)/i;
+    // ── Workout chat trigger regex ─────────────────────────────────────────────
+    // Matches: "generate today's workout", "create my workout plan", etc.
+    const WORKOUT_TRIGGER_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(today.?s?\s+workout|workout\s+plan|my\s+workout|today.?s?\s+plan)/i;
+    // ── Nutrition chat trigger regex ───────────────────────────────────────────
+    const NUTRITION_GEN_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat)/i;
+    const NUTRITION_LOG_RE = /(track|log|record|i\s+ate|i\s+had|just\s+ate).*(calories|meal|food|lunch|dinner|breakfast|snack)/i;
     app.post("/api/chat", async (req, res) => {
         try {
             const { message, history } = req.body;
             const user = req.user;
-            let userContextStr = "";
-            if (user?.profile_context) {
-                userContextStr = `\n\nUSER PROFILE CONTEXT (Remember this!):\n${user.profile_context}`;
+            // ── Progress trigger: show dashboard insights ─────────────────────────
+            if (user && message && PROGRESS_TRIGGER_RE.test(message) && !WORKOUT_TRIGGER_RE.test(message)) {
+                try {
+                    const data = await buildDashboardSummary(user.id);
+                    const insight = buildChatInsight(data);
+                    return res.json({ text: insight });
+                }
+                catch (dashErr) {
+                    console.error("[Chat/Progress trigger] Error:", dashErr.message);
+                    // Fall through to normal AI chat on error
+                }
             }
+            // ── Workout trigger: intercept before hitting the general AI ─────────
+            if (user && message && WORKOUT_TRIGGER_RE.test(message)) {
+                try {
+                    const profile = await getProfile(user.id);
+                    if (!profile || !isProfileComplete(profile)) {
+                        return res.json({
+                            text: "⚠️ I need your complete fitness profile before I can generate a personalized workout. Please make sure your **goal**, **workout days**, **activity level**, **weight**, **height**, **age**, and **diet type** are all set — then ask me again!",
+                        });
+                    }
+                    const today = new Date().toISOString().split("T")[0];
+                    const existingPlan = await getPlanByDate(user.id, today);
+                    if (existingPlan) {
+                        const exercises = typeof existingPlan.exercises === "string"
+                            ? JSON.parse(existingPlan.exercises)
+                            : existingPlan.exercises;
+                        const formatted = formatWorkoutForChat({ ...existingPlan, exercises });
+                        return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}` });
+                    }
+                    // Build history map for progressive overload
+                    const recentFocuses = await getRecentFocuses(user.id, 4);
+                    const todayFocus = decideSplit(profile.workout_days ?? 3, recentFocuses);
+                    const lastPlan = await getLatestPlan(user.id);
+                    const historyMap = new Map();
+                    if (lastPlan) {
+                        const lastExercises = typeof lastPlan.exercises === "string"
+                            ? JSON.parse(lastPlan.exercises)
+                            : lastPlan.exercises;
+                        await Promise.all(lastExercises.slice(0, 8).map(async (ex) => {
+                            const log = await getLastLog(user.id, ex.name);
+                            if (log)
+                                historyMap.set(ex.name, { name: ex.name, weight_used: log.weight_used, reps_done: log.reps_done, difficulty: log.difficulty });
+                        }));
+                    }
+                    const prompt = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
+                    const generatedPlan = await callWorkoutAI(prompt);
+                    await savePlan(user.id, today, generatedPlan, prompt);
+                    const formatted = formatWorkoutForChat(generatedPlan);
+                    return res.json({ text: formatted });
+                }
+                catch (workoutErr) {
+                    console.error("[Chat/Workout trigger] Error:", workoutErr.message);
+                    // Fall through to normal AI chat on error
+                }
+            }
+            // ── Nutrition Generate trigger ─────────────────────────────────────────
+            if (user && message && NUTRITION_GEN_RE.test(message)) {
+                try {
+                    const profile = await getProfile(user.id);
+                    if (!profile || !isProfileComplete(profile)) {
+                        return res.json({
+                            text: "⚠️ I need your complete fitness profile before I can generate a personalized meal plan. Please set your **goal**, **weight**, **height**, **age**, and **diet type** first!",
+                        });
+                    }
+                    const { generateMealPlan } = await import("./services/nutrition.service.js");
+                    const plan = await generateMealPlan(user.id);
+                    let responseText = `🍳 **Your Personalized Meal Plan** (Target: ${plan.calories_target} kcal)\n\n`;
+                    plan.meals.forEach((m) => {
+                        responseText += `**${m.type}** (${m.calories} kcal)\n- ${m.items.join("\n- ")}\n\n`;
+                    });
+                    return res.json({ text: responseText });
+                }
+                catch (nutriErr) {
+                    console.error("[Chat/Nutrition Gen] Error:", nutriErr.message);
+                }
+            }
+            // ── Nutrition Log trigger ──────────────────────────────────────────────
+            if (user && message && NUTRITION_LOG_RE.test(message)) {
+                try {
+                    const { logFoodIntake } = await import("./services/nutrition.service.js");
+                    const log = await logFoodIntake(user.id, message);
+                    return res.json({
+                        text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`
+                    });
+                }
+                catch (logErr) {
+                    console.error("[Chat/Nutrition Log] Error:", logErr.message);
+                }
+            }
+            // ── 1. Fetch structured fitness profile ────────────────────────────────
+            let fitnessProfile = null;
+            if (user) {
+                fitnessProfile = await getProfile(user.id);
+            }
+            // ── 2. Regex-extract any inline field updates from this message ────────
+            if (user && message) {
+                const inlineUpdate = extractProfileUpdate(message);
+                if (Object.keys(inlineUpdate).length > 0) {
+                    await upsertProfile(user.id, inlineUpdate);
+                    fitnessProfile = await getProfile(user.id); // refresh
+                    console.log("[Profile] Inline update saved for user", user.id, ":", inlineUpdate);
+                }
+            }
+            // ── 3. Build context string (onboarding vs. partial vs. complete) ──────
+            const userContextStr = user
+                ? buildSystemContext(fitnessProfile, user.profile_context)
+                : "";
             const systemPrompt = `Role & Identity
 You are the high-energy, motivating virtual assistant for Sweat Fix Gym.
 Your goal is to help members with gym information, membership details, and general fitness motivation.
@@ -499,6 +639,11 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                 if (jsonMatch) {
                     try {
                         const parsed = JSON.parse(jsonMatch[1]);
+                        // ── profile_update: AI-driven profile save (used during onboarding) ──
+                        if (parsed.profile_update) {
+                            await upsertProfile(user.id, parsed.profile_update);
+                            console.log("[Profile] AI profile_update saved for user", user.id, ":", parsed.profile_update);
+                        }
                         if (parsed.memory) {
                             const currentContext = user.profile_context
                                 ? user.profile_context + "\\n"
