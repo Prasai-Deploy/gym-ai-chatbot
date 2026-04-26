@@ -100,7 +100,7 @@ export function MacroTracker({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="glass-panel rounded-[32px] md:rounded-[40px] p-6 md:p-8 h-full flex flex-col"
+      className="glass-panel rounded-3xl p-6 md:p-8"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -120,11 +120,11 @@ export function MacroTracker({
       <div className="mb-6 p-4 rounded-2xl border" style={{ background: 'var(--surface-elevated)', borderColor: 'var(--glass-border)' }}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Flame size={16} style={{ color: 'var(--accent-coral)' }} />
+            <Flame size={16} className="text-orange-400" />
             <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Total Calories</span>
           </div>
           <div className="text-right flex items-baseline gap-1">
-            <span className="text-3xl font-bold" style={{ color: 'var(--accent-coral)' }}>{calories.toFixed(0)}</span>
+            <span className="text-3xl font-bold text-orange-400">{calories.toFixed(0)}</span>
             {caloriesGoal && caloriesGoal > 0 ? (
               <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>/ {caloriesGoal} kcal</span>
             ) : (
@@ -136,7 +136,7 @@ export function MacroTracker({
           <div className="h-2 mt-3 rounded-full overflow-hidden" style={{ background: 'var(--surface-input)' }}>
             <div 
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((calories / caloriesGoal) * 100, 100)}%`, background: 'var(--gradient-warm)' }}
+              style={{ width: `${Math.min((calories / caloriesGoal) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
             />
           </div>
         ) : null}

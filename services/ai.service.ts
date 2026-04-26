@@ -41,7 +41,7 @@ export async function callAI(
         "X-Title": "Sweat Fix Gym",
       },
       body: JSON.stringify({
-        model: "openrouter/auto:free",
+        model: "nvidia/nemotron-3-super-120b-a12b:free",
         messages,
         temperature: 0.7,
       }),

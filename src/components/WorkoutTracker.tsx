@@ -25,7 +25,7 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-export function WorkoutTracker({ customPlanString }: { customPlanString?: string }) {
+export function WorkoutTracker() {
   const [isActive, setIsActive] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>(DEFAULT_EXERCISES);
@@ -43,31 +43,10 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
     };
   }, [isActive, isFinished]);
 
-  const parseCustomPlan = (planStr: string): Exercise[] => {
-    const lines = planStr.split(/[\n,]/).map(s => s.trim()).filter(s => s.length > 0 && !s.toLowerCase().includes('workout plan'));
-    if (lines.length === 0) return DEFAULT_EXERCISES;
-    return lines.map((line, i) => {
-      const match = line.match(/(\d+\s*[x×*]\s*\d+)/i) || line.match(/(\d+\s*sets\s*(of)?\s*\d+)/i);
-      let sets = "";
-      let name = line;
-      if (match) {
-        sets = match[1];
-        name = line.replace(match[1], "").replace(/^[-*•\d.:]+\s*/, "").trim();
-      } else {
-        name = line.replace(/^[-*•\d.:]+\s*/, "").trim();
-      }
-      return { id: `custom-${i}`, name: name || 'Exercise', sets, done: false };
-    });
-  };
-
   const handleStart = () => {
     setIsActive(true);
     setIsFinished(false);
-    if (customPlanString) {
-      setExercises(parseCustomPlan(customPlanString));
-    } else {
-      setExercises(DEFAULT_EXERCISES);
-    }
+    setExercises(DEFAULT_EXERCISES);
     setElapsed(0);
   };
 
@@ -85,11 +64,7 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
   const handleReset = () => {
     setIsActive(false);
     setIsFinished(false);
-    if (customPlanString) {
-      setExercises(parseCustomPlan(customPlanString));
-    } else {
-      setExercises(DEFAULT_EXERCISES);
-    }
+    setExercises(DEFAULT_EXERCISES);
     setElapsed(0);
     if (timerRef.current) clearInterval(timerRef.current);
   };
@@ -103,7 +78,7 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-panel rounded-[32px] md:rounded-[40px] p-6 md:p-8 h-full flex flex-col"
+      className="glass-panel rounded-3xl p-6 md:p-8"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -114,8 +89,8 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
             {isActive ? (isFinished ? 'Workout complete!' : 'In progress...') : 'Ready to train?'}
           </p>
         </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-lime)' }}>
-          <Dumbbell size={20} className="text-black" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-accent)' }}>
+          <Dumbbell size={20} className="text-white" />
         </div>
       </div>
 
@@ -134,9 +109,9 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
               className="btn-gradient px-10 py-5 rounded-2xl text-lg font-bold inline-flex items-center gap-3 mx-auto"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              style={{ background: 'var(--accent-lime)', color: '#000' }}
+              style={{ background: 'var(--gradient-accent)' }}
             >
-              <Play size={22} fill="black" className="text-black" />
+              <Play size={22} fill="white" />
               Start Workout
             </motion.button>
             <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
@@ -148,6 +123,7 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
         {/* ---- STATE: ACTIVE ---- */}
         {isActive && !isFinished && (
           <motion.div
+            key="active"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -264,6 +240,7 @@ export function WorkoutTracker({ customPlanString }: { customPlanString?: string
         {/* ---- STATE: FINISHED ---- */}
         {isFinished && (
           <motion.div
+            key="finished"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
