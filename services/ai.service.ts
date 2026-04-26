@@ -41,7 +41,7 @@ export async function callAI(
         "X-Title": "Sweat Fix Gym",
       },
       body: JSON.stringify({
-        model: "arcee-ai/trinity-large-preview:free",
+        model: "openrouter/auto:free",
         messages,
         temperature: 0.7,
       }),

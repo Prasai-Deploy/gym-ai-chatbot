@@ -206,7 +206,7 @@ export async function callWorkoutAI(prompt: string): Promise<WorkoutPlan> {
       "X-Title":      "Sweat Fix Gym",
     },
     body: JSON.stringify({
-      model:       "arcee-ai/trinity-large-preview:free",
+      model:       "openrouter/auto:free",
       messages:    [{ role: "user", content: prompt }],
       temperature: 0.6,   // slightly lower for deterministic JSON
       top_p:       0.8,
