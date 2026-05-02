@@ -63,11 +63,19 @@
    BASE STYLES
    ======================================== */
 
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--surface-primary);
   color: var(--text-primary);
   @apply antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-height: 100svh; /* Small viewport height unit for mobile browsers */
 }
 
 ::selection {

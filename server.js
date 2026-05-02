@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import mysql from "mysql2/promise";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -13,6 +12,11 @@ import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
+import progressRouter from "./routes/progressDashboard.routes.js";
+import gamificationRouter from "./routes/gamification.routes.js";
+import pushRouter from "./routes/push.routes.js";
+import { runHourlyPushTasks, runWeeklySummaryIfDue } from "./services/pushCron.service.js";
+import pool from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -22,21 +26,7 @@ import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.s
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
-// ─────────────────────────────────────────────────────────────────────────────
-// MySQL connection pool
-// ─────────────────────────────────────────────────────────────────────────────
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: Number(process.env.DB_PORT) || 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    timezone: "+00:00",
-    decimalNumbers: true,
-});
+// Helper functions for DB access using the shared pool
 // Helpers – thin wrappers so the rest of the code stays readable
 async function dbGet(sql, params = []) {
     const [rows] = await pool.execute(sql, params);
@@ -170,7 +160,7 @@ async function startServer() {
                 // Refresh demo user state
                 await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
                 await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-                await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
+                await dbRun("DELETE FROM user_profiles WHERE user_id = ?", [user.id]);
                 await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
             }
             req.login(user, (err) => {
@@ -390,6 +380,18 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     app.use("/api", dashboardRouter);
     // ───────────────────────────────────────────────────────────────────────────
+    // Progress Dashboard routes
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/progress", progressRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Gamification routes
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/gamification", gamificationRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Push Notification routes
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use("/api/push", pushRouter);
+    // ───────────────────────────────────────────────────────────────────────────
     // OpenRouter AI connector
     // ───────────────────────────────────────────────────────────────────────────
     async function getOpenRouterResponse(userMessage, history, systemMessage) {
@@ -467,7 +469,7 @@ async function startServer() {
                     const profile = await getProfile(user.id);
                     if (!profile || !isProfileComplete(profile)) {
                         return res.json({
-                            text: "⚠️ I need your complete fitness profile before I can generate a personalized workout. Please make sure your **goal**, **workout days**, **activity level**, **weight**, **height**, **age**, and **diet type** are all set — then ask me again!",
+                            text: "⚠️ I need your complete fitness profile before I can generate a personalized workout. Please complete your onboarding or set your **goal**, **gender**, **age**, **weight**, **height**, **activity level**, and **focus areas** — then ask me again!",
                         });
                     }
                     const today = new Date().toISOString().split("T")[0];
@@ -557,72 +559,24 @@ async function startServer() {
             const userContextStr = user
                 ? buildSystemContext(fitnessProfile, user.profile_context)
                 : "";
-            const systemPrompt = `Role & Identity
-You are the high-energy, motivating virtual assistant for Sweat Fix Gym.
-Your goal is to help members with gym information, membership details, and general fitness motivation.
+            const systemPrompt = `${userContextStr}
 
 Rules to follow strictly:
 1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
 2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
-3. Brevity: Keep all general responses under 3 to 4 sentences. However, when asked to generate a workout or diet plan, provide a highly detailed, comprehensive response.
-
-Interaction Structure
-Onboarding & Details Gathering: Before creating any diet or workout plan, you MUST politely ask the user to provide their current details if they haven't already. Specifically, ask for:
-1. Current weight & height
-2. Primary fitness goal (e.g., cut, bulk, bodyweight mastery)
-3. Dietary restrictions
-4. Available equipment
-5. Preferred meal frequency (how many times they prefer to eat per day)
-DO NOT generate a plan until you have this information.
+3. Brevity: Keep general responses under 3 to 4 sentences. For workout/diet plans, be highly detailed.
 
 Auto-Fill Protocol:
-ONLY ONCE you have gathered the user's details, you can generate a highly accurate, customized diet and workout plan.
-The generated plans must be highly detailed. The workout chart must be a detailed per-day plan, and the diet plan must be broken down specifically by their preferred number of meals per day with full macro details.
-Whenever you generate this specific plan for the day, YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Whenever you generate a workout or diet plan, YOU MUST append a JSON block at the very end of your response inside triple backticks:
 \`\`\`json
 {
   "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
-  "macro_goals": {
-    "calories": 2500,
-    "protein": 180,
-    "carbs": 250,
-    "fats": 65
-  }
+  "diet_plan": "Detailed diet plan",
+  "macro_goals": { "calories": 0, "protein": 0, "carbs": 0, "fats": 0 }
 }
 \`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
 
-Memory Extraction Context:
-Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "memory": "User has a bad left knee and only has access to dumbbells."
-}
-\`\`\`
-If there is no new fact to save in this message, do not include the "memory" property. Do not just repeat existing memory.
-
-Progress & Macro Extraction Protocol:
-If the user indicates they just completed a workout, drank water, or ate a meal, YOU MUST estimate the caloric/nutritional value and add a "progress_log" property to the JSON block.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "progress_log": {
-    "workout_name": "Chicken Breast & Rice",
-    "calories": 450,
-    "protein": 45,
-    "carbs": 50,
-    "fats": 5,
-    "water": 0
-  }
-}
-\`\`\`
-If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
+Include "memory" for new facts or "progress_log" for completed activities in the JSON block when relevant.`;
             let aiContent;
             try {
                 aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
@@ -711,6 +665,22 @@ If there is no completed meal or workout to log, do not include "progress_log".$
     }
     app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on http://localhost:${PORT}`);
+        // ─────────────────────────────────────────────────────────────────────────
+        // Scheduled Push Notifications (Simple intervals)
+        // ─────────────────────────────────────────────────────────────────────────
+        // Run hourly tasks every 60 minutes
+        setInterval(() => {
+            runHourlyPushTasks().catch(e => console.error("[Cron] Hourly error:", e));
+        }, 60 * 60 * 1000);
+        // Run weekly check every 4 hours (to ensure it hits the 9 AM Sunday window)
+        setInterval(() => {
+            runWeeklySummaryIfDue().catch(e => console.error("[Cron] Weekly error:", e));
+        }, 4 * 60 * 60 * 1000);
+        // Initial run on boot (after 10s delay to allow DB/Env stabilization)
+        setTimeout(() => {
+            runHourlyPushTasks().catch(e => console.error("[Cron] Init Hourly error:", e));
+            runWeeklySummaryIfDue().catch(e => console.error("[Cron] Init Weekly error:", e));
+        }, 10000);
     });
 }
 startServer();

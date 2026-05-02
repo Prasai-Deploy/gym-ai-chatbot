@@ -28,7 +28,7 @@ export async function callAI(userMessage, systemMessage, history = []) {
             "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-            model: "openrouter/auto:free",
+            model: "tencent/hy3-preview:free",
             messages,
             temperature: 0.7,
         }),

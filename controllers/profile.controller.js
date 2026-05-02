@@ -4,12 +4,13 @@ import { getProfile, upsertProfile, isProfileComplete, } from "../services/profi
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getProfileHandler(req, res) {
     const user = req.user;
-    const requestedId = parseInt(req.params.userId, 10);
+    const requestedId = req.params.userId;
     if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
     }
-    if (user.id !== requestedId) {
+    // Support both numeric and string IDs for comparison
+    if (user.id.toString() !== requestedId.toString()) {
         res.status(403).json({ error: "Forbidden — you can only access your own profile" });
         return;
     }
@@ -39,17 +40,16 @@ export async function upsertProfileHandler(req, res) {
         res.status(401).json({ error: "Unauthorized" });
         return;
     }
-    const { goal, weight_kg, height_cm, age, diet_type, activity_level, workout_days, notes, } = req.body;
+    const { goal, gender, age, weight_kg, height_cm, activity_level, focus_areas, } = req.body;
     try {
         await upsertProfile(user.id, {
             goal,
+            gender,
+            age,
             weight_kg,
             height_cm,
-            age,
-            diet_type,
             activity_level,
-            workout_days,
-            notes,
+            focus_areas,
         });
         const profile = await getProfile(user.id);
         res.json({

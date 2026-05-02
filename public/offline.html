@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline — Sweatfix AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #09090b;
+      color: #fafafa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      overflow: hidden;
+    }
+    /* Background blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 400px; height: 400px; background: rgba(124,58,237,0.15); top: -100px; right: -100px; }
+    .blob-2 { width: 300px; height: 300px; background: rgba(236,72,153,0.10); bottom: 10%; left: -80px; }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      max-width: 380px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 0 40px rgba(124,58,237,0.4);
+    }
+
+    .card {
+      background: rgba(24,24,27,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 2rem 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      color: #a1a1aa;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .wifi-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.6;
+    }
+
+    .retry-btn {
+      margin-top: 1.5rem;
+      padding: 0.75rem 2rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      color: white;
+      font-weight: 700;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .retry-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .retry-btn:active { transform: scale(0.97); }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="content">
+    <div class="logo">S</div>
+    <div class="card">
+      <div class="wifi-icon">📡</div>
+      <h1>You're Offline</h1>
+      <p>Your AI coach will be back once you reconnect. Check your internet connection and try again.</p>
+      <button class="retry-btn" onclick="window.location.reload()">Try Again</button>
+    </div>
+  </div>
+</body>
+</html>
