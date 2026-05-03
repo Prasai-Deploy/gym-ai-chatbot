@@ -18,15 +18,13 @@ export async function getProfileHandler(
   res: Response
 ): Promise<void> {
   const user = (req as any).user;
-  const requestedId = req.params.userId;
+  const requestedId = parseInt(req.params.userId, 10);
 
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  
-  // Support both numeric and string IDs for comparison
-  if (user.id.toString() !== requestedId.toString()) {
+  if (user.id !== requestedId) {
     res.status(403).json({ error: "Forbidden — you can only access your own profile" });
     return;
   }
@@ -66,23 +64,25 @@ export async function upsertProfileHandler(
 
   const {
     goal,
-    gender,
-    age,
     weight_kg,
     height_cm,
+    age,
+    diet_type,
     activity_level,
-    focus_areas,
+    workout_days,
+    notes,
   }: FitnessProfileData = req.body;
 
   try {
     await upsertProfile(user.id, {
       goal,
-      gender,
-      age,
       weight_kg,
       height_cm,
+      age,
+      diet_type,
       activity_level,
-      focus_areas,
+      workout_days,
+      notes,
     });
 
     const profile = await getProfile(user.id);

@@ -136,17 +136,3 @@ CREATE TABLE IF NOT EXISTS user_stats (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- User Profiles (AI Coaching Memory)
-CREATE TABLE IF NOT EXISTS user_profiles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id VARCHAR(255) NOT NULL UNIQUE,
-  goal VARCHAR(100),
-  gender VARCHAR(20),
-  age INT,
-  weight_kg INT,
-  height_cm INT,
-  activity_level VARCHAR(50),
-  focus_areas TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -43,25 +43,6 @@ import { MacroTracker } from './components/MacroTracker';
 import { WorkoutTracker } from './components/WorkoutTracker';
 // --- END FEATURE: WORKOUT TRACKER ---
 
-// --- START FEATURE: ONBOARDING ---
-import { Onboarding } from './components/Onboarding';
-// --- END FEATURE: ONBOARDING ---
-
-import { Sidebar } from './components/Sidebar';
-import { WorkoutCard, NutritionCard } from './components/ResponseCards';
-import { ProgressDashboard } from './components/ProgressDashboard';
-import { BadgesPage } from './components/BadgesPage';
-import { StreakDisplay } from './components/StreakDisplay';
-import { StreakToastContainer } from './components/StreakToastContainer';
-import { BadgeUnlockOverlay } from './components/BadgeUnlockOverlay';
-import { useGamification } from './hooks/useGamification';
-import { usePWA } from './hooks/usePWA';
-import { usePushNotifications } from './hooks/usePushNotifications';
-import { InstallBanner } from './components/InstallBanner';
-import { NotificationPrompt } from './components/NotificationPrompt';
-import { NotificationSettingsPanel } from './components/NotificationSettings';
-import { BottomNav } from './components/BottomNav';
-
 interface User {
   id: number;
   name: string;
@@ -245,43 +226,11 @@ export default function App() {
   const [dailyPlans, setDailyPlans] = useState<DailyPlan[]>([]);
   const [showQR, setShowQR] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  interface ChatMessage {
-    id: string;
-    role: string;
-    content: string;
-    timestamp: string;
-    isStreaming?: boolean;
-    planData?: any;
-  }
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?", timestamp: format(new Date(), 'h:mm a') }
+  const [messages, setMessages] = useState<{ role: string, content: string }[]>([
+    { role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }
   ]);
-  const [quickReplies, setQuickReplies] = useState<string[]>([
-    "🏋️ Generate a Workout",
-    "🥗 Build a Diet Plan",
-    "💪 How to build muscle?"
-  ]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [hasProfile, setHasProfile] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
@@ -289,17 +238,6 @@ export default function App() {
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Layout states
-  const [activeTab, setActiveTab] = useState('chat');
-
-  // Gamification
-  const gamification = useGamification(!!user);
-
-  // PWA
-  const pwa = usePWA();
-  const push = usePushNotifications(!!user);
-
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -311,20 +249,6 @@ export default function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping, chatOpen]);
-
-  // Handle iOS/Android keyboard lifting the input bar
-  useEffect(() => {
-    if (!window.visualViewport) return;
-    const handleResize = () => {
-      const bar = document.getElementById('chat-input-container');
-      if (bar) {
-        const offset = window.innerHeight - window.visualViewport!.height;
-        bar.style.bottom = `${offset}px`;
-      }
-    };
-    window.visualViewport.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
-  }, []);
 
   // Plan state
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -474,28 +398,11 @@ export default function App() {
       if (data) {
         fetchProgress();
         fetchPlans();
-        fetchProfileStatus(data.id);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchProfileStatus = async (userId: number) => {
-    try {
-      const res = await fetch(`/api/profile/${userId}`);
-      const data = await res.json();
-      if (data.hasProfile && data.isComplete) {
-        setHasProfile(true);
-        setShowOnboarding(false);
-      } else {
-        setHasProfile(false);
-        setShowOnboarding(true);
-      }
-    } catch (e) {
-      console.error("Error fetching profile status:", e);
     }
   };
 
@@ -528,7 +435,7 @@ export default function App() {
     setUser(null);
     setProgress([]);
     setDailyPlans([]);
-    setMessages([{ id: Date.now().toString(), role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?", timestamp: format(new Date(), 'h:mm a') }]);
+    setMessages([{ role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }]);
   };
 
   const handleDemoLogin = async () => {
@@ -640,16 +547,10 @@ export default function App() {
   const handleSendMessage = async (explicitMessage?: string | React.MouseEvent | React.KeyboardEvent) => {
     const textToSend = typeof explicitMessage === 'string' ? explicitMessage : input;
     if (!textToSend.trim()) return;
-    
-    const userMsgId = Date.now().toString();
-    const newMessages = [...messages, { id: userMsgId, role: 'user', content: textToSend, timestamp: format(new Date(), 'h:mm a') }];
+    const newMessages = [...messages, { role: 'user', content: textToSend }];
     setMessages(newMessages);
-    setQuickReplies([]); // Clear chips on user input
     setInput('');
     setIsTyping(true);
-
-    // Award first_chat badge
-    gamification.triggerBadge('first_chat');
 
     try {
       const history = messages.map(m => ({
@@ -658,15 +559,23 @@ export default function App() {
       }));
       let advice = await getFitnessAdvice(textToSend, history);
 
-      let extractedPlanData: any = null;
+      // Auto-fill parsing
       const jsonMatch = advice.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
         try {
           const planData = JSON.parse(jsonMatch[1]);
-          extractedPlanData = planData;
           if (planData.workout_plan || planData.diet_plan) {
             advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
-            advice += "\n\n*(I have automatically attached this plan to your Daily Protocol!)*";
+
+            let planMarkdown = `\n\n### 📝 Your Generated Protocol\n\n`;
+            if (planData.workout_plan) {
+              planMarkdown += `**Workout Plan:**\n${planData.workout_plan}\n\n`;
+            }
+            if (planData.diet_plan) {
+              planMarkdown += `**Diet Plan:**\n${planData.diet_plan}\n\n`;
+            }
+
+            advice += planMarkdown + "*(I have automatically attached this plan to your Daily Protocol!)*";
 
             await fetch('/api/plans', {
               method: 'POST',
@@ -692,41 +601,10 @@ export default function App() {
         }
       }
 
-
-      setIsTyping(false);
-      const modelMsgId = (Date.now() + 1).toString();
-      
-      // Simulated Streaming Effect
-      const finalAdvice = advice || 'I am here to help!';
-      const words = finalAdvice.split(' ');
-      let currentText = '';
-      
-      setMessages([...newMessages, { id: modelMsgId, role: 'model', content: '', timestamp: format(new Date(), 'h:mm a'), isStreaming: true }]);
-
-      for (let i = 0; i < words.length; i++) {
-        currentText += (i === 0 ? '' : ' ') + words[i];
-        setMessages([...newMessages, { 
-          id: modelMsgId, 
-          role: 'model', 
-          content: currentText, 
-          timestamp: format(new Date(), 'h:mm a'), 
-          isStreaming: i !== words.length - 1,
-          planData: i === words.length - 1 ? extractedPlanData : undefined 
-        }]);
-        await new Promise(resolve => setTimeout(resolve, 30)); // 30ms per word streaming speed
-      }
-
-      // Context-aware suggestion chips
-      let nextChips = ['Tell me more', 'Why is that?', 'Give me a tip'];
-      if (extractedPlanData) {
-         if (extractedPlanData.workout_plan) nextChips = ['Make it harder 🔥', 'Swap an exercise 🔄', 'How long will this take? ⏱️'];
-         else if (extractedPlanData.diet_plan) nextChips = ['Vegetarian options? 🥬', 'I have allergies ⚠️', 'What about snacks? 🍎'];
-      }
-      setQuickReplies(nextChips);
-
+      setMessages([...newMessages, { role: 'model', content: advice || 'I am here to help!' }]);
     } catch (e: any) {
       console.error(e);
-      setMessages([...newMessages, { id: Date.now().toString(), role: 'model', content: `**Error:** ${e.message}`, timestamp: format(new Date(), 'h:mm a') }]);
+      setMessages([...newMessages, { role: 'model', content: `**Error:** ${e.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -875,122 +753,39 @@ export default function App() {
   const totalWater = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
   const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
 
-  if (showOnboarding && user) {
-    return <Onboarding userId={user.id} onComplete={() => { setShowOnboarding(false); setHasProfile(true); fetchUser(); push.setShowNotifPrompt(true); }} />;
-  }
-
   return (
-    <div className="flex h-screen font-sans overflow-hidden bg-[var(--surface-primary)] text-[var(--text-primary)]" style={{ height: '100svh' }}>
-      {!isMobile && (
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          isOpen={sidebarOpen} 
-          setIsOpen={setSidebarOpen} 
-          isMobile={isMobile} 
-        />
-      )}
-      <div className="flex-1 flex flex-col h-screen relative w-full overflow-hidden">
+    <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
       {/* Decorative Background Blobs */}
       <div className="bg-blob bg-blob-1" />
       <div className="bg-blob bg-blob-2" />
       <div className="bg-blob bg-blob-3" />
 
       {/* Header */}
-      <header className="px-4 py-2 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" 
-        style={{ 
-          height: isMobile ? '52px' : 'auto',
-          borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-          paddingTop: isMobile ? 'calc(0.5rem + env(safe-area-inset-top))' : '1.5rem'
-        }}>
-        
-        {/* Left: Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-1">
+      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
             <Dumbbell className="text-white w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          {!isMobile && (
-            <div className="min-w-0 flex-shrink">
-              <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Streak (Mobile Only) */}
-        {isMobile && user && (
-          <div className="flex-1 flex justify-center">
-            <StreakDisplay streak={gamification.currentStreak} />
+          <div className="min-w-0 flex-shrink">
+            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
           </div>
-        )}
-
-        {/* Right: Actions / Avatar */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-end">
-          {!isMobile && user && <StreakDisplay streak={gamification.currentStreak} />}
+        </div>
+        <div className="flex items-center gap-4">
+          {/* --- START FEATURE: THEME TOGGLE --- */}
           <ThemeToggle />
-          
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform outline-none">
-              <img src={user?.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--glass-border)' }} alt={user?.name} />
+          {/* --- END FEATURE: THEME TOGGLE --- */}
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform">
+              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--glass-border)' }} alt={user.name} />
             </button>
-            {!isMobile && (
-              <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
-                <LogOut size={18} />
-              </button>
-            )}
+            <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto relative z-10 w-full no-scrollbar pb-24" style={{ paddingBottom: isMobile ? 'calc(120px + env(safe-area-inset-bottom))' : '6rem' }}>
-        {/* Progress Dashboard tab */}
-        {activeTab === 'progress' && <ProgressDashboard />}
-
-        {/* Badges tab */}
-        {activeTab === 'badges' && <BadgesPage />}
-
-        {/* Settings tab */}
-        {activeTab === 'settings' && (
-          <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-8">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black" style={{ color: 'var(--text-primary)' }}>Settings</h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Manage your preferences</p>
-            </div>
-
-            {/* Install App */}
-            {!pwa.isStandalone && (
-              <section className="space-y-3">
-                <h2 className="text-sm font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>App</h2>
-                <div className="glass-panel rounded-2xl p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm" style={{ background: 'var(--gradient-primary)' }}>S</div>
-                    <div>
-                      <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Install Sweatfix AI</div>
-                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Add to your home screen</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={pwa.triggerInstall}
-                    className="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0 transition-all hover:opacity-90"
-                    style={{ background: pwa.canInstall ? 'var(--gradient-primary)' : 'var(--surface-elevated)', color: pwa.canInstall ? 'white' : 'var(--text-muted)' }}
-                    disabled={!pwa.canInstall}
-                  >
-                    {pwa.canInstall ? 'Install' : pwa.isIOS ? 'See Instructions' : 'Already installed'}
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* Notifications */}
-            <section className="space-y-3">
-              <h2 className="text-sm font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Notifications</h2>
-              <NotificationSettingsPanel push={push} />
-            </section>
-          </div>
-        )}
-
-        {/* My Plan tab = existing dashboard content */}
-        {activeTab === 'my_plan' ? (
-          <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}
         <section>
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
@@ -1139,159 +934,89 @@ export default function App() {
             )}
           </div>
         </section>
-          </div>
-        ) : null}
       </main>
 
-      {/* ── Gamification Overlays ── */}
-      <BadgeUnlockOverlay badge={gamification.pendingBadges[0] ?? null} onDismiss={gamification.dismissBadge} />
-      <StreakToastContainer toasts={gamification.toasts} onDismiss={gamification.dismissToast} />
+      {/* Chat Bot Trigger */}
+      <button
+        aria-label="Open Chat"
+        onClick={() => setChatOpen(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-purple-500/50"
+        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
+      >
+        <MessageSquare size={28} />
+      </button>
 
-      {/* ── PWA Overlays ── */}
-      <InstallBanner pwa={pwa} />
-      <NotificationPrompt
-        visible={push.showNotifPrompt}
-        onAllow={push.requestPermissionAndSubscribe}
-        onDismiss={() => push.setShowNotifPrompt(false)}
-      />
-
-      {/* Chat Window (Now the main view when activeTab === 'chat') */}
+      {/* Chat Window */}
       <AnimatePresence>
-        {activeTab === 'chat' && (
+        {chatOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col h-full relative overflow-hidden"
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] glass-panel md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
           >
-            <div className="p-4 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--glass-border)', paddingTop: isMobile ? '0' : '1rem' }}>
+            <div className="p-6 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--glass-border)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
                   <TrendingUp size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Sweat Fix Coach</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Always Online</p>
+                  <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Sweat Fix Coach</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400">Always Online</p>
                 </div>
               </div>
+              <button aria-label="Close Chat" onClick={() => setChatOpen(false)} className="hover:opacity-70 transition-opacity min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none" style={{ color: 'var(--text-muted)' }}>
+                <Plus className="rotate-45" size={24} />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {loading && messages.length <= 1 && (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex gap-3 animate-pulse">
-                      <div className="w-8 h-8 rounded-full bg-[var(--surface-elevated)]" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-[var(--surface-elevated)] rounded w-3/4" />
-                        <div className="h-4 bg-[var(--surface-elevated)] rounded w-1/2" />
-                      </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium`} style={{ background: m.role === 'user' ? 'var(--gradient-primary)' : 'var(--surface-elevated)', color: m.role === 'user' ? 'white' : 'var(--text-primary)' }}>
+                    <div className="prose chat-prose max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
+                      <ReactMarkdown>
+                        {m.content}
+                      </ReactMarkdown>
                     </div>
-                  ))}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="p-4 rounded-2xl flex gap-1.5 items-center min-h-[44px]" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
                 </div>
               )}
-              {messages.map((m, i) => (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  key={m.id || i} 
-                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {m.role === 'model' && (
-                    <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mr-3 mt-1 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
-                      <TrendingUp size={16} className="text-white" />
-                    </div>
-                  )}
-                  <div className={`max-w-[88%] sm:max-w-[85%] flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div 
-                      className={`p-4 rounded-[20px] text-sm font-medium shadow-sm ${
-                        m.role === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'
-                      } ${m.role === 'user' ? 'max-w-[92%]' : 'max-w-full'}`} 
-                      style={{ 
-                        background: m.role === 'user' ? 'var(--gradient-primary)' : 'var(--surface-elevated)', 
-                        color: m.role === 'user' ? 'white' : 'var(--text-primary)',
-                        border: m.role === 'user' ? 'none' : '1px solid var(--glass-border)'
-                      }}
-                    >
-                      <div className="prose chat-prose max-w-none prose-p:leading-relaxed prose-ul:ml-4 prose-ul:list-disc prose-ul:my-1 prose-li:my-0 text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-strong:text-emerald-400">
-                        <ReactMarkdown>{m.content}</ReactMarkdown>
-                        {m.isStreaming && <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-1 align-middle animate-pulse" />}
-                        {m.planData?.workout_plan && <WorkoutCard content={m.planData.workout_plan} />}
-                        {m.planData?.diet_plan && <NutritionCard content={m.planData.diet_plan} />}
-                      </div>
-                    </div>
-                    {m.timestamp && (
-                      <span className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: 'var(--text-muted)' }}>
-                        {m.timestamp}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-              
-              {isTyping && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-                  <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mr-3 mt-1 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
-                    <TrendingUp size={16} className="text-white" />
-                  </div>
-                  <div className="p-4 rounded-[20px] rounded-tl-sm flex gap-1.5 items-center min-h-[44px] shadow-sm" style={{ background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)' }}>
-                    <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--text-muted)' }} />
-                    <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:0.2s]" style={{ background: 'var(--text-muted)' }} />
-                    <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:0.4s]" style={{ background: 'var(--text-muted)' }} />
-                  </div>
-                </motion.div>
-              )}
-              <div ref={messagesEndRef} className="h-4" />
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Quick Action Prompts */}
-            {quickReplies.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-3 pb-2 px-0" style={{ borderTop: '1px solid var(--glass-border)' }}>
-                <div className="flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar snap-x touch-pan-x">
-                  {quickReplies.map((action, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSendMessage(action)}
-                      className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 snap-start shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[44px] min-w-max"
-                      style={{ background: 'var(--surface-input)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)' }}
-                    >
-                      {action}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            <div className="pt-3 pb-2 px-0" style={{ borderTop: '1px solid var(--glass-border)' }}>
+              <div className="flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar snap-x">
+                {QUICK_ACTIONS.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSendMessage(action)}
+                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 snap-start shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[44px]"
+                    style={{ background: 'var(--surface-input)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)' }}
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            {/* Input Bar */}
-            <div 
-              id="chat-input-container"
-              className="p-3 sm:p-4 transition-all duration-300 ease-out" 
-              style={{ 
-                background: 'var(--surface-elevated)', 
-                borderTop: '1px solid var(--glass-border)',
-                paddingBottom: isMobile ? '12px' : '1rem',
-                position: isMobile ? 'fixed' : 'relative',
-                bottom: isMobile ? 'calc(60px + env(safe-area-inset-bottom))' : 'auto',
-                left: 0,
-                right: 0,
-                zIndex: 40
-              }}
-            >
-              <div className="flex gap-2 items-end max-w-5xl mx-auto">
-                <button
-                  aria-label={isListening ? "Stop listening" : "Start voice input"}
-                  onClick={toggleListening}
-                  className={`min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 hover:text-white'}`}
-                >
-                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
+            <div className="p-4" style={{ background: 'var(--surface-elevated)', borderTop: '1px solid var(--glass-border)' }}>
+              <div className="flex gap-2 items-end">
                 <textarea
                   ref={textareaRef}
                   value={input}
                   aria-label="Chat input"
                   onChange={(e) => setInput(e.target.value)}
-                  onFocus={() => { if (isMobile) document.body.style.overflow = 'hidden'; }}
-                  onBlur={() => { if (isMobile) document.body.style.overflow = ''; }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -1306,6 +1031,13 @@ export default function App() {
                   className="flex-1 border-none rounded-2xl px-4 py-3 min-h-[44px] max-h-[120px] resize-none text-sm focus:ring-2 focus:ring-purple-500 shadow-inner outline-none transition-all duration-200 block no-scrollbar"
                   style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
                 />
+                <button
+                  aria-label={isListening ? "Stop listening" : "Start voice input"}
+                  onClick={toggleListening}
+                  className={`min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 hover:text-white'}`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
                 <button
                   aria-label="Send message"
                   onClick={() => {
@@ -1538,9 +1270,6 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-      {/* Mobile Bottom Nav */}
-      {isMobile && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />}
-      </div>
     </div>
   );
 }
