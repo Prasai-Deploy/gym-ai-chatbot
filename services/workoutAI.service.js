@@ -1,4 +1,3 @@
-import { callAI } from "./ai.service.js";
 // ─────────────────────────────────────────────────────────────────────────────
 // Split rotation maps
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,10 +147,34 @@ Respond with ONLY valid JSON in exactly this format (no extra text, no markdown,
  * Throws if the AI response is not valid JSON or if the API errors.
  */
 export async function callWorkoutAI(prompt) {
-    const raw = await callAI(prompt, "You are a professional personal trainer AI.", [], {
-        temperature: 0.6,
-        top_p: 0.8
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey?.trim()) {
+        throw new Error("OPENROUTER_API_KEY is not configured.");
+    }
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey.trim()}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+            "X-Title": "Sweat Fix Gym",
+        },
+        body: JSON.stringify({
+            model: "tencent/hy3-preview:free",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.6, // slightly lower for deterministic JSON
+            top_p: 0.8,
+        }),
     });
+    if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        const msg = typeof errJson.error === "string"
+            ? errJson.error
+            : errJson.error?.message ?? "OpenRouter API Error";
+        throw new Error(msg);
+    }
+    const data = await response.json();
+    const raw = (data.choices?.[0]?.message?.content ?? "").trim();
     // Strip any accidental markdown code-fences the model might add
     const cleaned = raw
         .replace(/^```(?:json)?\s*/i, "")

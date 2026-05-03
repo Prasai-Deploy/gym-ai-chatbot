@@ -7,16 +7,11 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import fs from "fs";
 import { EventEmitter } from "events";
 import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
-import progressRouter from "./routes/progressDashboard.routes.js";
-import gamificationRouter from "./routes/gamification.routes.js";
-import pushRouter from "./routes/push.routes.js";
-import { runHourlyPushTasks, runWeeklySummaryIfDue } from "./services/pushCron.service.js";
 import pool from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
@@ -24,7 +19,6 @@ import { extractProfileUpdate } from "./services/updateExtractor.service.js";
 import { decideSplit, buildWorkoutPrompt, callWorkoutAI, formatWorkoutForChat, } from "./services/workoutAI.service.js";
 import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, } from "./services/workout.service.js";
 import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.service.js";
-import { callAI } from "./services/ai.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -65,17 +59,13 @@ async function startServer() {
     const PORT = Number(process.env.PORT) || 3000;
     app.set("trust proxy", 1);
     app.use(express.json());
-    // Health check endpoint
-    app.get("/api/health", (_req, res) => {
-        res.json({ status: "ok", time: new Date().toISOString(), env: process.env.NODE_ENV || "production (default)" });
-    });
     app.use(session({
         secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
         resave: true,
         saveUninitialized: true,
         cookie: {
-            secure: process.env.NODE_ENV === "production" || !process.env.NODE_ENV,
-            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         },
@@ -101,7 +91,7 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     // Google OAuth strategy
     // ───────────────────────────────────────────────────────────────────────────
-    const callbackURL = (process.env.NODE_ENV === "production" || !process.env.NODE_ENV)
+    const callbackURL = process.env.NODE_ENV === "production"
         ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
         : "http://localhost:3000/auth/google/callback";
     passport.use(new GoogleStrategy({
@@ -166,7 +156,7 @@ async function startServer() {
                 // Refresh demo user state
                 await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
                 await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-                await dbRun("DELETE FROM user_profiles WHERE user_id = ?", [user.id]);
+                await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
                 await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
             }
             req.login(user, (err) => {
@@ -386,20 +376,49 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     app.use("/api", dashboardRouter);
     // ───────────────────────────────────────────────────────────────────────────
-    // Progress Dashboard routes
-    // ───────────────────────────────────────────────────────────────────────────
-    app.use("/api/progress", progressRouter);
-    // ───────────────────────────────────────────────────────────────────────────
-    // Gamification routes
-    // ───────────────────────────────────────────────────────────────────────────
-    app.use("/api/gamification", gamificationRouter);
-    // ───────────────────────────────────────────────────────────────────────────
-    // Push Notification routes
-    // ───────────────────────────────────────────────────────────────────────────
-    app.use("/api/push", pushRouter);
-    // ───────────────────────────────────────────────────────────────────────────
     // OpenRouter AI connector
     // ───────────────────────────────────────────────────────────────────────────
+    async function getOpenRouterResponse(userMessage, history, systemMessage) {
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey || apiKey.trim() === "") {
+            throw new Error("Missing Authentication: OPENROUTER_API_KEY is not defined in the environment or .env file.");
+        }
+        const messages = [
+            { role: "system", content: systemMessage },
+        ];
+        for (const h of history) {
+            const role = h.role === "model" || h.role === "assistant" ? "assistant" : "user";
+            const content = h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "";
+            if (content)
+                messages.push({ role, content });
+        }
+        messages.push({ role: "user", content: userMessage });
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey.trim()}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+                "X-Title": "Sweat Fix Gym",
+            },
+            body: JSON.stringify({
+                model: "tencent/hy3-preview:free",
+                messages,
+                temperature: 0.8,
+                top_p: 0.8,
+                top_k: 50,
+            }),
+        });
+        if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            const errorMessage = typeof errJson.error === "string"
+                ? errJson.error
+                : errJson.error?.message;
+            throw new Error(errorMessage || "OpenRouter API Error");
+        }
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || "I encountered an error.";
+    }
     // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
@@ -434,7 +453,7 @@ async function startServer() {
                     const profile = await getProfile(user.id);
                     if (!profile || !isProfileComplete(profile)) {
                         return res.json({
-                            text: "⚠️ I need your complete fitness profile before I can generate a personalized workout. Please complete your onboarding or set your **goal**, **gender**, **age**, **weight**, **height**, **activity level**, and **focus areas** — then ask me again!",
+                            text: "⚠️ I need your complete fitness profile before I can generate a personalized workout. Please make sure your **goal**, **workout days**, **activity level**, **weight**, **height**, **age**, and **diet type** are all set — then ask me again!",
                         });
                     }
                     const today = new Date().toISOString().split("T")[0];
@@ -524,37 +543,75 @@ async function startServer() {
             const userContextStr = user
                 ? buildSystemContext(fitnessProfile, user.profile_context)
                 : "";
-            const systemPrompt = `${userContextStr}
+            const systemPrompt = `Role & Identity
+You are the high-energy, motivating virtual assistant for Sweat Fix Gym.
+Your goal is to help members with gym information, membership details, and general fitness motivation.
 
-You are Sweatfix AI, a professional personal fitness coach and nutritionist. You have deep expertise in:
-- Strength training, hypertrophy, and fat loss programming
-- Macro and calorie-based nutrition planning
-- Workout form, injury prevention, and recovery
-- Motivation and habit building
+Rules to follow strictly:
+1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
+2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
+3. Brevity: Keep all general responses under 3 to 4 sentences. However, when asked to generate a workout or diet plan, provide a highly detailed, comprehensive response.
 
-Rules you always follow:
-1. Give specific, actionable answers — never vague advice
-2. When giving a workout plan, always include: exercise name, sets, reps, rest time, and a coaching tip
-3. When giving a nutrition plan, always include: meal name, ingredients, macros (protein/carbs/fat), and total calories
-4. Keep responses concise and scannable — use short paragraphs or bullet points, never long walls of text
-5. Always personalise based on the user's profile (goal, activity level, focus areas) that is injected into this prompt
-6. If the user asks something outside fitness/nutrition, politely redirect them back to their fitness goals
-7. Always be encouraging — celebrate effort, not just results
+Interaction Structure
+Onboarding & Details Gathering: Before creating any diet or workout plan, you MUST politely ask the user to provide their current details if they haven't already. Specifically, ask for:
+1. Current weight & height
+2. Primary fitness goal (e.g., cut, bulk, bodyweight mastery)
+3. Dietary restrictions
+4. Available equipment
+5. Preferred meal frequency (how many times they prefer to eat per day)
+DO NOT generate a plan until you have this information.
 
 Auto-Fill Protocol:
-Whenever you generate a workout or diet plan, YOU MUST append a JSON block at the very end of your response inside triple backticks:
+ONLY ONCE you have gathered the user's details, you can generate a highly accurate, customized diet and workout plan.
+The generated plans must be highly detailed. The workout chart must be a detailed per-day plan, and the diet plan must be broken down specifically by their preferred number of meals per day with full macro details.
+Whenever you generate this specific plan for the day, YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
 \`\`\`json
 {
   "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Detailed diet plan",
-  "macro_goals": { "calories": 0, "protein": 0, "carbs": 0, "fats": 0 }
+  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
+  "macro_goals": {
+    "calories": 2500,
+    "protein": 180,
+    "carbs": 250,
+    "fats": 65
+  }
 }
 \`\`\`
+This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
 
-Include "memory" for new facts or "progress_log" for completed activities in the JSON block when relevant.`;
+Memory Extraction Context:
+Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
+Example:
+\`\`\`json
+{
+  "workout_plan": "...",
+  "diet_plan": "...",
+  "memory": "User has a bad left knee and only has access to dumbbells."
+}
+\`\`\`
+If there is no new fact to save in this message, do not include the "memory" property. Do not just repeat existing memory.
+
+Progress & Macro Extraction Protocol:
+If the user indicates they just completed a workout, drank water, or ate a meal, YOU MUST estimate the caloric/nutritional value and add a "progress_log" property to the JSON block.
+Example:
+\`\`\`json
+{
+  "workout_plan": "...",
+  "diet_plan": "...",
+  "progress_log": {
+    "workout_name": "Chicken Breast & Rice",
+    "calories": 450,
+    "protein": 45,
+    "carbs": 50,
+    "fats": 5,
+    "water": 0
+  }
+}
+\`\`\`
+If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
             let aiContent;
             try {
-                aiContent = await callAI(message, systemPrompt, history || []);
+                aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
             }
             catch (apiError) {
                 console.error("OpenRouter API Error:", apiError.message);
@@ -625,8 +682,7 @@ Include "memory" for new facts or "progress_log" for completed activities in the
     // ───────────────────────────────────────────────────────────────────────────
     // Vite dev middleware / production static files
     // ───────────────────────────────────────────────────────────────────────────
-    if (process.env.NODE_ENV === "development") {
-        console.log("[Server] Starting in DEVELOPMENT mode (Vite middleware)...");
+    if (process.env.NODE_ENV !== "production") {
         const vite = await createViteServer({
             server: { middlewareMode: true },
             appType: "spa",
@@ -634,40 +690,13 @@ Include "memory" for new facts or "progress_log" for completed activities in the
         app.use(vite.middlewares);
     }
     else {
-        console.log("[Server] Starting in PRODUCTION mode (Serving static files)...");
-        const distPath = path.join(__dirname, "dist");
-        // Check if dist exists
-        if (!fs.existsSync(distPath)) {
-            console.warn(`[WARNING] Static folder 'dist' not found at ${distPath}. Build the project with 'npm run build' first.`);
-        }
-        app.use(express.static(distPath));
+        app.use(express.static(path.join(__dirname, "dist")));
         app.get("*", (_req, res) => {
-            if (fs.existsSync(path.join(distPath, "index.html"))) {
-                res.sendFile(path.join(distPath, "index.html"));
-            }
-            else {
-                res.status(404).send("Frontend build not found. Please run 'npm run build'.");
-            }
+            res.sendFile(path.join(__dirname, "dist", "index.html"));
         });
     }
     app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on http://localhost:${PORT}`);
-        // ─────────────────────────────────────────────────────────────────────────
-        // Scheduled Push Notifications (Simple intervals)
-        // ─────────────────────────────────────────────────────────────────────────
-        // Run hourly tasks every 60 minutes
-        setInterval(() => {
-            runHourlyPushTasks().catch(e => console.error("[Cron] Hourly error:", e));
-        }, 60 * 60 * 1000);
-        // Run weekly check every 4 hours (to ensure it hits the 9 AM Sunday window)
-        setInterval(() => {
-            runWeeklySummaryIfDue().catch(e => console.error("[Cron] Weekly error:", e));
-        }, 4 * 60 * 60 * 1000);
-        // Initial run on boot (after 10s delay to allow DB/Env stabilization)
-        setTimeout(() => {
-            runHourlyPushTasks().catch(e => console.error("[Cron] Init Hourly error:", e));
-            runWeeklySummaryIfDue().catch(e => console.error("[Cron] Init Weekly error:", e));
-        }, 10000);
     });
 }
 startServer();

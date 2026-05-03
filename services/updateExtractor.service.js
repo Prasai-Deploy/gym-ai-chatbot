@@ -72,10 +72,19 @@ export function extractProfileUpdate(message) {
     const ageMatch = message.match(AGE_RE);
     if (ageMatch)
         update.age = parseInt(ageMatch[1], 10);
+    const workoutMatch = message.match(WORKOUT_DAYS_RE);
+    if (workoutMatch)
+        update.workout_days = parseInt(workoutMatch[1], 10);
     // Keyword maps
     for (const [kw, val] of GOAL_MAP) {
         if (lower.includes(kw)) {
             update.goal = val;
+            break;
+        }
+    }
+    for (const [kw, val] of DIET_MAP) {
+        if (lower.includes(kw)) {
+            update.diet_type = val;
             break;
         }
     }
