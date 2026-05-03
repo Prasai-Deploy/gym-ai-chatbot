@@ -402,7 +402,7 @@ async function startServer() {
                 "X-Title": "Sweat Fix Gym",
             },
             body: JSON.stringify({
-                model: process.env.AI_MODEL || "qwen/qwen3-coder:free",
+                model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
                 messages,
                 temperature: 0.8,
                 top_p: 0.8,

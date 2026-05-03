@@ -160,7 +160,7 @@ export async function callWorkoutAI(prompt) {
             "X-Title": "Sweat Fix Gym",
         },
         body: JSON.stringify({
-            model: process.env.AI_MODEL || "qwen/qwen3-coder:free",
+            model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
             messages: [{ role: "user", content: prompt }],
             temperature: 0.6, // slightly lower for deterministic JSON
             top_p: 0.8,

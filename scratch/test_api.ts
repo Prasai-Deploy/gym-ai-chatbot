@@ -17,7 +17,7 @@ async function testAI() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.AI_MODEL || "qwen/qwen3-coder:free",
+        model: "z-ai/glm-4.5-air:free",
         messages: [{ role: "user", content: "hi" }]
       })
     });

@@ -41,7 +41,7 @@ export async function callAI(
         "X-Title": "Sweat Fix Gym",
       },
       body: JSON.stringify({
-        model: process.env.AI_MODEL || "qwen/qwen3-coder:free",
+        model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
         messages,
         temperature: 0.7,
       }),

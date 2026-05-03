@@ -10,7 +10,7 @@ async function testOpenRouter() {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            model: "meta-llama/llama-3.3-70b-instruct:free",
+            model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
             messages: [{ role: "user", content: "hello" }]
         })
     });
