@@ -206,7 +206,7 @@ export async function callWorkoutAI(prompt: string): Promise<WorkoutPlan> {
       "X-Title":      "Sweat Fix Gym",
     },
     body: JSON.stringify({
-      model:       "tencent/hy3-preview:free",
+      model:       process.env.AI_MODEL || "qwen/qwen3-coder:free",
       messages:    [{ role: "user", content: prompt }],
       temperature: 0.6,   // slightly lower for deterministic JSON
       top_p:       0.8,

@@ -17,7 +17,7 @@ async function testAI() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "tencent/hy3-preview:free",
+        model: process.env.AI_MODEL || "qwen/qwen3-coder:free",
         messages: [{ role: "user", content: "hi" }]
       })
     });
