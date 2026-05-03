@@ -8,6 +8,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import fs from "fs";
 import { EventEmitter } from "events";
 import bcrypt from "bcryptjs";
 import profileRouter from "./routes/profile.routes.js";
@@ -115,14 +116,19 @@ async function startServer() {
   app.set("trust proxy", 1);
   app.use(express.json());
 
+  // Health check endpoint
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString(), env: process.env.NODE_ENV || "production (default)" });
+  });
+
   app.use(
     session({
       secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
       resave: true,
       saveUninitialized: true,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production" || !process.env.NODE_ENV,
+        sameSite: "lax",
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       },
@@ -153,7 +159,7 @@ async function startServer() {
   // Google OAuth strategy
   // ───────────────────────────────────────────────────────────────────────────
   const callbackURL =
-    process.env.NODE_ENV === "production"
+    (process.env.NODE_ENV === "production" || !process.env.NODE_ENV)
       ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
       : "http://localhost:3000/auth/google/callback";
 
@@ -802,16 +808,29 @@ Include "memory" for new facts or "progress_log" for completed activities in the
   // ───────────────────────────────────────────────────────────────────────────
   // Vite dev middleware / production static files
   // ───────────────────────────────────────────────────────────────────────────
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Server] Starting in DEVELOPMENT mode (Vite middleware)...");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    console.log("[Server] Starting in PRODUCTION mode (Serving static files)...");
+    const distPath = path.join(__dirname, "dist");
+    
+    // Check if dist exists
+    if (!fs.existsSync(distPath)) {
+      console.warn(`[WARNING] Static folder 'dist' not found at ${distPath}. Build the project with 'npm run build' first.`);
+    }
+
+    app.use(express.static(distPath));
     app.get("*", (_req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      if (fs.existsSync(path.join(distPath, "index.html"))) {
+        res.sendFile(path.join(distPath, "index.html"));
+      } else {
+        res.status(404).send("Frontend build not found. Please run 'npm run build'.");
+      }
     });
   }
 

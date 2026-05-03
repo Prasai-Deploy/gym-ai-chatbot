@@ -7,6 +7,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import fs from "fs";
 import { EventEmitter } from "events";
 import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
@@ -23,6 +24,7 @@ import { extractProfileUpdate } from "./services/updateExtractor.service.js";
 import { decideSplit, buildWorkoutPrompt, callWorkoutAI, formatWorkoutForChat, } from "./services/workoutAI.service.js";
 import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, } from "./services/workout.service.js";
 import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.service.js";
+import { callAI } from "./services/ai.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -63,13 +65,17 @@ async function startServer() {
     const PORT = Number(process.env.PORT) || 3000;
     app.set("trust proxy", 1);
     app.use(express.json());
+    // Health check endpoint
+    app.get("/api/health", (_req, res) => {
+        res.json({ status: "ok", time: new Date().toISOString(), env: process.env.NODE_ENV || "production (default)" });
+    });
     app.use(session({
         secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
         resave: true,
         saveUninitialized: true,
         cookie: {
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production" || !process.env.NODE_ENV,
+            sameSite: "lax",
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         },
@@ -95,7 +101,7 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     // Google OAuth strategy
     // ───────────────────────────────────────────────────────────────────────────
-    const callbackURL = process.env.NODE_ENV === "production"
+    const callbackURL = (process.env.NODE_ENV === "production" || !process.env.NODE_ENV)
         ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
         : "http://localhost:3000/auth/google/callback";
     passport.use(new GoogleStrategy({
@@ -394,47 +400,6 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     // OpenRouter AI connector
     // ───────────────────────────────────────────────────────────────────────────
-    async function getOpenRouterResponse(userMessage, history, systemMessage) {
-        const apiKey = process.env.OPENROUTER_API_KEY;
-        if (!apiKey || apiKey.trim() === "") {
-            throw new Error("Missing Authentication: OPENROUTER_API_KEY is not defined in the environment or .env file.");
-        }
-        const messages = [
-            { role: "system", content: systemMessage },
-        ];
-        for (const h of history) {
-            const role = h.role === "model" || h.role === "assistant" ? "assistant" : "user";
-            const content = h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "";
-            if (content)
-                messages.push({ role, content });
-        }
-        messages.push({ role: "user", content: userMessage });
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey.trim()}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-                "X-Title": "Sweat Fix Gym",
-            },
-            body: JSON.stringify({
-                model: "tencent/hy3-preview:free",
-                messages,
-                temperature: 0.8,
-                top_p: 0.8,
-                top_k: 50,
-            }),
-        });
-        if (!response.ok) {
-            const errJson = await response.json().catch(() => ({}));
-            const errorMessage = typeof errJson.error === "string"
-                ? errJson.error
-                : errJson.error?.message;
-            throw new Error(errorMessage || "OpenRouter API Error");
-        }
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || "I encountered an error.";
-    }
     // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
@@ -561,10 +526,20 @@ async function startServer() {
                 : "";
             const systemPrompt = `${userContextStr}
 
-Rules to follow strictly:
-1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
-2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
-3. Brevity: Keep general responses under 3 to 4 sentences. For workout/diet plans, be highly detailed.
+You are Sweatfix AI, a professional personal fitness coach and nutritionist. You have deep expertise in:
+- Strength training, hypertrophy, and fat loss programming
+- Macro and calorie-based nutrition planning
+- Workout form, injury prevention, and recovery
+- Motivation and habit building
+
+Rules you always follow:
+1. Give specific, actionable answers — never vague advice
+2. When giving a workout plan, always include: exercise name, sets, reps, rest time, and a coaching tip
+3. When giving a nutrition plan, always include: meal name, ingredients, macros (protein/carbs/fat), and total calories
+4. Keep responses concise and scannable — use short paragraphs or bullet points, never long walls of text
+5. Always personalise based on the user's profile (goal, activity level, focus areas) that is injected into this prompt
+6. If the user asks something outside fitness/nutrition, politely redirect them back to their fitness goals
+7. Always be encouraging — celebrate effort, not just results
 
 Auto-Fill Protocol:
 Whenever you generate a workout or diet plan, YOU MUST append a JSON block at the very end of your response inside triple backticks:
@@ -579,7 +554,7 @@ Whenever you generate a workout or diet plan, YOU MUST append a JSON block at th
 Include "memory" for new facts or "progress_log" for completed activities in the JSON block when relevant.`;
             let aiContent;
             try {
-                aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
+                aiContent = await callAI(message, systemPrompt, history || []);
             }
             catch (apiError) {
                 console.error("OpenRouter API Error:", apiError.message);
@@ -650,7 +625,8 @@ Include "memory" for new facts or "progress_log" for completed activities in the
     // ───────────────────────────────────────────────────────────────────────────
     // Vite dev middleware / production static files
     // ───────────────────────────────────────────────────────────────────────────
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV === "development") {
+        console.log("[Server] Starting in DEVELOPMENT mode (Vite middleware)...");
         const vite = await createViteServer({
             server: { middlewareMode: true },
             appType: "spa",
@@ -658,9 +634,20 @@ Include "memory" for new facts or "progress_log" for completed activities in the
         app.use(vite.middlewares);
     }
     else {
-        app.use(express.static(path.join(__dirname, "dist")));
+        console.log("[Server] Starting in PRODUCTION mode (Serving static files)...");
+        const distPath = path.join(__dirname, "dist");
+        // Check if dist exists
+        if (!fs.existsSync(distPath)) {
+            console.warn(`[WARNING] Static folder 'dist' not found at ${distPath}. Build the project with 'npm run build' first.`);
+        }
+        app.use(express.static(distPath));
         app.get("*", (_req, res) => {
-            res.sendFile(path.join(__dirname, "dist", "index.html"));
+            if (fs.existsSync(path.join(distPath, "index.html"))) {
+                res.sendFile(path.join(distPath, "index.html"));
+            }
+            else {
+                res.status(404).send("Frontend build not found. Please run 'npm run build'.");
+            }
         });
     }
     app.listen(PORT, "0.0.0.0", () => {
