@@ -20,7 +20,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.05 }}
-      className="glass-card p-6 md:p-8"
+      className="card p-6 md:p-8"
     >
       <div className="flex flex-col items-center">
         {/* Ring */}
@@ -28,8 +28,8 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
           <svg className="w-full h-full" viewBox="0 0 200 200">
             <defs>
               <linearGradient id="cal-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00FFC2" />
-                <stop offset="100%" stopColor="#06b6d4" />
+                <stop offset="0%" stopColor="var(--color-calories)" />
+                <stop offset="100%" stopColor="var(--color-calories)" />
               </linearGradient>
             </defs>
 
@@ -65,10 +65,9 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
           {/* Center content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-              style={{ background: 'rgba(0, 255, 194, 0.12)' }}
+              className="w-10 h-10 rounded-full flex items-center justify-center mb-2 bg-[var(--surface-elevated)]"
             >
-              <Flame size={20} style={{ color: 'var(--accent-primary)' }} />
+              <Flame size={20} style={{ color: 'var(--color-calories)' }} />
             </div>
             <span
               className="text-3xl sm:text-4xl font-extrabold tabular-nums"
@@ -89,8 +88,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
         <div className="mt-4 flex items-center gap-3">
           <div className="text-center">
             <span
-              className="text-lg font-bold tabular-nums"
-              style={{ color: 'var(--accent-primary)' }}
+              style={{ color: 'var(--color-calories)' }}
             >
               {pct}%
             </span>
@@ -99,8 +97,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
             </p>
           </div>
           <div
-            className="w-px h-8"
-            style={{ background: 'var(--glass-border)' }}
+            className="w-px h-8 bg-[var(--border-subtle)]"
           />
           <div className="text-center">
             <span
@@ -114,8 +111,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
             </p>
           </div>
           <div
-            className="w-px h-8"
-            style={{ background: 'var(--glass-border)' }}
+            className="w-px h-8 bg-[var(--border-subtle)]"
           />
           <div className="text-center">
             <span

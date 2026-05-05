@@ -78,7 +78,7 @@ export function WorkoutTracker() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-card p-6 md:p-8 flex flex-col"
+      className="card p-6 md:p-8 flex flex-col"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -89,8 +89,8 @@ export function WorkoutTracker() {
             {isActive ? (isFinished ? 'Workout complete!' : 'In progress...') : 'Ready to train?'}
           </p>
         </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-accent)' }}>
-          <Dumbbell size={20} className="text-white" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent-primary)]">
+          <Dumbbell size={20} style={{ color: 'var(--surface-primary)' }} />
         </div>
       </div>
 
@@ -110,11 +110,11 @@ export function WorkoutTracker() {
             </p>
             <motion.button
               onClick={handleStart}
-              className="btn-accent w-full max-w-xs px-10 py-5 rounded-[24px] text-lg font-bold inline-flex items-center justify-center gap-3"
+              className="btn-primary w-full max-w-xs px-10 py-5 rounded-[24px] text-lg font-bold inline-flex items-center justify-center gap-3"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Play size={22} fill="#121212" />
+              <Play size={22} fill="currentColor" />
               START WORKOUT
             </motion.button>
           </motion.div>
@@ -143,7 +143,7 @@ export function WorkoutTracker() {
                 <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-input)' }}>
                   <motion.div
                     className="h-full rounded-full"
-                    style={{ background: 'var(--gradient-accent)' }}
+                    style={{ background: 'var(--accent-primary)' }}
                     animate={{ width: `${(completedCount / totalCount) * 100}%` }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   />
@@ -162,8 +162,8 @@ export function WorkoutTracker() {
                   transition={{ delay: index * 0.05 }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-colors cursor-pointer"
                   style={{
-                    background: exercise.done ? 'rgba(0, 255, 194, 0.06)' : 'var(--surface-card)',
-                    border: `1px solid ${exercise.done ? 'rgba(0, 255, 194, 0.15)' : 'var(--glass-border)'}`,
+                    background: exercise.done ? 'var(--accent-primary-hover)' : 'var(--surface-card)',
+                    border: `1px solid ${exercise.done ? 'var(--accent-primary-hover)' : 'var(--border-subtle)'}`,
                   }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -172,7 +172,7 @@ export function WorkoutTracker() {
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{
                       border: exercise.done ? 'none' : '2px solid var(--text-muted)',
-                      background: exercise.done ? 'var(--gradient-accent)' : 'transparent',
+                      background: exercise.done ? 'var(--accent-primary)' : 'transparent',
                     }}
                     animate={exercise.done ? { scale: [1, 1.2, 1] } : { scale: 1 }}
                     transition={{ duration: 0.3 }}
@@ -183,7 +183,7 @@ export function WorkoutTracker() {
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 25 }}
                       >
-                        <CheckCircle2 size={16} className="text-white" />
+                        <CheckCircle2 size={16} style={{ color: 'var(--surface-primary)' }} />
                       </motion.div>
                     )}
                   </motion.div>
@@ -251,10 +251,9 @@ export function WorkoutTracker() {
               initial={{ scale: 0 }}
               animate={{ scale: 1, rotate: [0, -10, 10, 0] }}
               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-              className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'var(--gradient-accent)' }}
+              className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-[var(--accent-primary)]"
             >
-              <Trophy size={36} className="text-white" />
+              <Trophy size={36} style={{ color: 'var(--surface-primary)' }} />
             </motion.div>
             <h4 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
               Great Workout! 💪
@@ -267,7 +266,7 @@ export function WorkoutTracker() {
             </p>
             <button
               onClick={handleReset}
-              className="btn-accent px-8 py-3 rounded-xl text-sm"
+              className="btn-primary px-8 py-3 rounded-xl text-sm"
             >
               New Workout
             </button>

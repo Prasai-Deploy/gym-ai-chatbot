@@ -26,7 +26,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={gradientColors[0]} />
-              <stop offset="100%" stopColor={gradientColors[1]} />
+              <stop offset="100%" stopColor={gradientColors[0]} />
             </linearGradient>
           </defs>
           {/* Background track */}
@@ -55,7 +55,7 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
         </svg>
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-sm sm:text-lg lg:text-xl font-black ${color}`}>{current}</span>
+          <span className={`text-sm sm:text-lg lg:text-xl font-black`} style={{ color: color }}>{current}</span>
           <span className="text-[8px] lg:text-[10px] uppercase font-black tracking-widest text-zinc-500">{unit}</span>
         </div>
       </div>
@@ -100,7 +100,7 @@ export function MacroTracker({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="glass-card p-6 md:p-8"
+      className="card p-6 md:p-8"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -111,8 +111,8 @@ export function MacroTracker({
             Today's nutrition
           </p>
         </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-          <Activity size={20} className="text-white" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)]">
+          <Activity size={20} style={{ color: 'var(--accent-primary)' }} />
         </div>
       </div>
 
@@ -123,35 +123,35 @@ export function MacroTracker({
           current={protein}
           goal={proteinGoal}
           unit="g"
-          color="text-purple-400"
+          color="var(--color-protein)"
           gradientId="protein-grad"
-          gradientColors={['#a855f7', '#7c3aed']}
-          icon={<Beef size={12} className="text-purple-400" />}
+          gradientColors={['var(--color-protein)', 'var(--color-protein)']}
+          icon={<Beef size={12} style={{ color: 'var(--color-protein)' }} />}
         />
         <MacroRing
           label="Carbs"
           current={carbs}
           goal={carbsGoal}
           unit="g"
-          color="text-amber-400"
+          color="var(--color-carbs)"
           gradientId="carbs-grad"
-          gradientColors={['#fbbf24', '#f59e0b']}
-          icon={<Wheat size={12} className="text-amber-400" />}
+          gradientColors={['var(--color-carbs)', 'var(--color-carbs)']}
+          icon={<Wheat size={12} style={{ color: 'var(--color-carbs)' }} />}
         />
         <MacroRing
           label="Fats"
           current={fats}
           goal={fatsGoal}
           unit="g"
-          color="text-rose-400"
+          color="var(--color-fats)"
           gradientId="fats-grad"
-          gradientColors={['#fb7185', '#e11d48']}
-          icon={<Activity size={12} className="text-rose-400" />}
+          gradientColors={['var(--color-fats)', 'var(--color-fats)']}
+          icon={<Activity size={12} style={{ color: 'var(--color-fats)' }} />}
         />
       </div>
 
       {/* Weight Logger */}
-      <div className="border-t pt-6" style={{ borderColor: 'var(--glass-border)' }}>
+      <div className="border-t pt-6 border-[var(--border-subtle)]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Scale size={16} style={{ color: 'var(--text-muted)' }} />
@@ -174,8 +174,8 @@ export function MacroTracker({
               value={weight}
               onChange={e => setWeight(e.target.value)}
               placeholder="Enter weight"
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-zinc-600"
-              style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-[var(--accent-primary)] placeholder-zinc-600 bg-[var(--surface-input)]"
+             
               onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
@@ -184,7 +184,7 @@ export function MacroTracker({
           </div>
           <button
             onClick={handleLogWeight}
-            className="btn-gradient px-5 py-3 rounded-xl text-sm"
+            className="btn-primary px-5 py-3 rounded-xl text-sm"
           >
             Log
           </button>
