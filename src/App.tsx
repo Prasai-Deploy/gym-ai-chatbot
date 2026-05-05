@@ -29,6 +29,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import { getFitnessAdvice } from './services/chatService';
+import {
+  cacheUser, getCachedUser,
+  cacheProgress, getCachedProgress,
+  cachePlans, getCachedPlans,
+  queueRequest, replayQueue,
+} from './services/offlineStorage';
 
 // --- START FEATURE: THEME TOGGLE ---
 import { ThemeToggle } from './components/ThemeToggle';
@@ -50,6 +56,11 @@ import { CaloriesRing } from './components/CaloriesRing';
 // --- START FEATURE: BOTTOM NAV ---
 import { BottomNav } from './components/BottomNav';
 // --- END FEATURE: BOTTOM NAV ---
+
+// --- START FEATURE: PWA COMPONENTS ---
+import { InstallPrompt } from './components/InstallPrompt';
+import { OfflineBanner } from './components/OfflineBanner';
+// --- END FEATURE: PWA COMPONENTS ---
 
 interface User {
   id: number;
@@ -302,7 +313,21 @@ export default function App() {
       }
     };
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+
+    // Replay queued offline requests when we come back online
+    const handleOnline = async () => {
+      const replayed = await replayQueue();
+      if (replayed > 0) {
+        fetchProgress();
+        fetchPlans();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   // Poll for real-time updates from the database
@@ -402,11 +427,21 @@ export default function App() {
       const data = await res.json();
       setUser(data);
       if (data) {
+        await cacheUser(data); // Cache for offline
         fetchProgress();
         fetchPlans();
       }
     } catch (e) {
       console.error(e);
+      // Offline fallback: load from IndexedDB
+      const cached = await getCachedUser();
+      if (cached) {
+        setUser(cached);
+        const cachedProgress = await getCachedProgress();
+        if (cachedProgress) setProgress(cachedProgress);
+        const cachedPlans = await getCachedPlans();
+        if (cachedPlans) setDailyPlans(cachedPlans);
+      }
     } finally {
       setLoading(false);
     }
@@ -417,9 +452,13 @@ export default function App() {
       const res = await fetch('/api/plans');
       if (!res.ok) return;
       const data = await res.json();
-      setDailyPlans(Array.isArray(data) ? data : []);
+      const plans = Array.isArray(data) ? data : [];
+      setDailyPlans(plans);
+      await cachePlans(plans); // Cache for offline
     } catch (e) {
       console.error(e);
+      const cached = await getCachedPlans();
+      if (cached) setDailyPlans(cached);
     }
   };
 
@@ -428,9 +467,13 @@ export default function App() {
       const res = await fetch('/api/progress');
       if (!res.ok) return;
       const data = await res.json();
-      setProgress(Array.isArray(data) ? data.reverse() : []);
+      const prog = Array.isArray(data) ? data.reverse() : [];
+      setProgress(prog);
+      await cacheProgress(prog); // Cache for offline
     } catch (e) {
       console.error(e);
+      const cached = await getCachedProgress();
+      if (cached) setProgress(cached);
     }
   };
 
@@ -467,19 +510,25 @@ export default function App() {
 
   const handleSubmitProgress = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...formData,
-        calories: Number(formData.calories) || 0,
-        protein: Number(formData.protein) || 0,
-        carbs: Number(formData.carbs) || 0,
-        fats: Number(formData.fats) || 0,
-        water: Number(formData.water) || 0,
-        date: format(new Date(), 'MMM dd')
-      })
-    });
+    const payload = {
+      ...formData,
+      calories: Number(formData.calories) || 0,
+      protein: Number(formData.protein) || 0,
+      carbs: Number(formData.carbs) || 0,
+      fats: Number(formData.fats) || 0,
+      water: Number(formData.water) || 0,
+      date: format(new Date(), 'MMM dd')
+    };
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      // Offline: queue for later
+      await queueRequest('/api/progress', 'POST', payload);
+    }
     setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
     setShowForm(false);
     fetchProgress();
@@ -545,19 +594,25 @@ export default function App() {
   };
 
   const handleAddWater = async (amount: number) => {
-    await fetch('/api/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workout_name: `Drank Water`,
-        water: amount,
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fats: 0,
-        date: format(new Date(), 'MMM dd')
-      })
-    });
+    const payload = {
+      workout_name: `Drank Water`,
+      water: amount,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fats: 0,
+      date: format(new Date(), 'MMM dd')
+    };
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      // Offline: queue for later
+      await queueRequest('/api/progress', 'POST', payload);
+    }
     fetchProgress();
   };
 
@@ -812,6 +867,11 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* --- START FEATURE: PWA BANNERS --- */}
+      <OfflineBanner />
+      <InstallPrompt />
+      {/* --- END FEATURE: PWA BANNERS --- */}
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}

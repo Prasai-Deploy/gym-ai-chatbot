@@ -11,10 +11,17 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt', // Changed from 'autoUpdate' to 'prompt' so we can show update UI
         devOptions: {
-          enabled: false
+          enabled: true, // Enable in dev for testing
+          type: 'module',
         },
+        includeAssets: [
+          'icon.svg',
+          'icons/icon-192x192.png',
+          'icons/icon-512x512.png',
+          'icons/apple-touch-icon-180x180.png',
+        ],
         manifest: {
           name: 'Sweat Fix Gym',
           short_name: 'Sweat Fix',
@@ -22,20 +29,113 @@ export default defineConfig(({mode}) => {
           theme_color: '#121212',
           background_color: '#121212',
           display: 'standalone',
+          orientation: 'portrait',
+          start_url: '/',
+          scope: '/',
+          categories: ['fitness', 'health'],
           icons: [
             {
-              src: '/icon.svg',
-              sizes: '192x192 512x512',
-              type: 'image/svg+xml'
+              src: '/icons/icon-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: '/icons/icon-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: '/icons/icon-maskable-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+            {
+              src: '/icons/icon-maskable-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
             {
               src: '/icon.svg',
-              sizes: '192x192 512x512',
+              sizes: 'any',
               type: 'image/svg+xml',
-              purpose: 'any maskable'
-            }
-          ]
-        }
+            },
+          ],
+        },
+        workbox: {
+          // Precache all built assets (JS, CSS, HTML, icons)
+          globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+          // Don't precache source maps
+          globIgnores: ['**/*.map'],
+          // Clean up old caches from previous SW versions
+          cleanupOutdatedCaches: true,
+          // Navigations should serve the app shell
+          navigateFallback: 'index.html',
+          // Only fallback navigation requests (not API calls)
+          navigateFallbackDenylist: [/^\/api\//],
+          // Runtime caching strategies
+          runtimeCaching: [
+            // API calls: NetworkFirst with 10s timeout, fall back to cache
+            {
+              urlPattern: /^\/api\//,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                networkTimeoutSeconds: 10,
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            // Google Fonts stylesheets: StaleWhileRevalidate
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'google-fonts-stylesheets',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+              },
+            },
+            // Google Fonts webfonts: CacheFirst
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-webfonts',
+                expiration: {
+                  maxEntries: 30,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            // External images (avatars, etc.): CacheFirst
+            {
+              urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp)$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'external-images',
+                expiration: {
+                  maxEntries: 60,
+                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+          ],
+        },
       })
     ],
     define: {
@@ -48,7 +148,7 @@ export default defineConfig(({mode}) => {
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâ€”file watching is disabled to prevent flickering during agent edits.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
