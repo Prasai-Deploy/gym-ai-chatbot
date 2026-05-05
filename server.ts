@@ -308,50 +308,63 @@ async function startServer() {
       const state = req.query.state as string;
       const user = (req as any).user;
 
-      if (state && user) {
-        try {
-          await dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
-            state,
-            user.id,
-          ]);
-          console.log(
-            `[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`
-          );
-          authEvents.emit(`auth_success_${state}`, user);
-        } catch (e) {
-          console.error("Failed to link chat_id:", e);
-        }
+      const renderResponse = () => {
+        if (state && user) {
+          try {
+            dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
+              state,
+              user.id,
+            ]).catch(e => console.error("Failed to link chat_id:", e));
+            
+            console.log(
+              `[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`
+            );
+            authEvents.emit(`auth_success_${state}`, user);
+          } catch (e) {
+            console.error("Failed to link chat_id:", e);
+          }
 
-        res.send(`
-          <html>
-            <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
-              <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
-                <div style="width: 64px; height: 64px; background: #10b981; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          res.send(`
+            <html>
+              <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
+                <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
+                  <div style="width: 64px; height: 64px; background: #10b981; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
+                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
+                  <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
                 </div>
-                <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
-                <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
-                <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
-              </div>
-            </body>
-          </html>
-        `);
+              </body>
+            </html>
+          `);
+        } else {
+          res.send(`
+            <html>
+              <body>
+                <script>
+                  if (window.opener) {
+                    window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                    window.close();
+                  } else {
+                    window.location.href = '/';
+                  }
+                </script>
+                <p>Authentication successful. This window should close automatically.</p>
+              </body>
+            </html>
+          `);
+        }
+      };
+
+      // Explicitly save the session before responding to avoid race conditions
+      if ((req as any).session) {
+        (req as any).session.save((err: any) => {
+          if (err) console.error("Session save error:", err);
+          renderResponse();
+        });
       } else {
-        res.send(`
-          <html>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                  window.close();
-                } else {
-                  window.location.href = '/';
-                }
-              </script>
-              <p>Authentication successful. This window should close automatically.</p>
-            </body>
-          </html>
-        `);
+        renderResponse();
       }
     }
   );
@@ -359,12 +372,14 @@ async function startServer() {
   app.get("/api/me", (req, res) => {
     const user = (req as any).user;
     console.log("Checking /api/me, user found:", !!user);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(user || null);
   });
 
   // Long-polling endpoint for Telegram bot auth flow
   app.get("/api/auth/status/:chat_id", (req, res) => {
     const chatId = req.params.chat_id;
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     const timeout = setTimeout(() => {
       authEvents.removeAllListeners(`auth_success_${chatId}`);
       res.json({ status: "pending" });
