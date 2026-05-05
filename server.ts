@@ -67,22 +67,37 @@ declare global {
 
 // Helpers – thin wrappers so the rest of the code stays readable
 async function dbGet(sql: string, params: any[] = []): Promise<any> {
-  const [rows] = await pool.execute(sql, params);
-  return (rows as any[])[0] ?? null;
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return (rows as any[])[0] ?? null;
+  } catch (err) {
+    console.error("[DB] dbGet failed:", err);
+    return null;
+  }
 }
 
 async function dbAll(sql: string, params: any[] = []): Promise<any[]> {
-  const [rows] = await pool.execute(sql, params);
-  return rows as any[];
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows as any[];
+  } catch (err) {
+    console.error("[DB] dbAll failed:", err);
+    return [];
+  }
 }
 
 async function dbRun(
   sql: string,
   params: any[] = []
 ): Promise<{ insertId: number; affectedRows: number }> {
-  const [result] = await pool.execute(sql, params);
-  const r = result as mysql.ResultSetHeader;
-  return { insertId: r.insertId, affectedRows: r.affectedRows };
+  try {
+    const [result] = await pool.execute(sql, params);
+    const r = result as mysql.ResultSetHeader;
+    return { insertId: r.insertId, affectedRows: r.affectedRows };
+  } catch (err) {
+    console.error("[DB] dbRun failed:", err);
+    return { insertId: 0, affectedRows: 0 };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,8 +115,7 @@ async function startServer() {
     console.log("[DB] MySQL connected successfully.");
     conn.release();
   } catch (err: any) {
-    console.error("[DB] MySQL connection FAILED:", err.message);
-    process.exit(1);
+    console.warn("[DB] MySQL connection FAILED during startServer:", err.message);
   }
 
   const app = express();
@@ -137,6 +151,20 @@ async function startServer() {
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      if (id === 999) {
+        return done(null, {
+          id: 999,
+          email: "demo@sweatfix.com",
+          name: "Demo User (Mock)",
+          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+          profile_context: "",
+          water_goal: 2000,
+          calorie_goal: 2500,
+          protein_goal: 180,
+          carb_goal: 250,
+          fat_goal: 70
+        });
+      }
       const user = await dbGet("SELECT * FROM users WHERE id = ?", [id]);
       done(null, user);
     } catch (err) {
@@ -212,33 +240,51 @@ async function startServer() {
   // Demo login
   app.post("/api/auth/demo", async (req, res) => {
     try {
-      let user = await dbGet(
-        "SELECT * FROM users WHERE email = ?",
-        ["demo@sweatfix.com"]
-      );
+      let user;
+      try {
+        user = await dbGet(
+          "SELECT * FROM users WHERE email = ?",
+          ["demo@sweatfix.com"]
+        );
 
-      if (!user) {
-        const { insertId } = await dbRun(
-          `INSERT INTO users (email, name, avatar, profile_context, water_goal)
-           VALUES (?, ?, ?, ?, ?)`,
-          [
-            "demo@sweatfix.com",
-            "Demo User",
-            "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-            "",
-            2000,
-          ]
-        );
-        user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
-      } else {
-        // Refresh demo user state
-        await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-        await dbRun(
-          "UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?",
-          [user.id]
-        );
+        if (!user) {
+          const { insertId } = await dbRun(
+            `INSERT INTO users (email, name, avatar, profile_context, water_goal)
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+              "demo@sweatfix.com",
+              "Demo User",
+              "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+              "",
+              2000,
+            ]
+          );
+          user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+          if (!user) throw new Error("DB insertion failed, fallback to mock");
+        } else {
+          // Refresh demo user state
+          await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
+          await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+          await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
+          await dbRun(
+            "UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?",
+            [user.id]
+          );
+        }
+      } catch (dbErr: any) {
+        console.warn("[DB] Demo login fallback to MOCK user due to DB error:", dbErr.message);
+        user = {
+          id: 999,
+          email: "demo@sweatfix.com",
+          name: "Demo User (Mock)",
+          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+          profile_context: "",
+          water_goal: 2000,
+          calorie_goal: 2500,
+          protein_goal: 180,
+          carb_goal: 250,
+          fat_goal: 70
+        };
       }
 
       (req as any).login(user, (err: any) => {

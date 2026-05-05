@@ -29,6 +29,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import { getFitnessAdvice } from './services/chatService';
+import {
+  cacheUser, getCachedUser,
+  cacheProgress, getCachedProgress,
+  cachePlans, getCachedPlans,
+  queueRequest, replayQueue,
+} from './services/offlineStorage';
 
 // --- START FEATURE: THEME TOGGLE ---
 import { ThemeToggle } from './components/ThemeToggle';
@@ -42,6 +48,19 @@ import { MacroTracker } from './components/MacroTracker';
 // --- START FEATURE: WORKOUT TRACKER ---
 import { WorkoutTracker } from './components/WorkoutTracker';
 // --- END FEATURE: WORKOUT TRACKER ---
+
+// --- START FEATURE: CALORIES RING ---
+import { CaloriesRing } from './components/CaloriesRing';
+// --- END FEATURE: CALORIES RING ---
+
+// --- START FEATURE: BOTTOM NAV ---
+import { BottomNav } from './components/BottomNav';
+// --- END FEATURE: BOTTOM NAV ---
+
+// --- START FEATURE: PWA COMPONENTS ---
+import { InstallPrompt } from './components/InstallPrompt';
+import { OfflineBanner } from './components/OfflineBanner';
+// --- END FEATURE: PWA COMPONENTS ---
 
 interface User {
   id: number;
@@ -119,7 +138,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
   };
 
   return (
-    <section className="glass-panel p-6 rounded-[40px] flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+    <section className="card p-6 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -148,7 +167,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
           <button
             onClick={() => { setTempGoal((waterGoal || 2000).toString()); setIsEditingGoal(true); }}
             className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 flex items-center gap-1"
-            style={{ background: 'var(--surface-elevated)', color: 'var(--text-muted)' }}
+           
           >
             <Edit2 size={12} /> Goal
           </button>
@@ -181,8 +200,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
           <button
             key={amount}
             onClick={() => onAddWater(amount)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold transition-colors hover:opacity-80"
-            style={{ background: 'var(--surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}
+            className="btn-secondary flex-1 py-2 text-xs"
           >
             +{amount}ml
           </button>
@@ -197,8 +215,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
             value={customAmount}
             onChange={e => setCustomAmount(e.target.value)}
             placeholder="Custom amount"
-            className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-zinc-600"
-            style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+            className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-zinc-600 bg-[var(--surface-input)]"
             onKeyDown={e => e.key === 'Enter' && handleCustomAdd()}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
@@ -207,8 +224,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
         </div>
         <button
           onClick={handleCustomAdd}
-          className="btn-gradient px-4 py-3 rounded-xl flex items-center justify-center text-sm font-bold"
-          style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
+          className="btn-primary px-4 py-3 rounded-xl flex items-center justify-center text-sm font-bold"
         >
           Add
         </button>
@@ -235,6 +251,7 @@ export default function App() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [activeTab, setActiveTab] = useState('home');
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -296,7 +313,21 @@ export default function App() {
       }
     };
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+
+    // Replay queued offline requests when we come back online
+    const handleOnline = async () => {
+      const replayed = await replayQueue();
+      if (replayed > 0) {
+        fetchProgress();
+        fetchPlans();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   // Poll for real-time updates from the database
@@ -396,11 +427,21 @@ export default function App() {
       const data = await res.json();
       setUser(data);
       if (data) {
+        await cacheUser(data); // Cache for offline
         fetchProgress();
         fetchPlans();
       }
     } catch (e) {
       console.error(e);
+      // Offline fallback: load from IndexedDB
+      const cached = await getCachedUser();
+      if (cached) {
+        setUser(cached);
+        const cachedProgress = await getCachedProgress();
+        if (cachedProgress) setProgress(cachedProgress);
+        const cachedPlans = await getCachedPlans();
+        if (cachedPlans) setDailyPlans(cachedPlans);
+      }
     } finally {
       setLoading(false);
     }
@@ -409,20 +450,30 @@ export default function App() {
   const fetchPlans = async () => {
     try {
       const res = await fetch('/api/plans');
+      if (!res.ok) return;
       const data = await res.json();
-      setDailyPlans(data);
+      const plans = Array.isArray(data) ? data : [];
+      setDailyPlans(plans);
+      await cachePlans(plans); // Cache for offline
     } catch (e) {
       console.error(e);
+      const cached = await getCachedPlans();
+      if (cached) setDailyPlans(cached);
     }
   };
 
   const fetchProgress = async () => {
     try {
       const res = await fetch('/api/progress');
+      if (!res.ok) return;
       const data = await res.json();
-      setProgress(data.reverse());
+      const prog = Array.isArray(data) ? data.reverse() : [];
+      setProgress(prog);
+      await cacheProgress(prog); // Cache for offline
     } catch (e) {
       console.error(e);
+      const cached = await getCachedProgress();
+      if (cached) setProgress(cached);
     }
   };
 
@@ -441,8 +492,17 @@ export default function App() {
   const handleDemoLogin = async () => {
     try {
       const res = await fetch('/api/auth/demo', { method: 'POST' });
-      if (res.ok) fetchUser();
-      else alert('Demo login failed');
+      if (res.ok) {
+        const userData = await res.json();
+        if (userData && userData.id) {
+          setUser(userData);
+          setLoading(false);
+        } else {
+          fetchUser();
+        }
+      } else {
+        alert('Demo login failed');
+      }
     } catch (e) {
       console.error(e);
     }
@@ -450,19 +510,25 @@ export default function App() {
 
   const handleSubmitProgress = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...formData,
-        calories: Number(formData.calories) || 0,
-        protein: Number(formData.protein) || 0,
-        carbs: Number(formData.carbs) || 0,
-        fats: Number(formData.fats) || 0,
-        water: Number(formData.water) || 0,
-        date: format(new Date(), 'MMM dd')
-      })
-    });
+    const payload = {
+      ...formData,
+      calories: Number(formData.calories) || 0,
+      protein: Number(formData.protein) || 0,
+      carbs: Number(formData.carbs) || 0,
+      fats: Number(formData.fats) || 0,
+      water: Number(formData.water) || 0,
+      date: format(new Date(), 'MMM dd')
+    };
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      // Offline: queue for later
+      await queueRequest('/api/progress', 'POST', payload);
+    }
     setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
     setShowForm(false);
     fetchProgress();
@@ -528,19 +594,25 @@ export default function App() {
   };
 
   const handleAddWater = async (amount: number) => {
-    await fetch('/api/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workout_name: `Drank Water`,
-        water: amount,
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fats: 0,
-        date: format(new Date(), 'MMM dd')
-      })
-    });
+    const payload = {
+      workout_name: `Drank Water`,
+      water: amount,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fats: 0,
+      date: format(new Date(), 'MMM dd')
+    };
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      // Offline: queue for later
+      await queueRequest('/api/progress', 'POST', payload);
+    }
     fetchProgress();
   };
 
@@ -681,21 +753,36 @@ export default function App() {
     recognition.start();
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-bold" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>Loading...</div>;
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'coach') {
+      setChatOpen(true);
+    } else {
+      setChatOpen(false);
+      const sectionMap: Record<string, string> = {
+        home: 'dashboard-top',
+        workouts: 'workout-section',
+        nutrition: 'nutrition-section',
+      };
+      const targetId = sectionMap[tab];
+      if (targetId) {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  if (loading) return <div className="h-screen flex items-center justify-center font-bold">Loading...</div>;
 
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'var(--surface-primary)' }}>
         {/* Decorative Blobs */}
-        <div className="bg-blob bg-blob-1" />
-        <div className="bg-blob bg-blob-2" />
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full relative z-10"
         >
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg" style={{ background: 'var(--gradient-primary)' }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
             <Dumbbell className="text-white w-10 h-10" />
           </div>
           <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>SWEAT FIX GYM</h1>
@@ -709,18 +796,18 @@ export default function App() {
             Continue with Google
           </button>
 
-          <div className="glass-panel rounded-2xl p-6 shadow-xl w-full">
+          <div className="card rounded-2xl p-6 shadow-xl w-full">
             <h3 className="text-xl font-bold mb-2 text-center" style={{ color: 'var(--text-primary)' }}>Try the Demo</h3>
             <p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>Experience the full platform without creating an account.</p>
             <button
               onClick={handleDemoLogin}
-              className="w-full btn-gradient py-3 rounded-xl font-semibold"
+              className="w-full btn-primary py-3 rounded-xl font-semibold"
             >
               Explore as Demo User
             </button>
           </div>
 
-          <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--glass-border)' }}>
+          <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--border-subtle)' }}>
             <button
               onClick={() => setShowQR(!showQR)}
               className="flex items-center gap-2 mx-auto text-sm uppercase tracking-widest font-bold hover:opacity-80 transition-opacity"
@@ -754,20 +841,16 @@ export default function App() {
   const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
 
   return (
-    <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
+    <div className="min-h-screen font-sans pb-28 relative overflow-hidden">
       {/* Decorative Background Blobs */}
-      <div className="bg-blob bg-blob-1" />
-      <div className="bg-blob bg-blob-2" />
-      <div className="bg-blob bg-blob-3" />
-
       {/* Header */}
-      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 bg-[var(--surface-primary)] border-b border-[var(--border-subtle)]" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-            <Dumbbell className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--accent-primary)' }}>
+            <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#121212' }} />
           </div>
           <div className="min-w-0 flex-shrink">
-            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
+            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ color: 'var(--accent-primary)' }}>SWEAT FIX GYM</h2>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -776,7 +859,7 @@ export default function App() {
           {/* --- END FEATURE: THEME TOGGLE --- */}
           <div className="flex items-center gap-3">
             <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform">
-              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--glass-border)' }} alt={user.name} />
+              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--border-subtle)' }} alt={user.name} />
             </button>
             <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
               <LogOut size={18} />
@@ -785,42 +868,53 @@ export default function App() {
         </div>
       </header>
 
+      {/* --- START FEATURE: PWA BANNERS --- */}
+      <OfflineBanner />
+      <InstallPrompt />
+      {/* --- END FEATURE: PWA BANNERS --- */}
+
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}
-        <section>
+        <section id="dashboard-top">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
           <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
         </section>
 
+        {/* --- START FEATURE: CALORIES RING --- */}
+        <CaloriesRing burned={totalCalories} goal={user.calorie_goal || 2000} />
+        {/* --- END FEATURE: CALORIES RING --- */}
+
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
         <MacroTracker 
-          protein={totalProtein} carbs={totalCarbs} fats={totalFats} calories={totalCalories} 
-          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal} caloriesGoal={user.calorie_goal}
+          protein={totalProtein} carbs={totalCarbs} fats={totalFats}
+          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal}
         />
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
-        <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+        <section className="card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h3 className="text-xl font-bold mb-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Track Workout & Macros</h3>
+            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--accent-primary)' }}>Track Workout & Macros</h3>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Log your recent activity to update your stats and progress chart.</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 btn-gradient px-6 py-3 rounded-2xl whitespace-nowrap"
+            className="flex items-center gap-2 btn-accent px-6 py-3 rounded-[24px] whitespace-nowrap"
           >
             <Plus size={20} /> <span className="md:inline">Log Activity</span>
           </button>
         </section>
 
         {/* --- START FEATURE: WORKOUT TRACKER --- */}
-        <WorkoutTracker />
+        <div id="workout-section">
+          <WorkoutTracker />
+        </div>
         {/* --- END FEATURE: WORKOUT TRACKER --- */}
 
         {/* Progress Chart + Water Log Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div id="nutrition-section" className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Weekly Progress Chart */}
-          <section className="glass-panel p-8 rounded-[40px] md:col-span-2">
+          <section className="card p-8 md:col-span-2">
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
@@ -854,14 +948,14 @@ export default function App() {
             <button
               onClick={() => setShowPlanForm(true)}
               className="px-4 py-2 text-sm font-bold rounded-xl transition-colors"
-              style={{ background: 'var(--surface-elevated)', color: 'var(--text-secondary)' }}
+             
             >
               Update Plan
             </button>
           </div>
           <div className="space-y-4">
             {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
-              <div key={i} className={`p-5 sm:p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
+              <div key={i} className={`p-5 sm:p-6 card transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
@@ -894,7 +988,7 @@ export default function App() {
                 </div>
               </div>
             )) : (
-              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
                 No daily plan set. Log your workout and diet protocols for the day.
               </div>
             )}
@@ -911,7 +1005,7 @@ export default function App() {
           </div>
           <div className="space-y-3">
             {progress.slice().reverse().map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 glass-panel glass-panel-hover rounded-2xl">
+              <div key={i} className="flex items-center justify-between p-4 card ">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-elevated)' }}>
                     <Dumbbell size={20} style={{ color: 'var(--text-muted)' }} />
@@ -922,13 +1016,13 @@ export default function App() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-purple-400">+{item.calories} kcal</div>
+                  <div className="font-bold" style={{ color: 'var(--accent-primary)' }}>+{item.calories} kcal</div>
                   <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-muted)' }}>Burned</div>
                 </div>
               </div>
             ))}
             {progress.length === 0 && (
-              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--glass-border)' }}>
+              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
                 No activity logged yet. Start your journey today!
               </div>
             )}
@@ -936,15 +1030,13 @@ export default function App() {
         </section>
       </main>
 
-      {/* Chat Bot Trigger */}
-      <button
-        aria-label="Open Chat"
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-purple-500/50"
-        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
-      >
-        <MessageSquare size={28} />
-      </button>
+      {/* --- START FEATURE: BOTTOM NAV --- */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onLogPress={() => setShowForm(true)}
+      />
+      {/* --- END FEATURE: BOTTOM NAV --- */}
 
       {/* Chat Window */}
       <AnimatePresence>
@@ -953,11 +1045,11 @@ export default function App() {
             initial={{ opacity: 0, y: 100, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.9 }}
-            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] glass-panel md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] card md:rounded-[32px] shadow-2xl z-50 flex flex-col overflow-hidden"
           >
-            <div className="p-6 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--glass-border)' }}>
+            <div className="p-6 flex justify-between items-center" style={{ background: 'var(--surface-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center">
                   <TrendingUp size={20} className="text-white" />
                 </div>
                 <div>
@@ -995,14 +1087,14 @@ export default function App() {
             </div>
 
             {/* Quick Action Prompts */}
-            <div className="pt-3 pb-2 px-0" style={{ borderTop: '1px solid var(--glass-border)' }}>
+            <div className="pt-3 pb-2 px-0" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar snap-x">
                 {QUICK_ACTIONS.map((action, index) => (
                   <button
                     key={index}
                     onClick={() => handleSendMessage(action)}
                     className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 snap-start shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[44px]"
-                    style={{ background: 'var(--surface-input)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)' }}
+                    style={{ background: 'var(--surface-input)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
                   >
                     {action}
                   </button>
@@ -1010,7 +1102,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4" style={{ background: 'var(--surface-elevated)', borderTop: '1px solid var(--glass-border)' }}>
+            <div className="p-4" style={{ background: 'var(--surface-elevated)', borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex gap-2 items-end">
                 <textarea
                   ref={textareaRef}
@@ -1029,7 +1121,7 @@ export default function App() {
                   placeholder="Type a message..."
                   rows={1}
                   className="flex-1 border-none rounded-2xl px-4 py-3 min-h-[44px] max-h-[120px] resize-none text-sm focus:ring-2 focus:ring-purple-500 shadow-inner outline-none transition-all duration-200 block no-scrollbar"
-                  style={{ background: 'var(--surface-input)', color: 'var(--text-primary)' }}
+                 
                 />
                 <button
                   aria-label={isListening ? "Stop listening" : "Start voice input"}
@@ -1045,7 +1137,7 @@ export default function App() {
                     const textarea = document.querySelector('textarea[aria-label="Chat input"]') as HTMLTextAreaElement;
                     if (textarea) textarea.style.height = 'auto';
                   }}
-                  className="btn-gradient min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:scale-105 active:scale-95"
+                  className="btn-primary min-w-[44px] w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:scale-105 active:scale-95"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -1062,7 +1154,7 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-panel w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
+              className="card w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
             >
               <div className="p-6 sm:p-8">
                 <div className="flex justify-between items-center mb-8">
@@ -1137,7 +1229,7 @@ export default function App() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
+                    className="w-full btn-primary py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
                   >
                     Save Entry
                   </button>
@@ -1155,9 +1247,9 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-panel w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              className="card w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="p-6 sm:p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+              <div className="p-6 sm:p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Daily Protocol</h3>
                 <button onClick={() => setShowPlanForm(false)} className="text-zinc-500 hover:text-white">
                   <Plus className="rotate-45" size={28} />
@@ -1192,7 +1284,7 @@ export default function App() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full btn-gradient py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
+                    className="w-full btn-primary py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
                   >
                     Lock In Plan
                   </button>
@@ -1210,7 +1302,7 @@ export default function App() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-panel p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] text-center max-w-sm w-full shadow-2xl"
+              className="card p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] text-center max-w-sm w-full shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-end mb-4">
