@@ -78,7 +78,7 @@ export function WorkoutTracker() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-panel rounded-3xl p-6 md:p-8"
+      className="glass-card p-6 md:p-8 flex flex-col"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -102,21 +102,21 @@ export function WorkoutTracker() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="text-center py-8"
+            className="flex flex-col items-center"
+            style={{ minHeight: '40vh', justifyContent: 'flex-end', paddingBottom: '2rem' }}
           >
-            <motion.button
-              onClick={handleStart}
-              className="btn-gradient px-10 py-5 rounded-2xl text-lg font-bold inline-flex items-center gap-3 mx-auto"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{ background: 'var(--gradient-accent)' }}
-            >
-              <Play size={22} fill="white" />
-              Start Workout
-            </motion.button>
-            <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
               {totalCount} exercises • ~45 min
             </p>
+            <motion.button
+              onClick={handleStart}
+              className="btn-accent w-full max-w-xs px-10 py-5 rounded-[24px] text-lg font-bold inline-flex items-center justify-center gap-3"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Play size={22} fill="#121212" />
+              START WORKOUT
+            </motion.button>
           </motion.div>
         )}
 
@@ -162,8 +162,8 @@ export function WorkoutTracker() {
                   transition={{ delay: index * 0.05 }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-colors cursor-pointer"
                   style={{
-                    background: exercise.done ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface-card)',
-                    border: `1px solid ${exercise.done ? 'rgba(16, 185, 129, 0.2)' : 'var(--glass-border)'}`,
+                    background: exercise.done ? 'rgba(0, 255, 194, 0.06)' : 'var(--surface-card)',
+                    border: `1px solid ${exercise.done ? 'rgba(0, 255, 194, 0.15)' : 'var(--glass-border)'}`,
                   }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -172,7 +172,7 @@ export function WorkoutTracker() {
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{
                       border: exercise.done ? 'none' : '2px solid var(--text-muted)',
-                      background: exercise.done ? 'var(--gradient-success)' : 'transparent',
+                      background: exercise.done ? 'var(--gradient-accent)' : 'transparent',
                     }}
                     animate={exercise.done ? { scale: [1, 1.2, 1] } : { scale: 1 }}
                     transition={{ duration: 0.3 }}
@@ -211,7 +211,8 @@ export function WorkoutTracker() {
                     <motion.span
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-[10px] font-bold uppercase tracking-widest text-emerald-400"
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: 'var(--accent-primary)' }}
                     >
                       Done
                     </motion.span>
@@ -220,13 +221,13 @@ export function WorkoutTracker() {
               ))}
             </div>
 
-            {/* Finish Button */}
+            {/* Finish Button — positioned for thumb access */}
             <motion.button
               onClick={handleFinish}
-              className="w-full mt-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full mt-6 py-4 rounded-[24px] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
               style={{
-                background: allDone ? 'var(--gradient-success)' : 'var(--surface-elevated)',
-                color: allDone ? 'white' : 'var(--text-secondary)',
+                background: allDone ? 'var(--accent-primary)' : 'var(--surface-elevated)',
+                color: allDone ? '#121212' : 'var(--text-secondary)',
               }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
@@ -251,7 +252,7 @@ export function WorkoutTracker() {
               animate={{ scale: 1, rotate: [0, -10, 10, 0] }}
               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
               className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'var(--gradient-success)' }}
+              style={{ background: 'var(--gradient-accent)' }}
             >
               <Trophy size={36} className="text-white" />
             </motion.div>
@@ -266,7 +267,7 @@ export function WorkoutTracker() {
             </p>
             <button
               onClick={handleReset}
-              className="btn-gradient px-8 py-3 rounded-xl text-sm"
+              className="btn-accent px-8 py-3 rounded-xl text-sm"
             >
               New Workout
             </button>

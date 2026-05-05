@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import mysql from "mysql2/promise";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -13,6 +12,7 @@ import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
+import pool from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -22,34 +22,38 @@ import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.s
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
-// ─────────────────────────────────────────────────────────────────────────────
-// MySQL connection pool
-// ─────────────────────────────────────────────────────────────────────────────
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: Number(process.env.DB_PORT) || 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    timezone: "+00:00",
-    decimalNumbers: true,
-});
+// Helper functions for DB access using the shared pool
 // Helpers – thin wrappers so the rest of the code stays readable
 async function dbGet(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows[0] ?? null;
+    try {
+        const [rows] = await pool.execute(sql, params);
+        return rows[0] ?? null;
+    }
+    catch (err) {
+        console.error("[DB] dbGet failed:", err);
+        return null;
+    }
 }
 async function dbAll(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows;
+    try {
+        const [rows] = await pool.execute(sql, params);
+        return rows;
+    }
+    catch (err) {
+        console.error("[DB] dbAll failed:", err);
+        return [];
+    }
 }
 async function dbRun(sql, params = []) {
-    const [result] = await pool.execute(sql, params);
-    const r = result;
-    return { insertId: r.insertId, affectedRows: r.affectedRows };
+    try {
+        const [result] = await pool.execute(sql, params);
+        const r = result;
+        return { insertId: r.insertId, affectedRows: r.affectedRows };
+    }
+    catch (err) {
+        console.error("[DB] dbRun failed:", err);
+        return { insertId: 0, affectedRows: 0 };
+    }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth event emitter (for long-polling Telegram bot flow)
@@ -66,8 +70,7 @@ async function startServer() {
         conn.release();
     }
     catch (err) {
-        console.error("[DB] MySQL connection FAILED:", err.message);
-        process.exit(1);
+        console.warn("[DB] MySQL connection FAILED during startServer:", err.message);
     }
     const app = express();
     const PORT = Number(process.env.PORT) || 3000;
@@ -154,24 +157,42 @@ async function startServer() {
     // Demo login
     app.post("/api/auth/demo", async (req, res) => {
         try {
-            let user = await dbGet("SELECT * FROM users WHERE email = ?", ["demo@sweatfix.com"]);
-            if (!user) {
-                const { insertId } = await dbRun(`INSERT INTO users (email, name, avatar, profile_context, water_goal)
-           VALUES (?, ?, ?, ?, ?)`, [
-                    "demo@sweatfix.com",
-                    "Demo User",
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-                    "",
-                    2000,
-                ]);
-                user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+            let user;
+            try {
+                user = await dbGet("SELECT * FROM users WHERE email = ?", ["demo@sweatfix.com"]);
+                if (!user) {
+                    const { insertId } = await dbRun(`INSERT INTO users (email, name, avatar, profile_context, water_goal)
+             VALUES (?, ?, ?, ?, ?)`, [
+                        "demo@sweatfix.com",
+                        "Demo User",
+                        "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+                        "",
+                        2000,
+                    ]);
+                    user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+                }
+                else {
+                    // Refresh demo user state
+                    await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
+                    await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+                    await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
+                    await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
+                }
             }
-            else {
-                // Refresh demo user state
-                await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-                await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-                await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-                await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
+            catch (dbErr) {
+                console.warn("[DB] Demo login fallback to MOCK user due to DB error:", dbErr.message);
+                user = {
+                    id: 999,
+                    email: "demo@sweatfix.com",
+                    name: "Demo User (Mock)",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+                    profile_context: "",
+                    water_goal: 2000,
+                    calorie_goal: 2500,
+                    protein_goal: 180,
+                    carb_goal: 250,
+                    fat_goal: 70
+                };
             }
             req.login(user, (err) => {
                 if (err)

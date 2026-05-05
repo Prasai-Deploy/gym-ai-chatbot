@@ -43,6 +43,14 @@ import { MacroTracker } from './components/MacroTracker';
 import { WorkoutTracker } from './components/WorkoutTracker';
 // --- END FEATURE: WORKOUT TRACKER ---
 
+// --- START FEATURE: CALORIES RING ---
+import { CaloriesRing } from './components/CaloriesRing';
+// --- END FEATURE: CALORIES RING ---
+
+// --- START FEATURE: BOTTOM NAV ---
+import { BottomNav } from './components/BottomNav';
+// --- END FEATURE: BOTTOM NAV ---
+
 interface User {
   id: number;
   name: string;
@@ -119,7 +127,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
   };
 
   return (
-    <section className="glass-panel p-6 rounded-[40px] flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+    <section className="glass-card p-6 flex flex-col" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -235,6 +243,7 @@ export default function App() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [activeTab, setActiveTab] = useState('home');
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -409,8 +418,9 @@ export default function App() {
   const fetchPlans = async () => {
     try {
       const res = await fetch('/api/plans');
+      if (!res.ok) return;
       const data = await res.json();
-      setDailyPlans(data);
+      setDailyPlans(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
     }
@@ -419,8 +429,9 @@ export default function App() {
   const fetchProgress = async () => {
     try {
       const res = await fetch('/api/progress');
+      if (!res.ok) return;
       const data = await res.json();
-      setProgress(data.reverse());
+      setProgress(Array.isArray(data) ? data.reverse() : []);
     } catch (e) {
       console.error(e);
     }
@@ -441,8 +452,17 @@ export default function App() {
   const handleDemoLogin = async () => {
     try {
       const res = await fetch('/api/auth/demo', { method: 'POST' });
-      if (res.ok) fetchUser();
-      else alert('Demo login failed');
+      if (res.ok) {
+        const userData = await res.json();
+        if (userData && userData.id) {
+          setUser(userData);
+          setLoading(false);
+        } else {
+          fetchUser();
+        }
+      } else {
+        alert('Demo login failed');
+      }
     } catch (e) {
       console.error(e);
     }
@@ -681,6 +701,24 @@ export default function App() {
     recognition.start();
   };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'coach') {
+      setChatOpen(true);
+    } else {
+      setChatOpen(false);
+      const sectionMap: Record<string, string> = {
+        home: 'dashboard-top',
+        workouts: 'workout-section',
+        nutrition: 'nutrition-section',
+      };
+      const targetId = sectionMap[tab];
+      if (targetId) {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center font-bold" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>Loading...</div>;
 
   if (!user) {
@@ -754,7 +792,7 @@ export default function App() {
   const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
 
   return (
-    <div className="min-h-screen font-sans pb-24 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
+    <div className="min-h-screen font-sans pb-28 relative overflow-hidden" style={{ background: 'var(--surface-primary)', color: 'var(--text-primary)' }}>
       {/* Decorative Background Blobs */}
       <div className="bg-blob bg-blob-1" />
       <div className="bg-blob bg-blob-2" />
@@ -763,11 +801,11 @@ export default function App() {
       {/* Header */}
       <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-40 glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-            <Dumbbell className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex flex-shrink-0 items-center justify-center" style={{ background: 'var(--accent-primary)' }}>
+            <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#121212' }} />
           </div>
           <div className="min-w-0 flex-shrink">
-            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SWEAT FIX GYM</h2>
+            <h2 className="font-bold text-sm sm:text-lg leading-tight uppercase tracking-widest truncate" style={{ color: 'var(--accent-primary)' }}>SWEAT FIX GYM</h2>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -787,40 +825,46 @@ export default function App() {
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}
-        <section>
+        <section id="dashboard-top">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
           <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
         </section>
 
+        {/* --- START FEATURE: CALORIES RING --- */}
+        <CaloriesRing burned={totalCalories} goal={user.calorie_goal || 2000} />
+        {/* --- END FEATURE: CALORIES RING --- */}
+
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
         <MacroTracker 
-          protein={totalProtein} carbs={totalCarbs} fats={totalFats} calories={totalCalories} 
-          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal} caloriesGoal={user.calorie_goal}
+          protein={totalProtein} carbs={totalCarbs} fats={totalFats}
+          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal}
         />
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
         {/* Track Workout Section */}
-        <section className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+        <section className="glass-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4" style={{ borderColor: 'rgba(0, 255, 194, 0.15)' }}>
           <div>
-            <h3 className="text-xl font-bold mb-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Track Workout & Macros</h3>
+            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--accent-primary)' }}>Track Workout & Macros</h3>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Log your recent activity to update your stats and progress chart.</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 btn-gradient px-6 py-3 rounded-2xl whitespace-nowrap"
+            className="flex items-center gap-2 btn-accent px-6 py-3 rounded-[24px] whitespace-nowrap"
           >
             <Plus size={20} /> <span className="md:inline">Log Activity</span>
           </button>
         </section>
 
         {/* --- START FEATURE: WORKOUT TRACKER --- */}
-        <WorkoutTracker />
+        <div id="workout-section">
+          <WorkoutTracker />
+        </div>
         {/* --- END FEATURE: WORKOUT TRACKER --- */}
 
         {/* Progress Chart + Water Log Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div id="nutrition-section" className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Weekly Progress Chart */}
-          <section className="glass-panel p-8 rounded-[40px] md:col-span-2">
+          <section className="glass-card p-8 md:col-span-2">
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
@@ -861,7 +905,7 @@ export default function App() {
           </div>
           <div className="space-y-4">
             {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
-              <div key={i} className={`p-5 sm:p-6 rounded-[24px] glass-panel transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
+              <div key={i} className={`p-5 sm:p-6 glass-card transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
@@ -911,7 +955,7 @@ export default function App() {
           </div>
           <div className="space-y-3">
             {progress.slice().reverse().map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 glass-panel glass-panel-hover rounded-2xl">
+              <div key={i} className="flex items-center justify-between p-4 glass-card glass-card-hover">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-elevated)' }}>
                     <Dumbbell size={20} style={{ color: 'var(--text-muted)' }} />
@@ -922,7 +966,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-purple-400">+{item.calories} kcal</div>
+                  <div className="font-bold" style={{ color: 'var(--accent-primary)' }}>+{item.calories} kcal</div>
                   <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-muted)' }}>Burned</div>
                 </div>
               </div>
@@ -936,15 +980,13 @@ export default function App() {
         </section>
       </main>
 
-      {/* Chat Bot Trigger */}
-      <button
-        aria-label="Open Chat"
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 min-w-[44px] min-h-[44px] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50 focus:outline-none focus:ring-4 focus:ring-purple-500/50"
-        style={{ background: 'var(--gradient-primary)', boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)' }}
-      >
-        <MessageSquare size={28} />
-      </button>
+      {/* --- START FEATURE: BOTTOM NAV --- */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onLogPress={() => setShowForm(true)}
+      />
+      {/* --- END FEATURE: BOTTOM NAV --- */}
 
       {/* Chat Window */}
       <AnimatePresence>

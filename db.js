@@ -23,8 +23,8 @@ pool.getConnection()
     conn.release();
   })
   .catch((err) => {
-    console.error("[DB] MySQL connection FAILED:", err.message);
-    process.exit(1);
+    console.warn("[DB] MySQL connection FAILED:", err.message);
+    console.warn("[DB] Proceeding anyway (database features will be disabled)...");
   });
 
 export default pool;

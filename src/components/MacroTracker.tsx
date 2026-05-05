@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Beef, Wheat, Activity, Scale, TrendingDown, TrendingUp, Flame } from 'lucide-react';
+import { Beef, Wheat, Activity, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface MacroRingProps {
   label: string;
@@ -73,11 +73,11 @@ function MacroRing({ label, current, goal, unit, color, gradientId, gradientColo
 }
 
 export function MacroTracker({ 
-  protein = 0, carbs = 0, fats = 0, calories = 0,
-  proteinGoal, carbsGoal, fatsGoal, caloriesGoal
+  protein = 0, carbs = 0, fats = 0,
+  proteinGoal, carbsGoal, fatsGoal
 }: { 
-  protein?: number, carbs?: number, fats?: number, calories?: number,
-  proteinGoal?: number, carbsGoal?: number, fatsGoal?: number, caloriesGoal?: number
+  protein?: number, carbs?: number, fats?: number,
+  proteinGoal?: number, carbsGoal?: number, fatsGoal?: number
 }) {
   const [weight, setWeight] = useState('');
   const [weightLog, setWeightLog] = useState<{ value: number; date: string }[]>([]);
@@ -100,46 +100,20 @@ export function MacroTracker({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="glass-panel rounded-3xl p-6 md:p-8"
+      className="glass-card p-6 md:p-8"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg md:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Macro & Metric Tracker
+            Macro Breakdown
           </h3>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Today's nutrition breakdown
+            Today's nutrition
           </p>
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
           <Activity size={20} className="text-white" />
         </div>
-      </div>
-
-      {/* Calories Count */}
-      <div className="mb-6 p-4 rounded-2xl border" style={{ background: 'var(--surface-elevated)', borderColor: 'var(--glass-border)' }}>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Flame size={16} className="text-orange-400" />
-            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Total Calories</span>
-          </div>
-          <div className="text-right flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-orange-400">{calories.toFixed(0)}</span>
-            {caloriesGoal && caloriesGoal > 0 ? (
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>/ {caloriesGoal} kcal</span>
-            ) : (
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>kcal</span>
-            )}
-          </div>
-        </div>
-        {caloriesGoal && caloriesGoal > 0 ? (
-          <div className="h-2 mt-3 rounded-full overflow-hidden" style={{ background: 'var(--surface-input)' }}>
-            <div 
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((calories / caloriesGoal) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
-            />
-          </div>
-        ) : null}
       </div>
 
       {/* Macro Rings */}
@@ -175,7 +149,6 @@ export function MacroTracker({
           icon={<Activity size={12} className="text-rose-400" />}
         />
       </div>
-
 
       {/* Weight Logger */}
       <div className="border-t pt-6" style={{ borderColor: 'var(--glass-border)' }}>
