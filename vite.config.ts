@@ -73,7 +73,7 @@ export default defineConfig(({mode}) => {
           // Navigations should serve the app shell
           navigateFallback: 'index.html',
           // Only fallback navigation requests (not API calls)
-          navigateFallbackDenylist: [/^\/api\//],
+          navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
           // Runtime caching strategies
           runtimeCaching: [
             // API calls: NetworkFirst with 10s timeout, fall back to cache
