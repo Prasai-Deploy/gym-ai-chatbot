@@ -35,6 +35,7 @@ import {
   buildDashboardSummary,
   buildChatInsight,
 } from "./services/dashboard.service.js";
+import { callAIWithRouting } from "./services/ai.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -554,67 +555,6 @@ async function startServer() {
   app.use("/api", dashboardRouter);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // OpenRouter AI connector
-  // ───────────────────────────────────────────────────────────────────────────
-  async function getOpenRouterResponse(
-    userMessage: string,
-    history: any[],
-    systemMessage: string
-  ): Promise<string> {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey || apiKey.trim() === "") {
-      throw new Error(
-        "Missing Authentication: OPENROUTER_API_KEY is not defined in the environment or .env file."
-      );
-    }
-
-    const messages: { role: string; content: string }[] = [
-      { role: "system", content: systemMessage },
-    ];
-
-    for (const h of history) {
-      const role =
-        h.role === "model" || h.role === "assistant" ? "assistant" : "user";
-      const content =
-        h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "";
-      if (content) messages.push({ role, content });
-    }
-    messages.push({ role: "user", content: userMessage });
-
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey.trim()}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-          "X-Title": "Sweat Fix Gym",
-        },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
-          messages,
-          temperature: 0.8,
-          top_p: 0.8,
-          top_k: 50,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errJson = await response.json().catch(() => ({}));
-      const errorMessage =
-        typeof (errJson as any).error === "string"
-          ? (errJson as any).error
-          : (errJson as any).error?.message;
-      throw new Error(errorMessage || "OpenRouter API Error");
-    }
-
-    const data = await response.json();
-    return (data as any).choices?.[0]?.message?.content || "I encountered an error.";
-  }
-
-  // ───────────────────────────────────────────────────────────────────────────
   // Chat route
   // ───────────────────────────────────────────────────────────────────────────
   // ── Progress chat trigger regex ────────────────────────────────────────────
@@ -835,15 +775,15 @@ If there is no completed meal or workout to log, do not include "progress_log".$
 
       let aiContent: string;
       try {
-        aiContent = await getOpenRouterResponse(
+        aiContent = await callAIWithRouting(
           message,
-          history || [],
-          systemPrompt
+          systemPrompt,
+          history || []
         );
       } catch (apiError: any) {
         console.error("OpenRouter API Error:", apiError.message);
         return res.json({
-          text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please check your API key or try again in a moment. (${apiError.message})`,
+          text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
         });
       }
 

@@ -19,6 +19,7 @@ import { extractProfileUpdate } from "./services/updateExtractor.service.js";
 import { decideSplit, buildWorkoutPrompt, callWorkoutAI, formatWorkoutForChat, } from "./services/workoutAI.service.js";
 import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, } from "./services/workout.service.js";
 import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.service.js";
+import { callAIWithRouting } from "./services/ai.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -98,6 +99,20 @@ async function startServer() {
     });
     passport.deserializeUser(async (id, done) => {
         try {
+            if (id === 999) {
+                return done(null, {
+                    id: 999,
+                    email: "demo@sweatfix.com",
+                    name: "Demo User (Mock)",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+                    profile_context: "",
+                    water_goal: 2000,
+                    calorie_goal: 2500,
+                    protein_goal: 180,
+                    carb_goal: 250,
+                    fat_goal: 70
+                });
+            }
             const user = await dbGet("SELECT * FROM users WHERE id = ?", [id]);
             done(null, user);
         }
@@ -170,6 +185,8 @@ async function startServer() {
                         2000,
                     ]);
                     user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+                    if (!user)
+                        throw new Error("DB insertion failed, fallback to mock");
                 }
                 else {
                     // Refresh demo user state
@@ -213,59 +230,74 @@ async function startServer() {
     app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), async (req, res) => {
         const state = req.query.state;
         const user = req.user;
-        if (state && user) {
-            try {
-                await dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
-                    state,
-                    user.id,
-                ]);
-                console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
-                authEvents.emit(`auth_success_${state}`, user);
-            }
-            catch (e) {
-                console.error("Failed to link chat_id:", e);
-            }
-            res.send(`
-          <html>
-            <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
-              <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
-                <div style="width: 64px; height: 64px; background: #10b981; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        const renderResponse = () => {
+            if (state && user) {
+                try {
+                    dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
+                        state,
+                        user.id,
+                    ]).catch(e => console.error("Failed to link chat_id:", e));
+                    console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
+                    authEvents.emit(`auth_success_${state}`, user);
+                }
+                catch (e) {
+                    console.error("Failed to link chat_id:", e);
+                }
+                res.send(`
+            <html>
+              <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
+                <div style="text-align: center; padding: 2.5rem; background: #18181b; border-radius: 1.5rem; border: 1px solid #27272a; max-width: 400px; width: 90%;">
+                  <div style="width: 64px; height: 64px; background: #10b981; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
+                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
+                  <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
                 </div>
-                <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
-                <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
-                <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
-              </div>
-            </body>
-          </html>
-        `);
+              </body>
+            </html>
+          `);
+            }
+            else {
+                res.send(`
+            <html>
+              <body>
+                <script>
+                  if (window.opener) {
+                    window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                    window.close();
+                  } else {
+                    window.location.href = '/';
+                  }
+                </script>
+                <p>Authentication successful. This window should close automatically.</p>
+              </body>
+            </html>
+          `);
+            }
+        };
+        // Explicitly save the session before responding to avoid race conditions
+        if (req.session) {
+            req.session.save((err) => {
+                if (err)
+                    console.error("Session save error:", err);
+                renderResponse();
+            });
         }
         else {
-            res.send(`
-          <html>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                  window.close();
-                } else {
-                  window.location.href = '/';
-                }
-              </script>
-              <p>Authentication successful. This window should close automatically.</p>
-            </body>
-          </html>
-        `);
+            renderResponse();
         }
     });
     app.get("/api/me", (req, res) => {
         const user = req.user;
         console.log("Checking /api/me, user found:", !!user);
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.json(user || null);
     });
     // Long-polling endpoint for Telegram bot auth flow
     app.get("/api/auth/status/:chat_id", (req, res) => {
         const chatId = req.params.chat_id;
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         const timeout = setTimeout(() => {
             authEvents.removeAllListeners(`auth_success_${chatId}`);
             res.json({ status: "pending" });
@@ -411,50 +443,6 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     app.use("/api", dashboardRouter);
     // ───────────────────────────────────────────────────────────────────────────
-    // OpenRouter AI connector
-    // ───────────────────────────────────────────────────────────────────────────
-    async function getOpenRouterResponse(userMessage, history, systemMessage) {
-        const apiKey = process.env.OPENROUTER_API_KEY;
-        if (!apiKey || apiKey.trim() === "") {
-            throw new Error("Missing Authentication: OPENROUTER_API_KEY is not defined in the environment or .env file.");
-        }
-        const messages = [
-            { role: "system", content: systemMessage },
-        ];
-        for (const h of history) {
-            const role = h.role === "model" || h.role === "assistant" ? "assistant" : "user";
-            const content = h.parts && h.parts.length > 0 ? h.parts[0].text : h.content || "";
-            if (content)
-                messages.push({ role, content });
-        }
-        messages.push({ role: "user", content: userMessage });
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey.trim()}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-                "X-Title": "Sweat Fix Gym",
-            },
-            body: JSON.stringify({
-                model: process.env.OPENROUTER_MODEL || "z-ai/glm-4.5-air:free",
-                messages,
-                temperature: 0.8,
-                top_p: 0.8,
-                top_k: 50,
-            }),
-        });
-        if (!response.ok) {
-            const errJson = await response.json().catch(() => ({}));
-            const errorMessage = typeof errJson.error === "string"
-                ? errJson.error
-                : errJson.error?.message;
-            throw new Error(errorMessage || "OpenRouter API Error");
-        }
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || "I encountered an error.";
-    }
-    // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
     // ── Progress chat trigger regex ────────────────────────────────────────────
@@ -584,8 +572,9 @@ Your goal is to help members with gym information, membership details, and gener
 
 Rules to follow strictly:
 1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
-2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
+2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. Avoid unsafe medical or extreme fitness advice. If a user asks about an injury, advise them to consult a medical professional.
 3. Brevity: Keep all general responses under 3 to 4 sentences. However, when asked to generate a workout or diet plan, provide a highly detailed, comprehensive response.
+4. Diets: Support both Indian vegetarian and non-vegetarian diet suggestions when generating meal plans.
 
 Interaction Structure
 Onboarding & Details Gathering: Before creating any diet or workout plan, you MUST politely ask the user to provide their current details if they haven't already. Specifically, ask for:
@@ -646,7 +635,7 @@ Example:
 If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
             let aiContent;
             try {
-                aiContent = await getOpenRouterResponse(message, history || [], systemPrompt);
+                aiContent = await callAIWithRouting(message, systemPrompt, history || []);
             }
             catch (apiError) {
                 console.error("OpenRouter API Error:", apiError.message);
