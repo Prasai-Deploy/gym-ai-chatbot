@@ -869,15 +869,23 @@ export default function App() {
 
       if (updates.userProfile) {
         fetchUser();
+        fetchActivities(); // Profile updates might generate activity logs
       }
       
       if (updates.progress) {
         fetchProgress();
+        fetchWeeklyProgress(); // Update charts
+        fetchActivities(); // Logged progress generates activity logs
+        window.dispatchEvent(new CustomEvent('progress-logged'));
         advice += "\n\n*(I have automatically logged your progress!)*";
       }
       
       if (updates.plans) {
         fetchPlans();
+        fetchActivities(); // Plan generation creates activity logs
+        fetchUser(); // AI sets a new hydration goal on plan generation
+        fetchTodayWater(); // Update the water UI with the new goal
+        window.dispatchEvent(new CustomEvent('plan-generated'));
         advice += "\n\n*(I have automatically attached a new plan to your Daily Protocol!)*";
       }
 

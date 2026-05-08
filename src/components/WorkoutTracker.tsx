@@ -47,47 +47,62 @@ export function WorkoutTracker() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 1. Fetch today's workout and active session
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch('/api/workout/today');
-        if (res.status === 404) {
-          setLoading(false);
-          return;
-        }
-        const data = await res.json();
-        
-        if (data.plan) {
-          setPlan(data.plan);
-          
-          // If session exists, resume it
-          if (data.session && data.session.status === 'active') {
-            setSession(data.session);
-            setIsActive(true);
-            
-            const completedNames = data.session.completed_exercises || [];
-            const mappedExercises = data.plan.exercises.map((ex: any) => ({
-              ...ex,
-              done: completedNames.includes(ex.name)
-            }));
-            setExercises(mappedExercises);
-            
-            // Calculate elapsed time
-            const start = new Date(data.session.start_time).getTime();
-            const now = new Date().getTime();
-            setElapsed(Math.floor((now - start) / 1000));
-          } else {
-            setExercises(data.plan.exercises.map((ex: any) => ({ ...ex, done: false })));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch workout:', err);
-      } finally {
+  const fetchData = async () => {
+    try {
+      const res = await fetch('/api/workout/today');
+      if (res.status === 404) {
         setLoading(false);
+        return;
       }
+      const data = await res.json();
+      
+      if (data.plan) {
+        setPlan(data.plan);
+        
+        // If session exists, resume it
+        if (data.session && data.session.status === 'active') {
+          setSession(data.session);
+          setIsActive(true);
+          
+          const completedNames = data.session.completed_exercises || [];
+          const mappedExercises = data.plan.exercises.map((ex: any) => ({
+            ...ex,
+            done: completedNames.includes(ex.name)
+          }));
+          setExercises(mappedExercises);
+          
+          // Calculate elapsed time
+          const start = new Date(data.session.start_time).getTime();
+          const now = new Date().getTime();
+          setElapsed(Math.floor((now - start) / 1000));
+        } else {
+          setExercises(data.plan.exercises.map((ex: any) => ({ ...ex, done: false })));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch workout:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // 1. Fetch today's workout and active session
+  useEffect(() => {
     fetchData();
+
+    const handlePlanGenerated = () => {
+      fetchData();
+    };
+
+    window.addEventListener('plan-generated', handlePlanGenerated);
+    window.addEventListener('workout-completed', handlePlanGenerated);
+
+    return () => {
+      window.removeEventListener('plan-generated', handlePlanGenerated);
+      window.removeEventListener('workout-completed', handlePlanGenerated);
+    };
   }, []);
+
 
   // Timer logic
   useEffect(() => {
