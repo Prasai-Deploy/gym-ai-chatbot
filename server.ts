@@ -842,13 +842,13 @@ ${userContextStr}`;
       };
 
       if (user) {
-        const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
+        const jsonMatch = aiContent.match(/```(?:json)?\s+([\s\S]*?)\s+```/i);
         if (jsonMatch) {
           try {
             const parsed = JSON.parse(jsonMatch[1]);
             
             // Remove the JSON block from the text sent to the user
-            aiContent = aiContent.replace(/```json\n([\s\S]*?)\n```/g, "").trim();
+            aiContent = aiContent.replace(/```(?:json)?\s+([\s\S]*?)\s+```/gi, "").trim();
 
             // ── profile_update: AI-driven profile save (used during onboarding) ──
             if (parsed.profile_update) {

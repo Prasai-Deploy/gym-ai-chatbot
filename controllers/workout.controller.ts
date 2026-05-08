@@ -22,6 +22,7 @@ import {
   getTodaySession,
   getWorkoutHistory,
 } from "../services/workout.service.js";
+import { getLatestActivePlan } from "../services/plan.service.js";
 import {
   decideSplit,
   buildWorkoutPrompt,
@@ -246,7 +247,21 @@ export async function getTodayWorkoutHandler(req: Request, res: Response): Promi
   const today = new Date().toISOString().split("T")[0];
 
   try {
-    const plan = await getPlanByDate(user.id, today);
+    const activePlan = await getLatestActivePlan(user.id);
+    let plan = await getPlanByDate(user.id, today);
+    
+    // Bridge new schema to expected frontend format
+    if (activePlan && activePlan.workout_title) {
+      plan = {
+        id: activePlan.workout_plan_id,
+        focus: activePlan.workout_title,
+        duration: activePlan.duration || "45 min",
+        difficulty: activePlan.difficulty || "Moderate",
+        exercises: activePlan.workout_exercises || [],
+        calories_estimate: activePlan.calories_estimate || 0
+      };
+    }
+
     const session = await getTodaySession(user.id);
 
     if (!plan) {
