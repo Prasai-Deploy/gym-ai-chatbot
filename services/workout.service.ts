@@ -4,6 +4,7 @@
  * Contains ONLY database queries — no AI logic, no HTTP concerns.
  */
 import pool from "../db.js";
+import { updateWeeklyProgress } from "./progress.service.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -19,9 +20,11 @@ export interface Exercise {
 }
 
 export interface WorkoutPlan {
-  focus:     string;           // e.g. "Push Day"
-  duration:  string;           // e.g. "45 min"
-  exercises: Exercise[];
+  focus:             string;           // e.g. "Push Day"
+  duration:          string;           // e.g. "45 min"
+  exercises:         Exercise[];
+  calories_estimate?: number;
+  difficulty?:        string;          // e.g. "Beginner", "Moderate", "Hard"
 }
 
 export interface WorkoutLogEntry {
@@ -79,14 +82,25 @@ export async function savePlan(
   const exercisesJson = JSON.stringify(plan.exercises);
 
   await pool.execute(
-    `INSERT INTO workout_plans (user_id, date, focus, duration, exercises, raw_prompt)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO workout_plans (user_id, date, focus, duration, exercises, calories_estimate, difficulty, raw_prompt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
-       focus      = VALUES(focus),
-       duration   = VALUES(duration),
-       exercises  = VALUES(exercises),
-       raw_prompt = VALUES(raw_prompt)`,
-    [userId, date, plan.focus, plan.duration, exercisesJson, rawPrompt]
+       focus             = VALUES(focus),
+       duration          = VALUES(duration),
+       exercises         = VALUES(exercises),
+       calories_estimate = VALUES(calories_estimate),
+       difficulty        = VALUES(difficulty),
+       raw_prompt        = VALUES(raw_prompt)`,
+    [
+      userId,
+      date,
+      plan.focus,
+      plan.duration,
+      exercisesJson,
+      plan.calories_estimate ?? 0,
+      plan.difficulty ?? "Moderate",
+      rawPrompt,
+    ]
   );
 
   // Re-fetch so we always return the actual DB row (with id, created_at etc.)
@@ -170,3 +184,121 @@ export async function saveLogs(
     values
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live Session Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Start a new workout session for a given plan.
+ */
+export async function startSession(userId: number, planId: number): Promise<any> {
+  const [result] = await pool.execute(
+    `INSERT INTO workout_sessions (user_id, plan_id, status, start_time, completed_exercises, progress_percentage)
+     VALUES (?, ?, 'active', NOW(), '[]', 0)`,
+    [userId, planId]
+  );
+  const insertId = (result as any).insertId;
+  
+  const [rows] = await pool.execute(`SELECT * FROM workout_sessions WHERE id = ?`, [insertId]);
+  return rows[0];
+}
+
+/**
+ * Update the progress of an active session.
+ */
+export async function updateSessionProgress(
+  sessionId: number,
+  completedExercises: string[],
+  progressPercentage: number,
+  caloriesBurned: number
+): Promise<void> {
+  await pool.execute(
+    `UPDATE workout_sessions 
+     SET completed_exercises = ?, progress_percentage = ?, calories_burned = ?
+     WHERE id = ?`,
+    [JSON.stringify(completedExercises), progressPercentage, caloriesBurned, sessionId]
+  );
+}
+
+/**
+ * Finalize a workout session.
+ */
+export async function completeSession(sessionId: number): Promise<void> {
+  // 1. Fetch session info before completing
+  const [sessionRows] = await pool.execute(
+    `SELECT user_id, calories_burned, completed_exercises, start_time 
+     FROM workout_sessions WHERE id = ?`,
+    [sessionId]
+  );
+  const session = (sessionRows as any[])[0];
+
+  // 2. Mark as completed
+  await pool.execute(
+    `UPDATE workout_sessions 
+     SET status = 'completed', end_time = NOW()
+     WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (session) {
+    const exercises = typeof session.completed_exercises === "string" 
+      ? JSON.parse(session.completed_exercises) 
+      : (session.completed_exercises || []);
+    
+    // Calculate duration in minutes
+    const startTime = new Date(session.start_time);
+    const endTime = new Date();
+    const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+
+    // 3. Update weekly progress
+    await updateWeeklyProgress(session.user_id, new Date().toISOString().split('T')[0], {
+      workouts_completed: 1,
+      exercises_completed: exercises.length,
+      calories_burned: session.calories_burned || 0,
+      workout_duration: durationMinutes
+    });
+  }
+}
+
+/**
+ * Fetch the active session for today, if any.
+ */
+export async function getTodaySession(userId: number): Promise<any | null> {
+  const [rows] = await pool.execute(
+    `SELECT * FROM workout_sessions 
+     WHERE user_id = ? AND status = 'active'
+     ORDER BY created_at DESC 
+     LIMIT 1`,
+    [userId]
+  );
+  return (rows as any[])[0] ?? null;
+}
+
+/**
+ * Fetch workout history for a user.
+ */
+export async function getWorkoutHistory(userId: number, limit = 10): Promise<any[]> {
+  const [rows] = await pool.execute(
+    `SELECT s.*, p.focus as workout_title, p.duration as planned_duration
+     FROM workout_sessions s
+     JOIN workout_plans p ON s.plan_id = p.id
+     WHERE s.user_id = ?
+     ORDER BY s.created_at DESC
+     LIMIT ?`,
+    [userId, limit]
+  );
+  return rows as any[];
+}
+
+/**
+ * Save raw AI-generated plan for audit/history.
+ */
+export async function saveToChatbotLog(userId: number, rawJson: any): Promise<void> {
+  await pool.execute(
+    `INSERT INTO chatbot_generated_plans (user_id, raw_json)
+     VALUES (?, ?)`,
+    [userId, JSON.stringify(rawJson)]
+  );
+}
+

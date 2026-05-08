@@ -17,7 +17,8 @@ import { FitnessProfileData, getMissingFields, isProfileComplete } from "./profi
  */
 export function buildSystemContext(
   profile: any,
-  legacyMemory?: string
+  legacyMemory?: string,
+  progressInsight?: string
 ): string {
   const missing = getMissingFields(profile);
 
@@ -37,7 +38,7 @@ export function buildSystemContext(
   }
 
   // ── Case 3: complete profile ─────────────────────────────────────────────
-  return buildProfileBlock(contextLines, legacyMemory);
+  return buildProfileBlock(contextLines, legacyMemory, progressInsight);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,10 +57,13 @@ function buildProfileLines(profile: any): string[] {
   return lines;
 }
 
-function buildProfileBlock(lines: string[], legacyMemory?: string): string {
+function buildProfileBlock(lines: string[], legacyMemory?: string, progressInsight?: string): string {
   let block = `\n\n[USER FITNESS PROFILE — personalise every response using this]\n${lines.join(" | ")}`;
   if (legacyMemory) {
     block += `\n[Memory Notes]\n${legacyMemory}`;
+  }
+  if (progressInsight) {
+    block += `\n[WEEKLY PROGRESS TRENDS — use this to provide adaptive recommendations and specific praise]\n${progressInsight}`;
   }
   return block;
 }

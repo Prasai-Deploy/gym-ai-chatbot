@@ -18,7 +18,8 @@ import {
   Check,
   Bot,
   Mic,
-  MicOff
+  MicOff,
+  History
 } from 'lucide-react';
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -105,12 +106,14 @@ interface WaterTrackerProps {
   waterGoal: number;
   onAddWater: (amount: number) => void;
   onUpdateGoal: (newGoal: number) => void;
+  onRemoveWater?: (id: number) => void;
 }
 
-function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: WaterTrackerProps) {
+function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal, onRemoveWater, logs = [] }: WaterTrackerProps & { logs?: any[] }) {
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [tempGoal, setTempGoal] = useState((waterGoal || 2000).toString());
   const [customAmount, setCustomAmount] = useState('');
+  const [showLogs, setShowLogs] = useState(false);
 
   const pct = Math.min(Math.round((currentWater / (waterGoal || 2000)) * 100), 100);
 
@@ -138,97 +141,149 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal }: Wat
   };
 
   return (
-    <section className="card p-6 flex flex-col">
+    <section className="card p-6 flex flex-col transition-all duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.12)' }}>
-            <Droplets size={20} className="text-blue-400" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl" style={{ background: 'rgba(59,130,246,0.1)' }}>
+            <Droplets size={22} className="text-blue-400" />
           </div>
           <div>
-            <h3 className="font-bold text-base leading-tight" style={{ color: 'var(--text-primary)' }}>Daily Water Log</h3>
-            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-400">{format(new Date(), 'MMM dd')}</p>
+            <h3 className="font-bold text-lg leading-tight text-white">Daily Water Log</h3>
+            <p className="text-[10px] uppercase tracking-widest font-black text-blue-500/80 mt-0.5">Smart Hydration</p>
           </div>
         </div>
         
-        {isEditingGoal ? (
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              value={tempGoal} 
-              onChange={e => setTempGoal(e.target.value)} 
-              className="w-16 px-2 py-1 text-xs rounded bg-zinc-800 text-white outline-none" 
-              autoFocus
-              onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
-            />
-            <button onClick={handleSaveGoal} className="text-xs text-blue-400 font-bold">Save</button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowLogs(!showLogs)}
+            className={`p-2 rounded-xl transition-colors ${showLogs ? 'bg-blue-500/20 text-blue-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            <History size={18} />
+          </button>
+          {isEditingGoal ? (
+            <div className="flex items-center gap-2 bg-zinc-900 rounded-xl p-1 px-2 border border-blue-500/30">
+              <input 
+                type="number" 
+                value={tempGoal} 
+                onChange={e => setTempGoal(e.target.value)} 
+                className="w-16 px-1 py-1 text-xs bg-transparent text-white outline-none font-bold" 
+                autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
+              />
+              <button onClick={handleSaveGoal} className="text-[10px] font-black text-blue-400 uppercase">Set</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setTempGoal((waterGoal || 2000).toString()); setIsEditingGoal(true); }}
+              className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white border border-white/5 transition-all"
+            >
+              Goal
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showLogs ? (
+        <div className="flex-1 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+             <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Today's Intake</span>
+             <button onClick={() => setShowLogs(false)} className="text-[10px] font-bold text-blue-400">Back</button>
           </div>
-        ) : (
-          <button
-            onClick={() => { setTempGoal((waterGoal || 2000).toString()); setIsEditingGoal(true); }}
-            className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 flex items-center gap-1"
-           
-          >
-            <Edit2 size={12} /> Goal
-          </button>
-        )}
-      </div>
-
-      {/* Total + Status */}
-      <div className="text-center mb-5">
-        <div className="text-4xl font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>
-          {(currentWater / 1000).toFixed(2)}
-          <span className="text-lg font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>L</span>
+          <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            {logs.length > 0 ? logs.map((log, i) => (
+              <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Droplets size={14} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white">{log.intake_amount}ml</div>
+                    <div className="text-[9px] text-zinc-500 uppercase">{format(new Date(log.created_at), 'hh:mm a')}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-tighter">{log.source}</div>
+                  <button 
+                    onClick={() => onRemoveWater?.(log.id)}
+                    className="p-1 hover:text-red-500 transition-colors"
+                  >
+                    <Plus size={12} className="rotate-45" />
+                  </button>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-8 text-xs text-zinc-600 italic">No logs for today.</div>
+            )}
+          </div>
         </div>
-        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {currentWater} / {waterGoal || 2000} ml · {pct}%
-        </div>
-        <div className="text-sm font-semibold mt-1 text-blue-400">{status}</div>
-      </div>
+      ) : (
+        <>
+          {/* Total + Progress Circle */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-left">
+              <div className="text-4xl font-black tabular-nums tracking-tight text-white">
+                {(currentWater / 1000).toFixed(2)}
+                <span className="text-xl font-bold ml-1 text-zinc-500">L</span>
+              </div>
+              <div className="text-xs font-bold mt-1 text-zinc-400">
+                {currentWater} / {waterGoal || 2000} ml · <span className="text-blue-400">{pct}%</span>
+              </div>
+              <div className="text-xs font-bold mt-2 text-blue-500 uppercase tracking-wider">{status}</div>
+            </div>
+            
+            {/* Simple Animated Ring */}
+            <div className="relative w-20 h-20">
+               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-zinc-800" />
+                  <circle 
+                    cx="50" cy="50" r="45" fill="none" stroke="#3b82f6" strokeWidth="8" 
+                    strokeDasharray="283" strokeDashoffset={283 - (283 * pct) / 100}
+                    strokeLinecap="round" className="transition-all duration-1000 ease-out"
+                  />
+               </svg>
+               <div className="absolute inset-0 flex items-center justify-center">
+                  <Droplets size={20} className={pct >= 100 ? "text-blue-400" : "text-zinc-700"} />
+               </div>
+            </div>
+          </div>
 
-      {/* Progress Bar */}
-      <div className="w-full h-2 rounded-full mb-6 overflow-hidden" style={{ background: 'var(--surface-elevated)' }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }}
-        />
-      </div>
+          {/* Quick Add Grid */}
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {[250, 500, 750, 1000].map(amount => (
+              <button
+                key={amount}
+                onClick={() => onAddWater(amount)}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group"
+              >
+                <span className="text-xs font-black text-white group-hover:text-blue-400">{amount >= 1000 ? '1L' : amount}</span>
+                <span className="text-[8px] font-bold text-zinc-600 uppercase mt-0.5 group-hover:text-blue-500/50">{amount >= 1000 ? '' : 'ml'}</span>
+              </button>
+            ))}
+          </div>
 
-      {/* Quick Add Buttons */}
-      <div className="flex gap-2 mb-4">
-        {[250, 500].map(amount => (
-          <button
-            key={amount}
-            onClick={() => onAddWater(amount)}
-            className="btn-secondary flex-1 py-2 text-xs"
-          >
-            +{amount}ml
-          </button>
-        ))}
-      </div>
-
-      {/* Custom Amount Input */}
-      <div className="flex gap-2 flex-1 items-end">
-        <div className="flex-1 relative">
-          <input
-            type="number"
-            value={customAmount}
-            onChange={e => setCustomAmount(e.target.value)}
-            placeholder="Custom amount"
-            className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-zinc-600 bg-[var(--surface-input)]"
-            onKeyDown={e => e.key === 'Enter' && handleCustomAdd()}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
-            ml
-          </span>
-        </div>
-        <button
-          onClick={handleCustomAdd}
-          className="btn-primary px-4 py-3 rounded-xl flex items-center justify-center text-sm font-bold"
-        >
-          Add
-        </button>
-      </div>
+          {/* Custom Amount */}
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 relative">
+              <input
+                type="number"
+                value={customAmount}
+                onChange={e => setCustomAmount(e.target.value)}
+                placeholder="Custom log"
+                className="w-full rounded-2xl px-4 py-3.5 text-sm font-bold outline-none border border-white/5 focus:border-blue-500/50 placeholder-zinc-700 bg-zinc-900/80 text-white"
+                onKeyDown={e => e.key === 'Enter' && handleCustomAdd()}
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-600 uppercase">ml</span>
+            </div>
+            <button
+              onClick={handleCustomAdd}
+              className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-colors"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -252,6 +307,15 @@ export default function App() {
   const [editName, setEditName] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+  const [planHistory, setPlanHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [waterLogs, setWaterLogs] = useState<any[]>([]);
+  const [waterSummary, setWaterSummary] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [weeklyChartData, setWeeklyChartData] = useState<any[]>([]);
+  const [weeklySummary, setWeeklySummary] = useState<any>(null);
+  const [chartMetric, setChartMetric] = useState<'calories_burned' | 'workouts_completed' | 'exercises_completed' | 'workout_duration' | 'hydration_completion'>('calories_burned');
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -300,8 +364,19 @@ export default function App() {
     } else {
       document.body.style.overflow = '';
     }
+
+    // Horizontal wheel scroll for desktop analytics tabs
+    const tabs = document.getElementById('analytics-tabs');
+    const handleWheel = (e: WheelEvent) => {
+      if (tabs && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        tabs.scrollLeft += e.deltaY;
+      }
+    };
+    tabs?.addEventListener('wheel', handleWheel, { passive: true });
+
     return () => {
       document.body.style.overflow = '';
+      tabs?.removeEventListener('wheel', handleWheel);
     };
   }, [chatOpen, showForm, showPlanForm, showProfile]);
 
@@ -324,19 +399,36 @@ export default function App() {
     };
     window.addEventListener('online', handleOnline);
 
+    // Listen for workout completion to refresh dashboard
+    const handleWorkoutCompleted = () => {
+      fetchProgress();
+      fetchPlans();
+      fetchWeeklyProgress();
+      fetchActivities();
+    };
+    window.addEventListener('workout-completed', handleWorkoutCompleted);
+
     return () => {
       window.removeEventListener('message', handleMessage);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('workout-completed', handleWorkoutCompleted);
     };
+
   }, []);
+
+  useEffect(() => {
+    fetchActivities();
+    fetchWeeklyProgress();
+  }, [user]);
 
   // Poll for real-time updates from the database
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval>;
     if (user) {
       intervalId = setInterval(() => {
-        fetchProgress();
-        fetchPlans();
+        fetchDashboardData();
+        fetchActivities();
+        fetchWeeklyProgress();
       }, 5000); // 5 seconds polling
     }
     return () => {
@@ -345,7 +437,7 @@ export default function App() {
   }, [user]);
 
   useLayoutEffect(() => {
-    if (!progress.length) return;
+    if (!weeklyChartData.length) return;
 
     let root = am5.Root.new("chartdiv");
 
@@ -356,18 +448,25 @@ export default function App() {
 
     let chart = root.container.children.push(am5xy.XYChart.new(root, {
       panX: true,
-      panY: true,
+      panY: false,
       wheelX: "panX",
       wheelY: "zoomX",
-      pinchZoomX: true
+      pinchZoomX: true,
+      layout: root.verticalLayout
     }));
 
+    // Add cursor (tooltips only, no behavior change)
     let cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
       behavior: "none"
     }));
+    cursor.lineX.set("visible", false);
     cursor.lineY.set("visible", false);
 
-    let xAxisRenderer = am5xy.AxisRendererX.new(root, {});
+    // Create axes
+    let xAxisRenderer = am5xy.AxisRendererX.new(root, {
+      minGridDistance: 30,
+      minorGridEnabled: true
+    });
     xAxisRenderer.grid.template.set("strokeOpacity", 0);
 
     let xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
@@ -375,51 +474,87 @@ export default function App() {
       renderer: xAxisRenderer,
       tooltip: am5.Tooltip.new(root, {})
     }));
-    xAxis.data.setAll(progress);
+    
+    const formattedData = weeklyChartData.map(d => ({
+      ...d,
+      date: format(new Date(d.date), 'EEE')
+    }));
+    xAxis.data.setAll(formattedData);
 
     let yAxisRenderer = am5xy.AxisRendererY.new(root, {});
-    yAxisRenderer.grid.template.set("strokeOpacity", 0.1);
+    yAxisRenderer.grid.template.set("strokeOpacity", 0.05);
     yAxisRenderer.grid.template.set("strokeDasharray", [3, 3]);
 
     let yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
-      renderer: yAxisRenderer
+      renderer: yAxisRenderer,
+      min: 0
     }));
 
-    let series = chart.series.push(am5xy.LineSeries.new(root, {
-      name: "Calories",
-      xAxis: xAxis,
-      yAxis: yAxis,
-      valueYField: "calories",
-      categoryXField: "date",
-      tooltip: am5.Tooltip.new(root, {
-        labelText: "{valueY} kcal"
-      })
-    }));
+    // Series color and type selection
+    const config = {
+      calories_burned:      { color: 0x10b981, type: 'area', unit: 'kcal' }, 
+      workouts_completed:   { color: 0x7c3aed, type: 'line', unit: 'workouts' },
+      hydration_completion: { color: 0x3b82f6, type: 'area', unit: '%' },
+      exercises_completed:  { color: 0xf59e0b, type: 'line', unit: 'exercises' }
+    }[chartMetric] || { color: 0x7c3aed, type: 'line', unit: '' };
+
+    let series: am5xy.LineSeries;
+    if (config.type === 'area') {
+      series = chart.series.push(am5xy.LineSeries.new(root, {
+        name: chartMetric.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: chartMetric,
+        categoryXField: "date",
+        fill: am5.color(config.color),
+        stroke: am5.color(config.color),
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{valueY} " + config.unit
+        })
+      }));
+      series.fills.template.setAll({
+        fillOpacity: 0.2,
+        visible: true
+      });
+    } else {
+      series = chart.series.push(am5xy.LineSeries.new(root, {
+        name: chartMetric.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: chartMetric,
+        categoryXField: "date",
+        stroke: am5.color(config.color),
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{valueY} " + config.unit
+        })
+      }));
+    }
 
     series.strokes.template.setAll({
-      strokeWidth: 4,
-      stroke: am5.color(0x10b981) // emerald-500
+      strokeWidth: 4
     });
 
     series.bullets.push(function () {
+      let graphics = am5.Circle.new(root, {
+        radius: 6,
+        fill: am5.color(0x18181b),
+        stroke: am5.color(config.color),
+        strokeWidth: 2
+      });
+
       return am5.Bullet.new(root, {
-        sprite: am5.Circle.new(root, {
-          radius: 5,
-          fill: am5.color(0x18181b),
-          stroke: am5.color(0x10b981),
-          strokeWidth: 2
-        })
+        sprite: graphics
       });
     });
 
-    series.data.setAll(progress);
+    series.data.setAll(formattedData);
     series.appear(1000);
     chart.appear(1000, 100);
 
     return () => {
       root.dispose();
     };
-  }, [progress]);
+  }, [weeklyChartData, chartMetric]);
 
   const fetchUser = async () => {
     try {
@@ -447,34 +582,162 @@ export default function App() {
     }
   };
 
-  const fetchPlans = async () => {
+  const fetchWeeklyProgress = async () => {
     try {
-      const res = await fetch('/api/plans');
-      if (!res.ok) return;
-      const data = await res.json();
-      const plans = Array.isArray(data) ? data : [];
-      setDailyPlans(plans);
-      await cachePlans(plans); // Cache for offline
+      const [chartRes, summaryRes] = await Promise.all([
+        fetch('/api/progress/chart-data'),
+        fetch('/api/progress/summary')
+      ]);
+      if (chartRes.ok) setWeeklyChartData(await chartRes.json());
+      if (summaryRes.ok) setWeeklySummary(await summaryRes.json());
     } catch (e) {
       console.error(e);
-      const cached = await getCachedPlans();
-      if (cached) setDailyPlans(cached);
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await fetch('/api/dashboard/progress');
+      if (!res.ok) return;
+      const data = await res.json();
+      setDashboardData(data);
+      if (data.today_stats) {
+        setWaterSummary({
+          total_consumed: data.today_stats.water_ml,
+          daily_goal: user?.water_goal || 2000,
+          completion_percentage: Math.min(100, Math.round((data.today_stats.water_ml / (user?.water_goal || 2000)) * 100))
+        });
+      }
+      if (data.recent_workouts) {
+        setProgress(data.recent_workouts); // Backwards compatibility if needed
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch('/api/activity/recent?limit=10');
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchTodayWater = async () => {
+    try {
+      const res = await fetch('/api/water/today');
+      if (res.ok) {
+        const { summary, logs } = await res.json();
+        setWaterSummary(summary);
+        setWaterLogs(logs);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddWater = async (amount: number) => {
+    // Optimistic UI
+    setWaterSummary((prev: any) => ({
+      ...prev,
+      total_consumed: (prev?.total_consumed || 0) + amount,
+      completion_percentage: Math.min(100, Math.round(((prev?.total_consumed || 0) + amount) / (prev?.daily_goal || 2000) * 100))
+    }));
+
+    // Optimistic UI for chart
+    const today = new Date().toISOString().split('T')[0];
+    setWeeklyChartData(prev => prev.map(d => 
+      d.date.includes(today) ? { ...d, hydration_completion: Math.min(100, (d.hydration_completion || 0) + (amount / 2000 * 100)) } : d
+    ));
+
+    try {
+      const res = await fetch('/api/water/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, source: 'manual' })
+      });
+      if (res.ok) {
+        fetchTodayWater();
+        fetchDashboardData();
+        fetchWeeklyProgress();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUpdateWaterGoal = async (goal: number) => {
+    try {
+      const res = await fetch('/api/water/goal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal, isAI: false })
+      });
+      if (res.ok) {
+        fetchTodayWater();
+        fetchDashboardData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRemoveWater = async (id: number) => {
+    try {
+      const res = await fetch(`/api/water/delete/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchTodayWater();
+        fetchDashboardData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchPlans = async () => {
+    try {
+      // 1. Fetch latest active plan
+      const res = await fetch('/api/dashboard/latest-plan');
+      if (res.ok) {
+        const plan = await res.json();
+        if (plan) {
+          // Map to dailyPlans for backwards compatibility
+          setDailyPlans([{
+            id: plan.id,
+            date: format(new Date(plan.created_at), 'MMM dd'),
+            workout_plan: plan.workout_title || 'Workout',
+            diet_plan: plan.diet_title || 'Diet',
+            completed: false, // We'll handle this with the new percentage
+            ...plan
+          }]);
+        }
+      }
+
+      // 2. Fetch legacy plans if needed
+      const legacyRes = await fetch('/api/plans');
+      if (legacyRes.ok) {
+        const data = await legacyRes.json();
+        // setDailyPlans(prev => [...prev, ...data]); // Merge or handle separately
+      }
+      
+      // 3. Fetch history
+      const historyRes = await fetch('/api/dashboard/history');
+      if (historyRes.ok) {
+        const history = await historyRes.json();
+        setPlanHistory(history);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
   const fetchProgress = async () => {
-    try {
-      const res = await fetch('/api/progress');
-      if (!res.ok) return;
-      const data = await res.json();
-      const prog = Array.isArray(data) ? data.reverse() : [];
-      setProgress(prog);
-      await cacheProgress(prog); // Cache for offline
-    } catch (e) {
-      console.error(e);
-      const cached = await getCachedProgress();
-      if (cached) setProgress(cached);
-    }
+    fetchDashboardData();
   };
 
   const handleLogin = () => {
@@ -519,12 +782,19 @@ export default function App() {
       water: Number(formData.water) || 0,
       date: format(new Date(), 'MMM dd')
     };
+    // Optimistic UI for chart
+    const today = new Date().toISOString().split('T')[0];
+    setWeeklyChartData(prev => prev.map(d => 
+      d.date.includes(today) ? { ...d, calories_burned: (d.calories_burned || 0) + (payload.calories || 0) } : d
+    ));
+
     try {
       await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+      fetchWeeklyProgress();
     } catch {
       // Offline: queue for later
       await queueRequest('/api/progress', 'POST', payload);
@@ -577,44 +847,7 @@ export default function App() {
     }
   };
 
-  const handleUpdateWaterGoal = async (newGoal: number) => {
-    try {
-      const res = await fetch('/api/user', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ water_goal: newGoal })
-      });
-      if (res.ok) {
-        const updatedUser = await res.json();
-        setUser(updatedUser);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
-  const handleAddWater = async (amount: number) => {
-    const payload = {
-      workout_name: `Drank Water`,
-      water: amount,
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fats: 0,
-      date: format(new Date(), 'MMM dd')
-    };
-    try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch {
-      // Offline: queue for later
-      await queueRequest('/api/progress', 'POST', payload);
-    }
-    fetchProgress();
-  };
 
   const handleSendMessage = async (explicitMessage?: string | React.MouseEvent | React.KeyboardEvent) => {
     const textToSend = typeof explicitMessage === 'string' ? explicitMessage : input;
@@ -629,59 +862,33 @@ export default function App() {
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
       }));
-      let advice = await getFitnessAdvice(textToSend, history);
+      
+      const response = await getFitnessAdvice(textToSend, history);
+      let advice = response.text || "I am here to help!";
+      const updates = response.updates || {};
 
-      // Auto-fill parsing
-      const jsonMatch = advice.match(/```json\n([\s\S]*?)\n```/);
-      if (jsonMatch) {
-        try {
-          const planData = JSON.parse(jsonMatch[1]);
-          if (planData.workout_plan || planData.diet_plan) {
-            advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
-
-            let planMarkdown = `\n\n### 📝 Your Generated Protocol\n\n`;
-            if (planData.workout_plan) {
-              planMarkdown += `**Workout Plan:**\n${planData.workout_plan}\n\n`;
-            }
-            if (planData.diet_plan) {
-              planMarkdown += `**Diet Plan:**\n${planData.diet_plan}\n\n`;
-            }
-
-            advice += planMarkdown + "*(I have automatically attached this plan to your Daily Protocol!)*";
-
-            await fetch('/api/plans', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                workout_plan: planData.workout_plan || '',
-                diet_plan: planData.diet_plan || '',
-                date: format(new Date(), 'MMM dd')
-              })
-            });
-            fetchPlans();
-          }
-          if (planData.macro_goals) {
-            fetchUser();
-          }
-          if (planData.progress_log) {
-            fetchProgress();
-            advice = advice.replace(/```json\n[\s\S]*?\n```/, '').trim();
-            advice += `\n\n*(I have automatically logged your progress!)*`;
-          }
-        } catch (err) {
-          console.error("Auto-fill parsing failed:", err);
-        }
+      if (updates.userProfile) {
+        fetchUser();
+      }
+      
+      if (updates.progress) {
+        fetchProgress();
+        advice += "\n\n*(I have automatically logged your progress!)*";
+      }
+      
+      if (updates.plans) {
+        fetchPlans();
+        advice += "\n\n*(I have automatically attached a new plan to your Daily Protocol!)*";
       }
 
-      setMessages([...newMessages, { role: 'model', content: advice || 'I am here to help!' }]);
+      setMessages([...newMessages, { role: 'model', content: advice }]);
     } catch (e: any) {
       console.error(e);
-      setMessages([...newMessages, { role: 'model', content: `**Error:** ${e.message}` }]);
+      setMessages([...newMessages, { role: 'model', content: "**Error:** " + e.message }]);
     } finally {
       setIsTyping(false);
     }
   };
-
   const toggleListening = () => {
     if (isListening && recognitionRef.current) {
       recognitionRef.current.intentionallyStopped = true;
@@ -834,11 +1041,25 @@ export default function App() {
   const today1 = format(new Date(), 'MMM dd');
   const today2 = new Date().toISOString().split('T')[0];
   const todaysProgress = progress.filter(p => p.date === today1 || p.date === today2);
-  const totalProtein = todaysProgress.reduce((sum, p) => sum + (p.protein || 0), 0);
-  const totalCarbs = todaysProgress.reduce((sum, p) => sum + (p.carbs || 0), 0);
-  const totalFats = todaysProgress.reduce((sum, p) => sum + (p.fats || 0), 0);
-  const totalWater = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
-  const totalCalories = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
+  const totalProteinRaw = todaysProgress.reduce((sum, p) => sum + (p.protein || 0), 0);
+  const totalCarbsRaw = todaysProgress.reduce((sum, p) => sum + (p.carbs || 0), 0);
+  const totalFatsRaw = todaysProgress.reduce((sum, p) => sum + (p.fats || 0), 0);
+  const totalWaterRaw = todaysProgress.reduce((sum, p) => sum + (p.water || 0), 0);
+  const totalCaloriesRaw = todaysProgress.reduce((sum, p) => sum + (p.calories || 0), 0);
+  const stats = dashboardData?.today_stats || {
+    protein: totalProteinRaw,
+    carbs: totalCarbsRaw,
+    fats: totalFatsRaw,
+    calories_consumed: totalCaloriesRaw,
+    calories_burned: 0,
+  };
+
+  const totalProtein = stats.protein || totalProteinRaw;
+  const totalCarbs = stats.carbs || totalCarbsRaw;
+  const totalFats = stats.fats || totalFatsRaw;
+  const totalCalories = stats.calories_consumed || totalCaloriesRaw;
+  const totalBurned = stats.calories_burned || 0;
+  const totalWater = stats.water_ml || totalWaterRaw;
 
   return (
     <div className="min-h-screen font-sans pb-28 relative overflow-hidden">
@@ -914,22 +1135,79 @@ export default function App() {
         {/* Progress Chart + Water Log Row */}
         <div id="nutrition-section" className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Weekly Progress Chart */}
-          <section className="card p-8 md:col-span-2">
-            <div className="flex justify-between items-end mb-8">
+          <section className="card p-6 sm:p-8 md:col-span-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Weekly Progress</h3>
-                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Calorie intake overview</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Visualize your fitness journey</p>
+              </div>
+              <div 
+                id="analytics-tabs"
+                className="flex bg-zinc-900/50 p-1 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar w-full sm:w-auto snap-x snap-proximity scroll-smooth"
+              >
+                {[
+                  { id: 'calories_burned', label: 'Calories', icon: Flame },
+                  { id: 'workouts_completed', label: 'Workouts', icon: Dumbbell },
+                  { id: 'hydration_completion', label: 'Hydration', icon: Droplets },
+                  { id: 'exercises_completed', label: 'Activity', icon: Activity }
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    id={`tab-${m.id}`}
+                    onClick={() => {
+                      setChartMetric(m.id as any);
+                      document.getElementById(`tab-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap snap-center ${chartMetric === m.id ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                    <m.icon size={14} />
+                    {m.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div id="chartdiv" className="h-[300px] w-full" />
+            
+            {/* Weekly Summary Tiles */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+               <div className="p-3 rounded-2xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter mb-1">Total Burned</div>
+                  <div className="text-lg font-bold text-emerald-500">{weeklySummary?.total_calories || 0} kcal</div>
+               </div>
+               <div className="p-3 rounded-2xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter mb-1">Workouts</div>
+                  <div className="text-lg font-bold text-purple-500">{weeklySummary?.total_workouts || 0}</div>
+               </div>
+               <div className="p-3 rounded-2xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter mb-1">Avg Hydration</div>
+                  <div className="text-lg font-bold text-blue-500">{Math.round(weeklySummary?.avg_hydration || 0)}%</div>
+               </div>
+               <div className="p-3 rounded-2xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter mb-1">Avg Diet</div>
+                  <div className="text-lg font-bold text-orange-500">{Math.round(weeklySummary?.avg_diet || 0)}%</div>
+               </div>
+            </div>
+
+            <div className="relative min-h-[300px]">
+              {!weeklyChartData.length && (
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/10 backdrop-blur-[2px] z-10 rounded-2xl">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Loading Analytics...</p>
+                  </div>
+                </div>
+              )}
+              <div id="chartdiv" className="h-[300px] w-full" />
+            </div>
           </section>
 
           {/* Daily Water Log */}
           <WaterTracker 
-            currentWater={totalWater} 
-            waterGoal={user.water_goal || 2000} 
+            currentWater={waterSummary?.total_consumed || 0} 
+            waterGoal={waterSummary?.daily_goal || user?.water_goal || 2000} 
             onAddWater={handleAddWater} 
             onUpdateGoal={handleUpdateWaterGoal} 
+            onRemoveWater={handleRemoveWater}
+            logs={waterLogs}
           />
         </div>
 
@@ -945,85 +1223,218 @@ export default function App() {
               </div>
               <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Your personalized routines generated by Sweat Fix Coach</p>
             </div>
-            <button
-              onClick={() => setShowPlanForm(true)}
-              className="px-4 py-2 text-sm font-bold rounded-xl transition-colors"
-             
-            >
-              Update Plan
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowHistory(true)}
+                className="px-4 py-2 text-xs font-bold rounded-xl transition-colors bg-zinc-800 text-zinc-400 hover:text-white"
+              >
+                View History
+              </button>
+              <button
+                onClick={() => setShowPlanForm(true)}
+                className="px-4 py-2 text-xs font-bold rounded-xl transition-colors btn-accent"
+              >
+                Update Plan
+              </button>
+            </div>
           </div>
           <div className="space-y-4">
-            {dailyPlans.length > 0 ? dailyPlans.slice(0, 3).map((plan, i) => (
-              <div key={i} className={`p-5 sm:p-6 card transition-colors ${plan.completed ? '' : ''}`} style={plan.completed ? { borderColor: 'rgba(16, 185, 129, 0.2)' } : {}}>
-                <div className="flex justify-between items-start mb-4">
+            {dashboardData?.today_plan ? (
+              <div className="p-5 sm:p-6 card transition-colors">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{plan.date === format(new Date(), 'MMM dd') ? 'Today' : plan.date}</span>
-                    <h4 className={`text-lg font-bold mt-1 ${plan.completed ? 'text-emerald-500 line-through opacity-70' : ''}`} style={plan.completed ? {} : { color: 'var(--text-primary)' }}>Daily Routine</h4>
+                    <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">Live Active Plan</span>
+                    <h4 className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
+                      {dashboardData.today_plan.workout_title || "Daily Routine"}
+                    </h4>
+                    <div className="flex gap-4 mt-2">
+                      {dashboardData.today_plan.difficulty && (
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                          {dashboardData.today_plan.difficulty}
+                        </span>
+                      )}
+                      {dashboardData.today_plan.duration && (
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                          {dashboardData.today_plan.duration}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleTogglePlan(plan.id, plan.completed)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${plan.completed ? 'bg-emerald-500 border-emerald-500 text-black' : 'text-transparent'}`}
-                    style={plan.completed ? {} : { borderColor: 'var(--text-muted)' }}
-                  >
-                    <Check size={16} />
-                  </button>
+                  <div className="text-right">
+                     <div className="text-2xl font-bold text-emerald-500">
+                        {dashboardData.today_stats?.completed_percentage || 0}%
+                     </div>
+                     <div className="text-[10px] uppercase font-bold text-zinc-500">Completion</div>
+                  </div>
                 </div>
 
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${plan.completed ? 'opacity-50' : ''}`}>
-                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Dumbbell size={16} style={{ color: 'var(--text-muted)' }} />
-                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Workout Chart</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Workout Section */}
+                  <div className="p-5 rounded-[24px]" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell size={18} className="text-emerald-500" />
+                        <span className="text-sm font-bold uppercase tracking-widest text-white">Workout Protocol</span>
+                      </div>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.workout_plan || 'No training logged.'}</p>
+                    <div className="space-y-3">
+                      {dashboardData.today_plan.workout_exercises?.map((ex: any, idx: number) => (
+                        <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-white">{ex.name}</div>
+                            {ex.description && <div className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{ex.description}</div>}
+                            <div className="flex gap-3 mt-1.5">
+                               {ex.sets && <span className="text-[10px] font-bold text-zinc-500">{ex.sets} Sets</span>}
+                               {ex.reps && <span className="text-[10px] font-bold text-zinc-500">{ex.reps} Reps</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )) || (
+                        <p className="text-sm italic text-zinc-500">No specific exercises listed.</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="p-4 rounded-2xl" style={{ background: 'var(--surface-elevated)' }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Utensils size={16} style={{ color: 'var(--text-muted)' }} />
-                      <span className="text-sm font-bold uppercase tracking-widest" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Diet Plan</span>
+
+                  {/* Diet Section */}
+                  <div className="p-5 rounded-[24px]" style={{ background: 'var(--surface-elevated)' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Utensils size={18} className="text-orange-500" />
+                        <span className="text-sm font-bold uppercase tracking-widest text-white">Meal Schedule</span>
+                      </div>
+                      <div className="text-xs font-bold text-orange-500">
+                        {dashboardData.today_plan.calories_target} kcal
+                      </div>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{plan.diet_plan || 'No nutrition logged.'}</p>
+                    <div className="space-y-3">
+                      {dashboardData.today_plan.diet_meals?.map((meal: any, idx: number) => (
+                        <div key={idx} className="p-3 rounded-xl bg-black/20 border border-white/5">
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="text-xs font-bold text-white uppercase tracking-tight">{meal.type || `Meal ${idx+1}`}</div>
+                            {meal.calories && <div className="text-[10px] font-bold text-zinc-500">{meal.calories} kcal</div>}
+                          </div>
+                          <ul className="text-xs text-zinc-400 space-y-1">
+                            {meal.items?.map((item: string, i: number) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-orange-500">•</span> {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )) || (
+                        <p className="text-sm italic text-zinc-500">No specific meals listed.</p>
+                      )}
+                    </div>
+                    {/* Macros Summary */}
+                    <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
+                        <div className="text-center">
+                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.protein_goal}g</div>
+                            <div className="text-[9px] uppercase font-bold text-zinc-500">Protein</div>
+                        </div>
+                        <div className="text-center border-x border-white/5">
+                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.carb_goal}g</div>
+                            <div className="text-[9px] uppercase font-bold text-zinc-500">Carbs</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.fat_goal}g</div>
+                            <div className="text-[9px] uppercase font-bold text-zinc-500">Fats</div>
+                        </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            )) : (
-              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
-                No daily plan set. Log your workout and diet protocols for the day.
+            ) : dailyPlans.length > 0 ? (
+              // Fallback to legacy view if dailyPlans exist but today_plan doesn't
+              dailyPlans.slice(0, 1).map((plan, i) => (
+                <div key={i} className="p-5 sm:p-6 card">
+                   <div className="flex justify-between items-start mb-4">
+                      <h4 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Daily Routine (Legacy)</h4>
+                      <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">{plan.date}</span>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-zinc-900/50">
+                        <p className="text-sm whitespace-pre-wrap text-zinc-400">{plan.workout_plan}</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-zinc-900/50">
+                        <p className="text-sm whitespace-pre-wrap text-zinc-400">{plan.diet_plan}</p>
+                      </div>
+                   </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-16 border-2 border-dashed rounded-[32px]" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
+                <Bot size={48} className="mx-auto mb-4 opacity-20" />
+                <h4 className="text-lg font-bold mb-1">No AI Plan Generated</h4>
+                <p className="text-sm max-w-xs mx-auto">Ask the Sweat Fix Coach to generate a personalized workout and diet plan for you.</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Recent Workouts */}
+        {/* Recent Activity Feed */}
         <section>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
-            <button className="text-sm font-bold flex items-center gap-1" style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              View All <ChevronRight size={16} className="text-purple-500" />
+            <h3 className="text-xl font-bold text-white">Recent Activity</h3>
+            <button className="text-sm font-bold flex items-center gap-1 text-purple-500 hover:text-purple-400 transition-colors">
+              View All <ChevronRight size={16} />
             </button>
           </div>
-          <div className="space-y-3">
-            {progress.slice().reverse().map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 card ">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-elevated)' }}>
-                    <Dumbbell size={20} style={{ color: 'var(--text-muted)' }} />
+          <div className="space-y-4">
+            {activities.length > 0 ? activities.map((item, i) => {
+              const Icon = {
+                workout: Dumbbell,
+                diet: Utensils,
+                hydration: Droplets,
+                chatbot: Bot,
+                achievement: TrendingUp,
+                progress: Activity,
+                account: UserIcon
+              }[item.activity_type as string] || Activity;
+
+              const colors = {
+                workout: 'text-emerald-500',
+                diet: 'text-orange-500',
+                hydration: 'text-blue-500',
+                chatbot: 'text-purple-500',
+                achievement: 'text-yellow-500',
+                progress: 'text-zinc-400',
+                account: 'text-zinc-500'
+              }[item.activity_type as string] || 'text-zinc-500';
+
+              return (
+                <motion.div 
+                  key={item.id || i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center justify-between p-4 card group hover:bg-zinc-800/30 transition-all border border-white/5"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-zinc-900 border border-white/5 group-hover:border-white/10 transition-colors">
+                      <Icon size={20} className={colors} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm sm:text-base">{item.activity_title}</h4>
+                      <p className="text-xs text-zinc-500 leading-relaxed max-w-[200px] sm:max-w-xs truncate">{item.activity_description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.workout_name || 'General Training'}</h4>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.date}</p>
+                  <div className="text-right flex flex-col items-end">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+                      {format(new Date(item.created_at), 'hh:mm a')}
+                    </div>
+                    <div className="text-[10px] font-bold text-zinc-500/50 uppercase tracking-tighter">
+                      {format(new Date(item.created_at), 'MMM dd')}
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold" style={{ color: 'var(--accent-primary)' }}>+{item.calories} kcal</div>
-                  <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-muted)' }}>Burned</div>
-                </div>
-              </div>
-            ))}
-            {progress.length === 0 && (
-              <div className="text-center py-12 border-2 border-dashed rounded-3xl" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
-                No activity logged yet. Start your journey today!
+                </motion.div>
+              );
+            }) : (
+              <div className="text-center py-12 border-2 border-dashed rounded-[32px] border-white/5 text-zinc-500">
+                <Activity size={40} className="mx-auto mb-4 opacity-10" />
+                <p className="text-sm font-medium">No activity logged yet.</p>
+                <p className="text-[10px] uppercase tracking-widest mt-1 opacity-50">Start your journey today!</p>
               </div>
             )}
           </div>
@@ -1289,6 +1700,57 @@ export default function App() {
                     Lock In Plan
                   </button>
                 </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Plan History Modal */}
+      <AnimatePresence>
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="card w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 sm:p-8 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <h3 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Plan History</h3>
+                  <p className="text-xs text-zinc-500 mt-1">Previous protocols generated for you</p>
+                </div>
+                <button onClick={() => setShowHistory(false)} className="text-zinc-500 hover:text-white">
+                  <Plus className="rotate-45" size={28} />
+                </button>
+              </div>
+
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-4">
+                {planHistory.length > 0 ? planHistory.map((h, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5 flex justify-between items-center hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                          <History size={20} />
+                       </div>
+                       <div>
+                          <div className="font-bold text-white">{h.workout_title || h.diet_title || 'Plan Update'}</div>
+                          <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{format(new Date(h.created_at), 'MMM dd, yyyy')}</div>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       {h.active ? (
+                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">Active</span>
+                       ) : (
+                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-white/5 uppercase tracking-widest">Archived</span>
+                       )}
+                       <ChevronRight size={16} className="text-zinc-600" />
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-12 text-zinc-500">
+                    No plan history found.
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

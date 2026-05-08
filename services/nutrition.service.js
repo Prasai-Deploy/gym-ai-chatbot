@@ -3,7 +3,7 @@
  * Logic for calorie calculation, meal plan generation, and food logging.
  */
 import pool from "../db.js";
-import { callAIWithRouting, parseJSONResponse, MODELS } from "./ai.service.js";
+import { callAI } from "./ai.service.js";
 import { getProfile } from "./profile.service.js";
 /**
  * Calculates calorie and macro targets based on user profile.
@@ -72,14 +72,12 @@ The output MUST be in the following JSON format ONLY:
   ]
 }
 Include specific Indian food items like Poha, Paneer, Roti, Dal, etc., based on the diet type.`;
-    const aiResponse = await callAIWithRouting("Generate my meal plan for today.", systemPrompt, [], MODELS.PLANNER);
-    let mealPlanData;
-    try {
-        mealPlanData = parseJSONResponse(aiResponse);
-    }
-    catch (err) {
-        throw new Error("Failed to generate structured meal plan: " + err.message);
-    }
+    const aiResponse = await callAI("Generate my meal plan for today.", systemPrompt);
+    // Extract JSON
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch)
+        throw new Error("Failed to generate structured meal plan.");
+    const mealPlanData = JSON.parse(jsonMatch[0]);
     // Save to database
     await pool.execute(`INSERT INTO meal_plans (user_id, date, calories_target, meals)
      VALUES (?, ?, ?, ?)
@@ -106,14 +104,11 @@ The output MUST be in the following JSON format ONLY:
   "fats": 15
 }
 If multiple items are mentioned, group them into one entry or return the total estimate.`;
-    const aiResponse = await callAIWithRouting(foodText, systemPrompt, [], MODELS.PLANNER);
-    let logData;
-    try {
-        logData = parseJSONResponse(aiResponse);
-    }
-    catch (err) {
-        throw new Error("Failed to parse food intake: " + err.message);
-    }
+    const aiResponse = await callAI(foodText, systemPrompt);
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch)
+        throw new Error("Failed to parse food intake.");
+    const logData = JSON.parse(jsonMatch[0]);
     // Save to database
     await pool.execute(`INSERT INTO nutrition_logs (user_id, date, food_item, calories, protein, carbs, fats)
      VALUES (?, ?, ?, ?, ?, ?, ?)`, [userId, today, logData.food_item, logData.calories, logData.protein, logData.carbs, logData.fats]);

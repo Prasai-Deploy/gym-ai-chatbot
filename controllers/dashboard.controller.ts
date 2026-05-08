@@ -11,6 +11,14 @@ import {
   logMetrics,
   MetricsPayload,
 } from "../services/dashboard.service.js";
+import {
+  saveAIWorkout,
+  saveAIDiet,
+  linkActivePlans,
+  getLatestActivePlan,
+  getPlanHistory,
+  updateDailyProgress
+} from "../services/plan.service.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth guard
@@ -111,6 +119,103 @@ export async function logMetricsHandler(
     });
   } catch (e: any) {
     console.error("[Dashboard] logMetricsHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/dashboard/latest-plan
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getLatestPlanHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  try {
+    const plan = await getLatestActivePlan(user.id);
+    res.json(plan);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/dashboard/history
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getHistoryHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  try {
+    const history = await getPlanHistory(user.id);
+    res.json(history);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/dashboard/progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getProgressHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  try {
+    // Reusing buildDashboardSummary but we could optimize if needed
+    const data = await buildDashboardSummary(user.id);
+    res.json(data);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUT /api/dashboard/update
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function updateProgressHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const { date, ...data } = req.body;
+  const targetDate = date || new Date().toISOString().split("T")[0];
+
+  try {
+    await updateDailyProgress(user.id, targetDate, data);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/chatbot/save-plan
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function saveAIPlanHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const { workout, diet, plan_id } = req.body;
+
+  try {
+    let workoutId, dietId;
+    if (workout) {
+      workoutId = await saveAIWorkout(user.id, workout, plan_id);
+    }
+    if (diet) {
+      dietId = await saveAIDiet(user.id, diet, plan_id);
+    }
+
+    if (workoutId || dietId) {
+      await linkActivePlans(user.id, workoutId, dietId);
+    }
+
+    res.json({ success: true, workoutId, dietId });
+  } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
 }

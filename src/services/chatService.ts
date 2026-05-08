@@ -9,5 +9,5 @@ export const getFitnessAdvice = async (message: string, history: { role: string,
     throw new Error(error.error || "Failed to fetch response");
   }
   const data = await res.json();
-  return data.text;
+  return data;
 };

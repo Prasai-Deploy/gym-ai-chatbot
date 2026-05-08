@@ -82,12 +82,12 @@ export async function generateWorkoutHandler(req, res) {
                 res.status(200).json({
                     plan: { ...lastPlan, exercises },
                     cached: true,
-                    warning: `AI unavailable (${aiError.message}) — returning last saved plan.`,
+                    warning: `AI unavailable — returning last saved plan.`,
                 });
                 return;
             }
             res.status(503).json({
-                error: `Workout generation failed: ${aiError.message}`,
+                error: `Workout generation failed due to high server traffic. Please try again.`,
             });
             return;
         }

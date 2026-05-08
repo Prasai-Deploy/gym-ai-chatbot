@@ -572,9 +572,8 @@ Your goal is to help members with gym information, membership details, and gener
 
 Rules to follow strictly:
 1. Tone: Enthusiastic, encouraging, and professional. Use short, punchy sentences.
-2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. Avoid unsafe medical or extreme fitness advice. If a user asks about an injury, advise them to consult a medical professional.
+2. Boundaries: NEVER provide medical advice, injury diagnostics, or physical therapy. If a user asks about an injury, advise them to consult a medical professional.
 3. Brevity: Keep all general responses under 3 to 4 sentences. However, when asked to generate a workout or diet plan, provide a highly detailed, comprehensive response.
-4. Diets: Support both Indian vegetarian and non-vegetarian diet suggestions when generating meal plans.
 
 Interaction Structure
 Onboarding & Details Gathering: Before creating any diet or workout plan, you MUST politely ask the user to provide their current details if they haven't already. Specifically, ask for:
@@ -585,43 +584,23 @@ Onboarding & Details Gathering: Before creating any diet or workout plan, you MU
 5. Preferred meal frequency (how many times they prefer to eat per day)
 DO NOT generate a plan until you have this information.
 
-Auto-Fill Protocol:
-ONLY ONCE you have gathered the user's details, you can generate a highly accurate, customized diet and workout plan.
-The generated plans must be highly detailed. The workout chart must be a detailed per-day plan, and the diet plan must be broken down specifically by their preferred number of meals per day with full macro details.
-Whenever you generate this specific plan for the day, YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Auto-Fill Protocol & Centralized AI Extraction:
+Whenever the user discusses their fitness data (workouts, diets, weight, goals, macros, etc.), YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
 \`\`\`json
 {
-  "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
+  "profile_update": {
+    "goal": "muscle gain",
+    "weight": 75,
+    "diet_type": "vegetarian"
+  },
   "macro_goals": {
     "calories": 2500,
     "protein": 180,
     "carbs": 250,
     "fats": 65
-  }
-}
-\`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
-
-Memory Extraction Context:
-Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "memory": "User has a bad left knee and only has access to dumbbells."
-}
-\`\`\`
-If there is no new fact to save in this message, do not include the "memory" property. Do not just repeat existing memory.
-
-Progress & Macro Extraction Protocol:
-If the user indicates they just completed a workout, drank water, or ate a meal, YOU MUST estimate the caloric/nutritional value and add a "progress_log" property to the JSON block.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
+  },
+  "workout_plan": "Detailed per-day workout chart...",
+  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency...",
   "progress_log": {
     "workout_name": "Chicken Breast & Rice",
     "calories": 450,
@@ -629,39 +608,60 @@ Example:
     "carbs": 50,
     "fats": 5,
     "water": 0
-  }
+  },
+  "memory": "User has a bad left knee and only has access to dumbbells."
 }
 \`\`\`
-If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
+This JSON will be used to automatically update their Daily Protocol dashboard in real-time. Only include the keys that are actively relevant to the current conversation. 
+
+Rules for the JSON block:
+1. "profile_update": Include if the user states a new goal, weight, or diet type. (Weight should be a number in kg).
+2. "macro_goals": Include if you have calculated or the user has stated their target daily calories/macros.
+3. "workout_plan" & "diet_plan": Include as detailed markdown strings if the user asked for a generated plan.
+4. "progress_log": Include if the user indicates they just completed a workout, drank water, or ate a meal. Estimate the nutritional values.
+5. "memory": Include a concise summary of any new, permanent fact about the user (e.g., injuries, equipment). Do not repeat existing memory.
+${userContextStr}`;
             let aiContent;
             try {
                 aiContent = await callAIWithRouting(message, systemPrompt, history || []);
             }
             catch (apiError) {
-                console.error("OpenRouter API Error:", apiError.message);
+                console.error("=== [SERVER ERROR] Chat API Failure ===");
+                console.error(`Message: ${apiError.message}`);
+                if (apiError.stack)
+                    console.error(`Stack: ${apiError.stack}`);
                 return res.json({
-                    text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please check your API key or try again in a moment. (${apiError.message})`,
+                    text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
                 });
             }
-            // Extract memory / macro_goals / progress_log from AI JSON block
+            // Extract memory / macro_goals / progress_log / plans from AI JSON block
+            let updates = {
+                userProfile: false,
+                progress: false,
+                plans: false
+            };
             if (user) {
                 const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
                 if (jsonMatch) {
                     try {
                         const parsed = JSON.parse(jsonMatch[1]);
+                        // Remove the JSON block from the text sent to the user
+                        aiContent = aiContent.replace(/```json\n([\s\S]*?)\n```/g, "").trim();
                         // ── profile_update: AI-driven profile save (used during onboarding) ──
                         if (parsed.profile_update) {
                             await upsertProfile(user.id, parsed.profile_update);
                             console.log("[Profile] AI profile_update saved for user", user.id, ":", parsed.profile_update);
+                            updates.userProfile = true;
                         }
                         if (parsed.memory) {
                             const currentContext = user.profile_context
-                                ? user.profile_context + "\\n"
+                                ? user.profile_context + "\n"
                                 : "";
                             const newContext = currentContext + "- " + parsed.memory;
                             await dbRun("UPDATE users SET profile_context = ? WHERE id = ?", [newContext, user.id]);
                             user.profile_context = newContext;
                             console.log("Saved new memory for user", user.id, ":", parsed.memory);
+                            updates.userProfile = true;
                         }
                         if (parsed.macro_goals) {
                             const mg = parsed.macro_goals;
@@ -673,6 +673,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                                 user.id,
                             ]);
                             console.log("Saved new macro goals for user", user.id, ":", mg);
+                            updates.userProfile = true;
                         }
                         if (parsed.progress_log) {
                             const p = parsed.progress_log;
@@ -689,6 +690,16 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                                 p.fats || 0,
                             ]);
                             console.log("Saved new progress log for user", user.id, ":", p);
+                            updates.progress = true;
+                        }
+                        if (parsed.workout_plan || parsed.diet_plan) {
+                            const today = new Date().toISOString().split("T")[0];
+                            const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
+                            // Using formattedDate (e.g., 'May 06') for consistency with frontend
+                            await dbRun(`INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
+                 VALUES (?, ?, ?, ?, 0)`, [user.id, formattedDate, parsed.workout_plan || "", parsed.diet_plan || ""]);
+                            console.log("Saved new plans for user", user.id);
+                            updates.plans = true;
                         }
                     }
                     catch (e) {
@@ -696,7 +707,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                     }
                 }
             }
-            res.json({ text: aiContent });
+            res.json({ text: aiContent, updates });
         }
         catch (e) {
             console.error(e);

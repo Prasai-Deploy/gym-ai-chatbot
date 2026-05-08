@@ -7,10 +7,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const MODELS = {
-  MAIN: process.env.MODEL_MAIN || "meta-llama/llama-3.3-70b-instruct:free",
-  FAST: process.env.MODEL_FAST || "google/gemma-3-27b-it:free",
+  MAIN: process.env.MODEL_MAIN || "meta-llama/llama-3.1-8b-instruct:free",
+  FAST: process.env.MODEL_FAST || "google/gemma-2-9b-it:free",
   PLANNER: process.env.MODEL_PLANNER || "deepseek/deepseek-r1:free",
-  CODER: process.env.MODEL_CODER || "qwen/qwen3-coder:free",
+  CODER: process.env.MODEL_CODER || "qwen/qwen-2.5-coder-32b-instruct:free",
 };
 
 /**
@@ -74,9 +74,31 @@ async function executeWithRetryAndFallback(
   while (attempt <= retries) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => {
+        console.error(`[AI DEBUG] Request to ${model} timed out after 15s`);
+        controller.abort();
+      }, 15000); 
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const url = "https://openrouter.ai/api/v1/chat/completions";
+      const payload = {
+        model,
+        messages,
+        temperature: 0.7,
+        top_p: 0.8,
+      };
+
+      console.log("=== [AI DEBUG] API Request ===");
+      console.log(`URL: ${url}`);
+      console.log(`Model: ${model}`);
+      console.log(`API Key (masked): ${apiKey.substring(0, 10)}...`);
+      console.log(`Payload: ${JSON.stringify(payload, null, 2)}`);
+      console.log("Headers:", JSON.stringify({
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://sweatfix.ai",
+        "X-Title": "Sweat Fix Coach"
+      }, null, 2));
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey.trim()}`,
@@ -84,48 +106,50 @@ async function executeWithRetryAndFallback(
           "HTTP-Referer": "https://sweatfix.ai",
           "X-Title": "Sweat Fix Coach",
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: 0.7,
-          top_p: 0.8,
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
+      console.log("=== [AI DEBUG] API Response ===");
+      console.log(`Status: ${response.status} ${response.statusText}`);
+
+      const rawBody = await response.text();
+      console.log(`Full Response Body: ${rawBody}`);
+
       if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        console.error(`[AI ERROR] HTTP ${response.status} from ${model}:`, errText);
+        console.error(`[AI ERROR] HTTP ${response.status} from ${model}:`, rawBody);
 
         if (response.status === 429) {
           console.warn(`[AI] Rate limit hit on ${model}, backing off...`);
-          await sleep(1000 * Math.pow(2, attempt)); // Exponential backoff
+          await sleep(1000 * Math.pow(2, attempt)); 
           attempt++;
           continue;
         }
 
         let errorMessage = `OpenRouter API Error: HTTP ${response.status}`;
         try {
-          const errJson = JSON.parse(errText);
+          const errJson = JSON.parse(rawBody);
           errorMessage = typeof errJson.error === "string" ? errJson.error : errJson.error?.message || errorMessage;
         } catch (parseErr) {}
         
         throw new Error(errorMessage);
       }
 
-      const data = await response.json() as any;
+      const data = JSON.parse(rawBody);
+      console.log(`[AI DEBUG] Successfully received response from ${model}`);
       return data.choices?.[0]?.message?.content || "";
     } catch (e: any) {
-      console.error(`[AI EXCEPTION] Error calling model ${model} (attempt ${attempt + 1}):`, e.message || e);
+      console.error(`[AI EXCEPTION] Error calling model ${model} (attempt ${attempt + 1}):`);
+      console.error(`Name: ${e.name}`);
+      console.error(`Message: ${e.message}`);
+      if (e.stack) console.error(`Stack: ${e.stack}`);
+      
       attempt++;
       if (attempt > retries) {
-        // Fallback logic
-        if (model !== MODELS.FAST) {
-          console.warn(`[AI Router] Model ${model} failed permanently. Falling back to ${MODELS.FAST}`);
-          return executeWithRetryAndFallback(userMessage, systemMessage, history, MODELS.FAST, 0); // No retries on fallback
-        }
+        // Fallback logic - disabled for now as per Requirement 5
+        console.warn(`[AI Router] Model ${model} failed permanently after ${attempt} attempts.`);
         throw e;
       }
     }
@@ -145,7 +169,14 @@ export async function callAIWithRouting(
 ): Promise<string> {
   const targetModel = preferredModel || determineModel(userMessage);
   console.log(`[AI Router] Routing request to: ${targetModel}`);
-  return await executeWithRetryAndFallback(userMessage, systemMessage, history, targetModel);
+  
+  try {
+    return await executeWithRetryAndFallback(userMessage, systemMessage, history, targetModel);
+  } catch (err: any) {
+    console.warn(`[AI Router] Primary model ${targetModel} failed (${err.message}). Falling back to openrouter/free...`);
+    // Fallback to the automated free router
+    return await executeWithRetryAndFallback(userMessage, systemMessage, history, "openrouter/free", 1);
+  }
 }
 
 /**

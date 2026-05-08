@@ -11,14 +11,24 @@ import {
   generateWorkoutHandler,
   getWorkoutHandler,
   logWorkoutHandler,
+  getTodayWorkoutHandler,
+  startWorkoutHandler,
+  updateProgressHandler,
+  completeWorkoutHandler,
+  getHistoryHandler,
 } from "../controllers/workout.controller.js";
 
 const router = Router();
 
-// Order matters: /generate and /log must come before /:userId
-// so Express does not treat "generate" or "log" as a userId param.
+// Order matters: static subroutes must come before /:userId
 router.post("/generate", generateWorkoutHandler);
 router.post("/log",      logWorkoutHandler);
+router.get("/today",     getTodayWorkoutHandler);
+router.post("/start",    startWorkoutHandler);
+router.post("/progress", updateProgressHandler);
+router.post("/complete", completeWorkoutHandler);
+router.get("/history",   getHistoryHandler);
 router.get("/:userId",   getWorkoutHandler);
+
 
 export default router;

@@ -16,6 +16,11 @@ import {
   getLastLog,
   getRecentFocuses,
   WorkoutLogEntry,
+  startSession,
+  updateSessionProgress,
+  completeSession,
+  getTodaySession,
+  getWorkoutHistory,
 } from "../services/workout.service.js";
 import {
   decideSplit,
@@ -229,3 +234,130 @@ export async function logWorkoutHandler(
     res.status(500).json({ error: e.message });
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/workout/today
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getTodayWorkoutHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const today = new Date().toISOString().split("T")[0];
+
+  try {
+    const plan = await getPlanByDate(user.id, today);
+    const session = await getTodaySession(user.id);
+
+    if (!plan) {
+      res.status(404).json({ plan: null, session: null, message: "No workout plan for today." });
+      return;
+    }
+
+    const exercises = typeof plan.exercises === "string" ? JSON.parse(plan.exercises) : plan.exercises;
+
+    res.json({ 
+      plan: { ...plan, exercises },
+      session: session ? {
+        ...session,
+        completed_exercises: typeof session.completed_exercises === "string" ? JSON.parse(session.completed_exercises) : session.completed_exercises
+      } : null
+    });
+  } catch (e: any) {
+    console.error("[Workout] getTodayWorkoutHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/start
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function startWorkoutHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const { plan_id } = req.body;
+  if (!plan_id) {
+    res.status(400).json({ error: "plan_id is required." });
+    return;
+  }
+
+  try {
+    const session = await startSession(user.id, plan_id);
+    res.json({ success: true, session });
+  } catch (e: any) {
+    console.error("[Workout] startWorkoutHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function updateProgressHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const { session_id, completed_exercises, progress_percentage, calories_burned } = req.body;
+
+  if (!session_id) {
+    res.status(400).json({ error: "session_id is required." });
+    return;
+  }
+
+  try {
+    await updateSessionProgress(
+      session_id,
+      completed_exercises || [],
+      progress_percentage || 0,
+      calories_burned || 0
+    );
+    res.json({ success: true });
+  } catch (e: any) {
+    console.error("[Workout] updateProgressHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/complete
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function completeWorkoutHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const { session_id } = req.body;
+  if (!session_id) {
+    res.status(400).json({ error: "session_id is required." });
+    return;
+  }
+
+  try {
+    await completeSession(session_id);
+    res.json({ success: true });
+  } catch (e: any) {
+    console.error("[Workout] completeWorkoutHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/workout/history
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getHistoryHandler(req: Request, res: Response): Promise<void> {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  try {
+    const history = await getWorkoutHistory(user.id);
+    res.json({ history });
+  } catch (e: any) {
+    console.error("[Workout] getHistoryHandler error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+

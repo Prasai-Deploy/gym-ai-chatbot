@@ -40,6 +40,28 @@ export interface DashboardData {
   strength_progress: StrengthSeries[];
   most_improved:     MostImproved | null;
   recent_workouts:   { date: string; focus: string }[];
+  today_stats: {
+    calories_consumed: number;
+    calories_burned: number;
+    water_ml: number;
+    completed_percentage: number;
+    weight_kg: number | null;
+    protein: number;
+    carbs: number;
+    fats: number;
+  } | null;
+  today_plan: {
+    workout_title: string | null;
+    diet_title: string | null;
+    workout_exercises: any[] | null;
+    diet_meals: any[] | null;
+    calories_target: number | null;
+    protein_goal: number | null;
+    carb_goal: number | null;
+    fat_goal: number | null;
+    duration: string | null;
+    difficulty: string | null;
+  } | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -342,14 +364,36 @@ export async function getRecentWorkouts(
  * This is the single function controllers and the chat trigger call.
  */
 export async function buildDashboardSummary(userId: number): Promise<DashboardData> {
-  const [weightProgress, stats, strengthProgress, mostImproved, recentWorkouts] =
+  const today = new Date().toISOString().split("T")[0];
+
+  const [weightProgress, stats, strengthProgress, mostImproved, recentWorkouts, todayStatsRows, activePlanRows] =
     await Promise.all([
       getWeightProgress(userId),
       computeStreakAndStats(userId),
       getStrengthProgress(userId),
       getMostImproved(userId),
       getRecentWorkouts(userId),
+      pool.execute(`SELECT * FROM user_progress WHERE user_id = ? AND date = ?`, [userId, today]),
+      pool.execute(
+        `SELECT ufp.*, 
+                cgw.title as workout_title, cgw.exercises as workout_exercises, cgw.duration, cgw.difficulty, cgw.calories_estimate,
+                cgd.title as diet_title, cgd.meals as diet_meals, cgd.calories_target, cgd.protein, cgd.carbs, cgd.fats
+         FROM user_fitness_plans ufp
+         LEFT JOIN chatbot_generated_workouts cgw ON ufp.workout_plan_id = cgw.id
+         LEFT JOIN chatbot_generated_diets cgd ON ufp.diet_plan_id = cgd.id
+         WHERE ufp.user_id = ? AND ufp.active = 1
+         ORDER BY ufp.created_at DESC LIMIT 1`,
+        [userId]
+      )
     ]);
+
+  const todayStats = (todayStatsRows[0] as any[])[0] || null;
+  const activePlan = (activePlanRows[0] as any[])[0] || null;
+
+  if (activePlan) {
+    if (activePlan.workout_exercises) activePlan.workout_exercises = JSON.parse(activePlan.workout_exercises);
+    if (activePlan.diet_meals) activePlan.diet_meals = JSON.parse(activePlan.diet_meals);
+  }
 
   return {
     weight_progress:   weightProgress,
@@ -357,6 +401,28 @@ export async function buildDashboardSummary(userId: number): Promise<DashboardDa
     strength_progress: strengthProgress,
     most_improved:     mostImproved,
     recent_workouts:   recentWorkouts,
+    today_stats: todayStats ? {
+      calories_consumed: todayStats.calories_consumed,
+      calories_burned: todayStats.calories_burned,
+      water_ml: todayStats.water_ml,
+      completed_percentage: todayStats.completed_percentage,
+      weight_kg: todayStats.weight_kg,
+      protein: todayStats.protein || 0,
+      carbs: todayStats.carbs || 0,
+      fats: todayStats.fats || 0,
+    } : null,
+    today_plan: activePlan ? {
+      workout_title: activePlan.workout_title,
+      diet_title: activePlan.diet_title,
+      workout_exercises: activePlan.workout_exercises,
+      diet_meals: activePlan.diet_meals,
+      calories_target: activePlan.calories_target,
+      protein_goal: activePlan.protein,
+      carb_goal: activePlan.carbs,
+      fat_goal: activePlan.fats,
+      duration: activePlan.duration,
+      difficulty: activePlan.difficulty,
+    } : null,
   };
 }
 

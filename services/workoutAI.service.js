@@ -153,8 +153,8 @@ export async function callWorkoutAI(prompt) {
     try {
         plan = parseJSONResponse(rawResponse);
     }
-    catch (err) {
-        throw new Error(`AI returned invalid format: ${err.message}`);
+    catch (e) {
+        throw new Error(`AI returned non-JSON response: ${e.message}`);
     }
     // Basic shape validation
     if (!plan.focus || !Array.isArray(plan.exercises)) {

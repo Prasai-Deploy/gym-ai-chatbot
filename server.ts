@@ -30,12 +30,26 @@ import {
   savePlan,
   getLastLog,
   getRecentFocuses,
+  saveToChatbotLog,
 } from "./services/workout.service.js";
 import {
   buildDashboardSummary,
   buildChatInsight,
 } from "./services/dashboard.service.js";
 import { callAIWithRouting } from "./services/ai.service.js";
+import { 
+  saveAIWorkout, 
+  saveAIDiet, 
+  linkActivePlans, 
+  logMeal, 
+  updateDailyProgress 
+} from "./services/plan.service.js";
+import waterRouter from "./routes/water.routes.js";
+import { setHydrationGoal, addWaterIntake } from "./services/water.service.js";
+import activityRouter from "./routes/activity.routes.js";
+import { createActivity } from "./services/activity.service.js";
+import progressRouter from "./routes/progress.routes.js";
+import { getDailyStats, buildProgressInsight } from "./services/progress.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -262,16 +276,28 @@ async function startServer() {
           );
           user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
           if (!user) throw new Error("DB insertion failed, fallback to mock");
-        } else {
-          // Refresh demo user state
-          await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-          await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-          await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-          await dbRun(
-            "UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?",
-            [user.id]
-          );
-        }
+          } else {
+            // Refresh demo user state
+            await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM workout_plans WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM workout_sessions WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM chatbot_generated_plans WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM workout_logs WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM progress_logs WHERE user_id = ?", [user.id]);
+            
+            // Cleanup new tables
+            await dbRun("DELETE FROM chatbot_generated_workouts WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM chatbot_generated_diets WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM user_fitness_plans WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM user_meal_tracking WHERE user_id = ?", [user.id]);
+            await dbRun("DELETE FROM user_progress WHERE user_id = ?", [user.id]);
+            await dbRun(
+              "UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?",
+              [user.id]
+            );
+          }
       } catch (dbErr: any) {
         console.warn("[DB] Demo login fallback to MOCK user due to DB error:", dbErr.message);
         user = {
@@ -392,7 +418,31 @@ async function startServer() {
     });
   });
 
-  app.get("/api/logout", (req, res) => {
+  app.get("/api/logout", async (req, res) => {
+    const user = (req as any).user;
+    if (user && user.email === "demo@sweatfix.com") {
+      try {
+        await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM workout_plans WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM workout_sessions WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM chatbot_generated_plans WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM workout_logs WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM progress_logs WHERE user_id = ?", [user.id]);
+
+        // Cleanup new tables
+        await dbRun("DELETE FROM chatbot_generated_workouts WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM chatbot_generated_diets WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM user_fitness_plans WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM user_meal_tracking WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM user_progress WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM weekly_progress WHERE user_id = ?", [user.id]);
+        await dbRun("DELETE FROM daily_fitness_stats WHERE user_id = ?", [user.id]);
+      } catch (e) {
+        console.error("Failed to clear demo data:", e);
+      }
+    }
     (req as any).logout(() => res.json({ success: true }));
   });
 
@@ -552,7 +602,10 @@ async function startServer() {
   // ───────────────────────────────────────────────────────────────────────────
   // Dashboard routes (modular) — GET /api/dashboard/:userId, POST /api/progress/metrics
   // ───────────────────────────────────────────────────────────────────────────
-  app.use("/api", dashboardRouter);
+  app.use("/api",          dashboardRouter);
+  app.use("/api/water",    waterRouter);
+  app.use("/api/activity", activityRouter);
+  app.use("/api/progress", progressRouter);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Chat route
@@ -637,6 +690,7 @@ async function startServer() {
           const prompt       = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
           const generatedPlan = await callWorkoutAI(prompt);
           await savePlan(user.id, today, generatedPlan, prompt);
+          await saveToChatbotLog(user.id, generatedPlan);
 
           const formatted = formatWorkoutForChat(generatedPlan);
           return res.json({ text: formatted });
@@ -702,8 +756,9 @@ async function startServer() {
       }
 
       // ── 3. Build context string (onboarding vs. partial vs. complete) ──────
+      const progressInsight = user ? await buildProgressInsight(user.id) : "";
       const userContextStr = user
-        ? buildSystemContext(fitnessProfile, user.profile_context)
+        ? buildSystemContext(fitnessProfile, user.profile_context, progressInsight)
         : "";
 
       const systemPrompt = `Role & Identity
@@ -724,43 +779,23 @@ Onboarding & Details Gathering: Before creating any diet or workout plan, you MU
 5. Preferred meal frequency (how many times they prefer to eat per day)
 DO NOT generate a plan until you have this information.
 
-Auto-Fill Protocol:
-ONLY ONCE you have gathered the user's details, you can generate a highly accurate, customized diet and workout plan.
-The generated plans must be highly detailed. The workout chart must be a detailed per-day plan, and the diet plan must be broken down specifically by their preferred number of meals per day with full macro details.
-Whenever you generate this specific plan for the day, YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Auto-Fill Protocol & Centralized AI Extraction:
+Whenever the user discusses their fitness data (workouts, diets, weight, goals, macros, etc.), YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
 \`\`\`json
 {
-  "workout_plan": "Detailed per-day workout chart",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency",
+  "profile_update": {
+    "goal": "muscle gain",
+    "weight": 75,
+    "diet_type": "vegetarian"
+  },
   "macro_goals": {
     "calories": 2500,
     "protein": 180,
     "carbs": 250,
     "fats": 65
-  }
-}
-\`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard. Keep the JSON properties exactly as "workout_plan", "diet_plan", and "macro_goals", providing realistic autofill data based on the conversation.
-
-Memory Extraction Context:
-Whenever the user explicitly tells you a fact about themselves that would be important to remember for future workouts or diets (such as injuries, available equipment, target weight, dietary restrictions, schedule constraints, etc.), YOU MUST add a third property to the JSON block called "memory" that concisely summarizes the new fact.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
-  "memory": "User has a bad left knee and only has access to dumbbells."
-}
-\`\`\`
-If there is no new fact to save in this message, do not include the "memory" property. Do not just repeat existing memory.
-
-Progress & Macro Extraction Protocol:
-If the user indicates they just completed a workout, drank water, or ate a meal, YOU MUST estimate the caloric/nutritional value and add a "progress_log" property to the JSON block.
-Example:
-\`\`\`json
-{
-  "workout_plan": "...",
-  "diet_plan": "...",
+  },
+  "workout_plan": "Detailed per-day workout chart...",
+  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency...",
   "progress_log": {
     "workout_name": "Chicken Breast & Rice",
     "calories": 450,
@@ -768,10 +803,19 @@ Example:
     "carbs": 50,
     "fats": 5,
     "water": 0
-  }
+  },
+  "memory": "User has a bad left knee and only has access to dumbbells."
 }
 \`\`\`
-If there is no completed meal or workout to log, do not include "progress_log".${userContextStr}`;
+This JSON will be used to automatically update their Daily Protocol dashboard in real-time. Only include the keys that are actively relevant to the current conversation. 
+
+Rules for the JSON block:
+1. "profile_update": Include if the user states a new goal, weight, or diet type. (Weight should be a number in kg).
+2. "macro_goals": Include if you have calculated or the user has stated their target daily calories/macros.
+3. "workout_plan" & "diet_plan": Include as detailed markdown strings if the user asked for a generated plan.
+4. "progress_log": Include if the user indicates they just completed a workout, drank water, or ate a meal. Estimate the nutritional values.
+5. "memory": Include a concise summary of any new, permanent fact about the user (e.g., injuries, equipment). Do not repeat existing memory.
+${userContextStr}`;
 
       let aiContent: string;
       try {
@@ -781,28 +825,41 @@ If there is no completed meal or workout to log, do not include "progress_log".$
           history || []
         );
       } catch (apiError: any) {
-        console.error("OpenRouter API Error:", apiError.message);
+        console.error("=== [SERVER ERROR] Chat API Failure ===");
+        console.error(`Message: ${apiError.message}`);
+        if (apiError.stack) console.error(`Stack: ${apiError.stack}`);
+        
         return res.json({
           text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
         });
       }
 
-      // Extract memory / macro_goals / progress_log from AI JSON block
+      // Extract memory / macro_goals / progress_log / plans from AI JSON block
+      let updates = {
+        userProfile: false,
+        progress: false,
+        plans: false
+      };
+
       if (user) {
         const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
         if (jsonMatch) {
           try {
             const parsed = JSON.parse(jsonMatch[1]);
+            
+            // Remove the JSON block from the text sent to the user
+            aiContent = aiContent.replace(/```json\n([\s\S]*?)\n```/g, "").trim();
 
             // ── profile_update: AI-driven profile save (used during onboarding) ──
             if (parsed.profile_update) {
               await upsertProfile(user.id, parsed.profile_update);
               console.log("[Profile] AI profile_update saved for user", user.id, ":", parsed.profile_update);
+              updates.userProfile = true;
             }
 
             if (parsed.memory) {
               const currentContext = user.profile_context
-                ? user.profile_context + "\\n"
+                ? user.profile_context + "\n"
                 : "";
               const newContext = currentContext + "- " + parsed.memory;
               await dbRun(
@@ -816,6 +873,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                 ":",
                 parsed.memory
               );
+              updates.userProfile = true;
             }
 
             if (parsed.macro_goals) {
@@ -836,11 +894,14 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                 ":",
                 mg
               );
+              updates.userProfile = true;
             }
 
             if (parsed.progress_log) {
               const p = parsed.progress_log;
               const today = new Date().toISOString().split("T")[0];
+              
+              // 1. Log to legacy progress table
               await dbRun(
                 `INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -855,12 +916,81 @@ If there is no completed meal or workout to log, do not include "progress_log".$
                   p.fats || 0,
                 ]
               );
-              console.log(
-                "Saved new progress log for user",
-                user.id,
-                ":",
-                p
+
+              // 2. Log to new user_progress and user_meal_tracking
+              await updateDailyProgress(user.id, today, {
+                calories_consumed: p.calories || 0,
+                water_ml: p.water || 0,
+                weight_kg: parsed.profile_update?.weight_kg || null
+              });
+
+              if (p.food_item || p.calories) {
+                await logMeal(user.id, today, {
+                  meal_type: "AI Log",
+                  food_item: p.food_item || p.workout_name || "Meal",
+                  calories: p.calories || 0,
+                  protein: p.protein || 0,
+                  carbs: p.carbs || 0,
+                  fats: p.fats || 0
+                });
+              }
+
+              console.log("Saved new progress log for user", user.id);
+              updates.progress = true;
+            }
+
+            if (parsed.workout_plan || parsed.diet_plan) {
+              const today = new Date().toISOString().split("T")[0];
+              
+              // 1. Save to legacy daily_plans
+              const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
+              await dbRun(
+                `INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
+                 VALUES (?, ?, ?, ?, 0)
+                 ON DUPLICATE KEY UPDATE workout_plan = VALUES(workout_plan), diet_plan = VALUES(diet_plan)`,
+                [user.id, formattedDate, parsed.workout_plan || "", parsed.diet_plan || ""]
               );
+
+              // 2. Save to new structured tables
+              let workoutId, dietId;
+              if (parsed.workout_plan) {
+                // If it's a string, we might need to parse it if AI sent it as JSON, 
+                // but the prompt says "detailed markdown strings". 
+                // Let's check if the AI sent a structured workout.
+                const workoutObj = typeof parsed.workout_plan === 'string' 
+                  ? { title: "Today's Workout", exercises: [{ name: "Workout", description: parsed.workout_plan }] }
+                  : parsed.workout_plan;
+                workoutId = await saveAIWorkout(user.id, workoutObj);
+              }
+
+              if (parsed.diet_plan) {
+                const dietObj = typeof parsed.diet_plan === 'string'
+                  ? { title: "Today's Diet", meals: [{ type: "Full Day", items: [parsed.diet_plan] }] }
+                  : parsed.diet_plan;
+                dietId = await saveAIDiet(user.id, dietObj);
+              }
+
+              if (workoutId || dietId) {
+                await linkActivePlans(user.id, workoutId, dietId);
+                
+                // AI Hydration Logic
+                let hydrationGoal = 2500; // Base
+                let reason = "Standard hydration target.";
+                
+                if (parsed.workout_plan) {
+                  hydrationGoal += 1000;
+                  reason = "Increased hydration for high-intensity workout.";
+                }
+                
+                await setHydrationGoal(user.id, hydrationGoal, true, reason);
+                
+                // Activity Log
+                await createActivity(user.id, 'chatbot', 'AI Plan Generated', 
+                  `Coach generated a new ${parsed.workout_plan ? 'workout' : 'diet'} plan and set a hydration target of ${hydrationGoal/1000}L.`);
+              }
+
+              console.log("Saved new plans for user", user.id);
+              updates.plans = true;
             }
           } catch (e) {
             console.error("Failed to parse AI JSON for memory/progress:", e);
@@ -868,7 +998,7 @@ If there is no completed meal or workout to log, do not include "progress_log".$
         }
       }
 
-      res.json({ text: aiContent });
+      res.json({ text: aiContent, updates });
     } catch (e: any) {
       console.error(e);
       res.status(500).json({ error: e.message });
