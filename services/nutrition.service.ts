@@ -105,6 +105,15 @@ Include specific Indian food items like Poha, Paneer, Roti, Dal, etc., based on 
     [userId, today, mealPlanData.calories_target, JSON.stringify(mealPlanData.meals)]
   );
 
+  // Sync to modern dashboard tables
+  const { saveAIDiet, linkActivePlans } = await import("./plan.service.js");
+  const dietId = await saveAIDiet(userId, {
+    title: "Personalized Meal Plan",
+    meals: mealPlanData.meals,
+    calories_target: mealPlanData.calories_target
+  });
+  await linkActivePlans(userId, undefined, dietId);
+
   return mealPlanData;
 }
 
@@ -141,6 +150,24 @@ If multiple items are mentioned, group them into one entry or return the total e
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [userId, today, logData.food_item, logData.calories, logData.protein, logData.carbs, logData.fats]
   );
+
+  // Sync to modern dashboard tables
+  const { logMeal, updateDailyProgress } = await import("./plan.service.js");
+  await logMeal(userId, today, {
+    meal_type: "AI Log",
+    food_item: logData.food_item,
+    calories: logData.calories,
+    protein: logData.protein,
+    carbs: logData.carbs,
+    fats: logData.fats
+  });
+
+  await updateDailyProgress(userId, today, {
+    calories_consumed: logData.calories,
+    protein: logData.protein,
+    carbs: logData.carbs,
+    fats: logData.fats
+  });
 
   return logData;
 }

@@ -5,7 +5,7 @@
 import pool from "../db.js";
 import { ResultSetHeader } from "mysql2/promise";
 
-export type ActivityType = 'workout' | 'diet' | 'achievement' | 'hydration' | 'chatbot' | 'progress' | 'account';
+export type ActivityType = 'workout' | 'diet' | 'achievement' | 'hydration' | 'chatbot' | 'progress' | 'account' | 'chat' | 'cardio';
 
 /**
  * Creates a new activity log entry.

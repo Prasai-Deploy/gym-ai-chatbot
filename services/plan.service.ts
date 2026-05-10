@@ -155,27 +155,34 @@ export async function logMeal(userId: number, date: string, meal: any) {
 }
 
 /**
- * Updates daily progress stats.
+ * Updates daily progress stats — includes macro nutrients (migration 008).
  */
 export async function updateDailyProgress(userId: number, date: string, data: any) {
   const [result] = await pool.execute(
-    `INSERT INTO user_progress (user_id, date, calories_consumed, calories_burned, water_ml, completed_percentage, weight_kg)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO user_progress 
+       (user_id, date, calories_consumed, calories_burned, water_ml, completed_percentage, weight_kg, protein, carbs, fats)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
-       calories_consumed = calories_consumed + VALUES(calories_consumed),
-       calories_burned = calories_burned + VALUES(calories_burned),
-       water_ml = water_ml + VALUES(water_ml),
+       calories_consumed    = calories_consumed    + VALUES(calories_consumed),
+       calories_burned      = calories_burned      + VALUES(calories_burned),
+       water_ml             = water_ml             + VALUES(water_ml),
        completed_percentage = GREATEST(completed_percentage, VALUES(completed_percentage)),
-       weight_kg = COALESCE(VALUES(weight_kg), weight_kg),
-       updated_at = CURRENT_TIMESTAMP`,
+       weight_kg            = COALESCE(VALUES(weight_kg), weight_kg),
+       protein              = IFNULL(protein, 0)  + VALUES(protein),
+       carbs                = IFNULL(carbs, 0)    + VALUES(carbs),
+       fats                 = IFNULL(fats, 0)     + VALUES(fats),
+       updated_at           = CURRENT_TIMESTAMP`,
     [
       userId,
       date,
       data.calories_consumed || 0,
-      data.calories_burned || 0,
-      data.water_ml || 0,
+      data.calories_burned   || 0,
+      data.water_ml          || 0,
       data.completed_percentage || 0,
-      data.weight_kg || null
+      data.weight_kg         || null,
+      data.protein           || 0,
+      data.carbs             || 0,
+      data.fats              || 0,
     ]
   );
   const affected = (result as ResultSetHeader).affectedRows;
@@ -183,7 +190,6 @@ export async function updateDailyProgress(userId: number, date: string, data: an
   // Sync with weekly progress
   await updateWeeklyProgress(userId, date, {
     calories_burned: data.calories_burned || 0,
-    // Add other relevant mappings if needed
   });
 
   return affected;

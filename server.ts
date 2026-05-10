@@ -50,6 +50,7 @@ import activityRouter from "./routes/activity.routes.js";
 import { createActivity } from "./services/activity.service.js";
 import progressRouter from "./routes/progress.routes.js";
 import { getDailyStats, buildProgressInsight } from "./services/progress.service.js";
+import { parseAndApplyAIData } from "./services/aiDataParser.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -119,6 +120,20 @@ async function dbRun(
 // Auth event emitter (for long-polling Telegram bot flow)
 // ─────────────────────────────────────────────────────────────────────────────
 const authEvents = new EventEmitter();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SSE — per-user stream clients map (userId → Set of response objects)
+// ─────────────────────────────────────────────────────────────────────────────
+const sseClients = new Map<number, Set<any>>();
+
+function broadcastToUser(userId: number, event: string, data: any) {
+  const clients = sseClients.get(userId);
+  if (!clients || clients.size === 0) return;
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of clients) {
+    try { res.write(payload); } catch { clients.delete(res); }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server bootstrap
@@ -608,6 +623,38 @@ async function startServer() {
   app.use("/api/progress", progressRouter);
 
   // ───────────────────────────────────────────────────────────────────────────
+  // SSE — Real-time push to dashboard
+  // GET /api/stream
+  // ───────────────────────────────────────────────────────────────────────────
+  app.get("/api/stream", (req, res) => {
+    const user = (req as any).user;
+    if (!user) { res.status(401).end(); return; }
+
+    res.setHeader("Content-Type",  "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection",    "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no"); // Nginx / Hostinger pass-through
+    res.flushHeaders();
+
+    // Register this client
+    if (!sseClients.has(user.id)) sseClients.set(user.id, new Set());
+    sseClients.get(user.id)!.add(res);
+    console.log(`[SSE] Client connected for user ${user.id} (${sseClients.get(user.id)!.size} total)`);
+
+    // Keep-alive ping every 25 seconds
+    const ping = setInterval(() => {
+      try { res.write(": ping\n\n"); } catch { clearInterval(ping); }
+    }, 25000);
+
+    // Cleanup on disconnect
+    req.on("close", () => {
+      clearInterval(ping);
+      sseClients.get(user.id)?.delete(res);
+      console.log(`[SSE] Client disconnected for user ${user.id}`);
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
   // Chat route
   // ───────────────────────────────────────────────────────────────────────────
   // ── Progress chat trigger regex ────────────────────────────────────────────
@@ -664,7 +711,8 @@ async function startServer() {
                 ? JSON.parse(existingPlan.exercises)
                 : existingPlan.exercises;
             const formatted = formatWorkoutForChat({ ...existingPlan, exercises });
-            return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}` });
+            broadcastToUser(user.id, "dashboard-update", { plans: true });
+            return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}`, updates: { plans: true } });
           }
 
           // Build history map for progressive overload
@@ -693,7 +741,9 @@ async function startServer() {
           await saveToChatbotLog(user.id, generatedPlan);
 
           const formatted = formatWorkoutForChat(generatedPlan);
-          return res.json({ text: formatted });
+          
+          broadcastToUser(user.id, "dashboard-update", { plans: true });
+          return res.json({ text: formatted, updates: { plans: true } });
         } catch (workoutErr: any) {
           console.error("[Chat/Workout trigger] Error:", workoutErr.message);
           // Fall through to normal AI chat on error
@@ -718,7 +768,8 @@ async function startServer() {
             responseText += `**${m.type}** (${m.calories} kcal)\n- ${m.items.join("\n- ")}\n\n`;
           });
           
-          return res.json({ text: responseText });
+          broadcastToUser(user.id, "dashboard-update", { plans: true });
+          return res.json({ text: responseText, updates: { plans: true } });
         } catch (nutriErr: any) {
           console.error("[Chat/Nutrition Gen] Error:", nutriErr.message);
         }
@@ -730,8 +781,10 @@ async function startServer() {
           const { logFoodIntake } = await import("./services/nutrition.service.js");
           const log = await logFoodIntake(user.id, message);
           
+          broadcastToUser(user.id, "dashboard-update", { progress: true });
           return res.json({ 
-            text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`
+            text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`,
+            updates: { progress: true }
           });
         } catch (logErr: any) {
           console.error("[Chat/Nutrition Log] Error:", logErr.message);
@@ -780,13 +833,19 @@ Onboarding & Details Gathering: Before creating any diet or workout plan, you MU
 DO NOT generate a plan until you have this information.
 
 Auto-Fill Protocol & Centralized AI Extraction:
-Whenever the user discusses their fitness data (workouts, diets, weight, goals, macros, etc.), YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Whenever the user provides ANY fitness-related information in their message, YOU MUST append a structured JSON block at the VERY END of your response inside triple backticks. This JSON is parsed by the dashboard to automatically update all fitness tracking sections — do NOT skip it when relevant data is present.
+
+Full JSON schema (only include keys relevant to this specific message — omit irrelevant ones):
 \`\`\`json
 {
   "profile_update": {
     "goal": "muscle gain",
-    "weight": 75,
-    "diet_type": "vegetarian"
+    "weight_kg": 75,
+    "height_cm": 178,
+    "age": 25,
+    "diet_type": "vegetarian",
+    "activity_level": "active",
+    "workout_days": 4
   },
   "macro_goals": {
     "calories": 2500,
@@ -794,27 +853,44 @@ Whenever the user discusses their fitness data (workouts, diets, weight, goals, 
     "carbs": 250,
     "fats": 65
   },
-  "workout_plan": "Detailed per-day workout chart...",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency...",
+  "workout_plan": "Detailed per-day workout chart as markdown...",
+  "diet_plan": "Fully detailed meal plan as markdown...",
   "progress_log": {
-    "workout_name": "Chicken Breast & Rice",
-    "calories": 450,
-    "protein": 45,
-    "carbs": 50,
-    "fats": 5,
-    "water": 0
+    "workout_name": "Chest & Triceps",
+    "workout_completed": true,
+    "muscle_group": "chest",
+    "calories_consumed": 2400,
+    "calories_burned": 350,
+    "protein": 120,
+    "carbs": 200,
+    "fats": 55,
+    "water_ml": 2000,
+    "body_weight_kg": 80,
+    "cardio_type": "running",
+    "cardio_duration_min": 30,
+    "cardio_distance_km": 5,
+    "exercises": [
+      { "name": "Bench Press", "sets": 4, "reps": "8-10", "weight_kg": 80 },
+      { "name": "Tricep Pushdown", "sets": 3, "reps": "12", "weight_kg": 25 }
+    ]
   },
-  "memory": "User has a bad left knee and only has access to dumbbells."
+  "memory": "User has a bad left knee and only trains with dumbbells."
 }
 \`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard in real-time. Only include the keys that are actively relevant to the current conversation. 
 
-Rules for the JSON block:
-1. "profile_update": Include if the user states a new goal, weight, or diet type. (Weight should be a number in kg).
-2. "macro_goals": Include if you have calculated or the user has stated their target daily calories/macros.
-3. "workout_plan" & "diet_plan": Include as detailed markdown strings if the user asked for a generated plan.
-4. "progress_log": Include if the user indicates they just completed a workout, drank water, or ate a meal. Estimate the nutritional values.
-5. "memory": Include a concise summary of any new, permanent fact about the user (e.g., injuries, equipment). Do not repeat existing memory.
+Detailed rules for the JSON block — read carefully:
+1. "profile_update": Include ONLY when the user states a new goal, weight, height, age, or diet type. weight_kg must be a number.
+2. "macro_goals": Include when you calculate or the user states their target daily calories/macros.
+3. "workout_plan" & "diet_plan": Include as detailed markdown strings only when explicitly asked to generate a plan.
+4. "progress_log": Include whenever the user mentions ANYTHING they did today — completed a workout, ate a meal, drank water, went for a run, updated their weight. Be generous in interpreting these:
+   - Workout completed → set workout_name, workout_completed: true, muscle_group
+   - Food/meal eaten → set calories_consumed, protein, carbs, fats (estimate if not stated)
+   - Water drunk → set water_ml (convert litres to ml: 2L = 2000)
+   - Weight check → set body_weight_kg
+   - Cardio done → set cardio_type (running/cycling/swimming/walking/hiit etc.), cardio_duration_min, cardio_distance_km, calories_burned
+   - Individual exercises → populate the exercises array with name, sets, reps, weight_kg
+5. "memory": Include a concise one-sentence summary of any NEW permanent fact about the user (injuries, equipment, preferences). Do NOT repeat already-known facts.
+6. IMPORTANT: Do NOT include the JSON block in your visible response text — it is stripped automatically. Only the human-readable message is shown to the user.
 ${userContextStr}`;
 
       let aiContent: string;
@@ -834,168 +910,53 @@ ${userContextStr}`;
         });
       }
 
-      // Extract memory / macro_goals / progress_log / plans from AI JSON block
+      // ── Centralized AI data extraction (aiDataParser.service.ts) ────────────
       let updates = {
         userProfile: false,
-        progress: false,
-        plans: false
+        progress:    false,
+        plans:       false,
+        hydration:   false,
+        weight:      false,
+        activity:    false,
+        macros:      false,
       };
 
       if (user) {
-        const jsonMatch = aiContent.match(/```(?:json)?\s+([\s\S]*?)\s+```/i);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[1]);
-            
-            // Remove the JSON block from the text sent to the user
-            aiContent = aiContent.replace(/```(?:json)?\s+([\s\S]*?)\s+```/gi, "").trim();
+        try {
+          const { cleanedText, updates: parsedUpdates, newProfileContext } =
+            await parseAndApplyAIData(aiContent, user.id, {
+              profile_context: user.profile_context,
+              weight_kg: undefined, // fetched inside parser if needed
+            });
 
-            // ── profile_update: AI-driven profile save (used during onboarding) ──
-            if (parsed.profile_update) {
-              await upsertProfile(user.id, parsed.profile_update);
-              console.log("[Profile] AI profile_update saved for user", user.id, ":", parsed.profile_update);
-              updates.userProfile = true;
-            }
+          // Apply cleaned text (JSON block stripped)
+          aiContent = cleanedText;
 
-            if (parsed.memory) {
-              const currentContext = user.profile_context
-                ? user.profile_context + "\n"
-                : "";
-              const newContext = currentContext + "- " + parsed.memory;
-              await dbRun(
-                "UPDATE users SET profile_context = ? WHERE id = ?",
-                [newContext, user.id]
-              );
-              user.profile_context = newContext;
-              console.log(
-                "Saved new memory for user",
-                user.id,
-                ":",
-                parsed.memory
-              );
-              updates.userProfile = true;
-            }
+          // Merge update flags
+          Object.assign(updates, parsedUpdates);
 
-            if (parsed.macro_goals) {
-              const mg = parsed.macro_goals;
-              await dbRun(
-                "UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?",
-                [
-                  mg.calories || 0,
-                  mg.protein || 0,
-                  mg.carbs || 0,
-                  mg.fats || 0,
-                  user.id,
-                ]
-              );
-              console.log(
-                "Saved new macro goals for user",
-                user.id,
-                ":",
-                mg
-              );
-              updates.userProfile = true;
-            }
-
-            if (parsed.progress_log) {
-              const p = parsed.progress_log;
-              const today = new Date().toISOString().split("T")[0];
-              
-              // 1. Log to legacy progress table
-              await dbRun(
-                `INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  user.id,
-                  today,
-                  p.workout_name || "Log",
-                  p.calories || 0,
-                  p.protein || 0,
-                  p.water || 0,
-                  p.carbs || 0,
-                  p.fats || 0,
-                ]
-              );
-
-              // 2. Log to new user_progress and user_meal_tracking
-              await updateDailyProgress(user.id, today, {
-                calories_consumed: p.calories || 0,
-                water_ml: p.water || 0,
-                weight_kg: parsed.profile_update?.weight_kg || null
-              });
-
-              if (p.food_item || p.calories) {
-                await logMeal(user.id, today, {
-                  meal_type: "AI Log",
-                  food_item: p.food_item || p.workout_name || "Meal",
-                  calories: p.calories || 0,
-                  protein: p.protein || 0,
-                  carbs: p.carbs || 0,
-                  fats: p.fats || 0
-                });
-              }
-
-              console.log("Saved new progress log for user", user.id);
-              updates.progress = true;
-            }
-
-            if (parsed.workout_plan || parsed.diet_plan) {
-              const today = new Date().toISOString().split("T")[0];
-              
-              // 1. Save to legacy daily_plans
-              const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
-              await dbRun(
-                `INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
-                 VALUES (?, ?, ?, ?, 0)
-                 ON DUPLICATE KEY UPDATE workout_plan = VALUES(workout_plan), diet_plan = VALUES(diet_plan)`,
-                [user.id, formattedDate, parsed.workout_plan || "", parsed.diet_plan || ""]
-              );
-
-              // 2. Save to new structured tables
-              let workoutId, dietId;
-              if (parsed.workout_plan) {
-                // If it's a string, we might need to parse it if AI sent it as JSON, 
-                // but the prompt says "detailed markdown strings". 
-                // Let's check if the AI sent a structured workout.
-                const workoutObj = typeof parsed.workout_plan === 'string' 
-                  ? { title: "Today's Workout", exercises: [{ name: "Workout", description: parsed.workout_plan }] }
-                  : parsed.workout_plan;
-                workoutId = await saveAIWorkout(user.id, workoutObj);
-              }
-
-              if (parsed.diet_plan) {
-                const dietObj = typeof parsed.diet_plan === 'string'
-                  ? { title: "Today's Diet", meals: [{ type: "Full Day", items: [parsed.diet_plan] }] }
-                  : parsed.diet_plan;
-                dietId = await saveAIDiet(user.id, dietObj);
-              }
-
-              if (workoutId || dietId) {
-                await linkActivePlans(user.id, workoutId, dietId);
-                
-                // AI Hydration Logic
-                let hydrationGoal = 2500; // Base
-                let reason = "Standard hydration target.";
-                
-                if (parsed.workout_plan) {
-                  hydrationGoal += 1000;
-                  reason = "Increased hydration for high-intensity workout.";
-                }
-                
-                await setHydrationGoal(user.id, hydrationGoal, true, reason);
-                
-                // Activity Log
-                await createActivity(user.id, 'chatbot', 'AI Plan Generated', 
-                  `Coach generated a new ${parsed.workout_plan ? 'workout' : 'diet'} plan and set a hydration target of ${hydrationGoal/1000}L.`);
-              }
-
-              console.log("Saved new plans for user", user.id);
-              updates.plans = true;
-            }
-          } catch (e) {
-            console.error("Failed to parse AI JSON for memory/progress:", e);
+          // Sync in-memory profile_context if memory was saved
+          if (newProfileContext) {
+            user.profile_context = newProfileContext;
           }
+        } catch (parseErr: any) {
+          console.error("[Chat] aiDataParser error (non-fatal):", parseErr.message);
         }
+      }
+
+      // ── Build user-friendly suffix messages ──────────────────────────────
+      const suffixes: string[] = [];
+      if (updates.progress)  suffixes.push("*(✅ Progress logged to your dashboard!)*");
+      if (updates.hydration) suffixes.push("*(💧 Hydration updated!)*");
+      if (updates.weight)    suffixes.push("*(⚖️ Body weight logged!)*");
+      if (updates.activity)  suffixes.push("*(🏃 Activity recorded!)*");
+      if (updates.plans)     suffixes.push("*(📋 New plan attached to your Daily Protocol!)*");
+      if (updates.macros)    suffixes.push("*(🎯 Macro goals updated!)*");
+      if (suffixes.length > 0) aiContent += "\n\n" + suffixes.join(" ");
+
+      // ── Real-time SSE push to all browser tabs of this user ──────────────
+      if (user && Object.values(updates).some(Boolean)) {
+        broadcastToUser(user.id, "dashboard-update", updates);
       }
 
       res.json({ text: aiContent, updates });

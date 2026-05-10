@@ -421,19 +421,52 @@ export default function App() {
     fetchWeeklyProgress();
   }, [user]);
 
-  // Poll for real-time updates from the database
+  // ── SSE: real-time push from server after every chat-triggered DB write ──────
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
-    if (user) {
-      intervalId = setInterval(() => {
-        fetchDashboardData();
-        fetchActivities();
-        fetchWeeklyProgress();
-      }, 5000); // 5 seconds polling
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
+    if (!user) return;
+
+    const es = new EventSource('/api/stream');
+
+    es.addEventListener('dashboard-update', (e: MessageEvent) => {
+      try {
+        const flags = JSON.parse(e.data);
+        if (flags.progress || flags.activity) {
+          fetchProgress();
+          fetchWeeklyProgress();
+          fetchActivities();
+        }
+        if (flags.hydration) {
+          fetchTodayWater();
+          fetchDashboardData();
+        }
+        if (flags.weight) {
+          fetchDashboardData();
+        }
+        if (flags.macros || flags.userProfile) {
+          fetchUser();
+        }
+        if (flags.plans) {
+          fetchPlans();
+          fetchTodayWater();
+          fetchUser();
+        }
+      } catch {}
+    });
+
+    es.onerror = () => {
+      // SSE disconnected — browser auto-reconnects; silent
     };
+
+    // Fallback polling at 30s (handles tabs that lose SSE)
+    const fallbackPoll = setInterval(() => {
+      fetchDashboardData();
+    }, 30000);
+
+    return () => {
+      es.close();
+      clearInterval(fallbackPoll);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useLayoutEffect(() => {
@@ -864,30 +897,56 @@ export default function App() {
       }));
       
       const response = await getFitnessAdvice(textToSend, history);
-      let advice = response.text || "I am here to help!";
+      const advice = response.text || "I am here to help!";
       const updates = response.updates || {};
 
-      if (updates.userProfile) {
-        fetchUser();
-        fetchActivities(); // Profile updates might generate activity logs
+      // ── Immediate targeted refetches per update flag ─────────────────────
+      const refetches: Promise<any>[] = [];
+
+      if (updates.userProfile || updates.macros) {
+        refetches.push(fetchUser());
       }
-      
+
       if (updates.progress) {
-        fetchProgress();
-        fetchWeeklyProgress(); // Update charts
-        fetchActivities(); // Logged progress generates activity logs
+        refetches.push(
+          fetchProgress(),
+          fetchWeeklyProgress(),
+          fetchActivities(),
+          fetchDashboardData()
+        );
         window.dispatchEvent(new CustomEvent('progress-logged'));
-        advice += "\n\n*(I have automatically logged your progress!)*";
       }
-      
+
+      if (updates.hydration) {
+        // Optimistic UI: bump water display immediately
+        setWaterSummary((prev: any) => ({
+          ...prev,
+          total_consumed: (prev?.total_consumed || 0) + 500, // rough bump; real value comes from fetch
+          completion_percentage: Math.min(100, ((prev?.total_consumed || 0) + 500) / (prev?.daily_goal || 2000) * 100)
+        }));
+        refetches.push(fetchTodayWater(), fetchDashboardData());
+      }
+
+      if (updates.weight) {
+        refetches.push(fetchDashboardData());
+      }
+
+      if (updates.activity) {
+        refetches.push(fetchActivities(), fetchWeeklyProgress());
+      }
+
       if (updates.plans) {
-        fetchPlans();
-        fetchActivities(); // Plan generation creates activity logs
-        fetchUser(); // AI sets a new hydration goal on plan generation
-        fetchTodayWater(); // Update the water UI with the new goal
+        refetches.push(
+          fetchPlans(),
+          fetchActivities(),
+          fetchUser(),
+          fetchTodayWater()
+        );
         window.dispatchEvent(new CustomEvent('plan-generated'));
-        advice += "\n\n*(I have automatically attached a new plan to your Daily Protocol!)*";
       }
+
+      // Fire all refetches in parallel (non-blocking — SSE will also handle this)
+      if (refetches.length > 0) Promise.all(refetches).catch(() => {});
 
       setMessages([...newMessages, { role: 'model', content: advice }]);
     } catch (e: any) {

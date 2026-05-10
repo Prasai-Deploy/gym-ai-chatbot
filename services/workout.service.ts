@@ -103,6 +103,22 @@ export async function savePlan(
     ]
   );
 
+  // Sync to modern dashboard tables
+  const { saveAIWorkout, linkActivePlans } = await import("./plan.service.js");
+  const { setHydrationGoal } = await import("./water.service.js");
+  const { createActivity } = await import("./activity.service.js");
+
+  const workoutId = await saveAIWorkout(userId, {
+    title: plan.focus || "Today's Workout",
+    exercises: plan.exercises,
+    duration: plan.duration,
+    difficulty: plan.difficulty,
+    calories_estimate: plan.calories_estimate
+  });
+  await linkActivePlans(userId, workoutId, undefined);
+  await setHydrationGoal(userId, 3500, true, "Increased hydration for workout day.");
+  await createActivity(userId, 'chatbot', 'AI Plan Generated', 'Coach generated a new workout plan.');
+
   // Re-fetch so we always return the actual DB row (with id, created_at etc.)
   return getPlanByDate(userId, date);
 }
