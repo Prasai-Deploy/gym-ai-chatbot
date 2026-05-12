@@ -366,7 +366,7 @@ export async function getRecentWorkouts(
 export async function buildDashboardSummary(userId: number): Promise<DashboardData> {
   const today = new Date().toISOString().split("T")[0];
 
-  const [weightProgress, stats, strengthProgress, mostImproved, recentWorkouts, todayStatsRows, activePlanRows] =
+  const [weightProgress, stats, strengthProgress, mostImproved, recentWorkouts, todayStatsRows, activePlanRows, workoutPlanRows, legacyPlanRows] =
     await Promise.all([
       getWeightProgress(userId),
       computeStreakAndStats(userId),
@@ -384,15 +384,137 @@ export async function buildDashboardSummary(userId: number): Promise<DashboardDa
          WHERE ufp.user_id = ? AND ufp.active = 1
          ORDER BY ufp.created_at DESC LIMIT 1`,
         [userId]
+      ),
+      // Also check workout_plans table (has structured exercises from both direct-generation and our new parser fix)
+      pool.execute(
+        `SELECT * FROM workout_plans WHERE user_id = ? ORDER BY date DESC, created_at DESC LIMIT 1`,
+        [userId]
+      ),
+      // Legacy daily_plans table — has the raw markdown strings
+      pool.execute(
+        `SELECT * FROM daily_plans WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
+        [userId]
       )
     ]);
 
   const todayStats = (todayStatsRows[0] as any[])[0] || null;
   const activePlan = (activePlanRows[0] as any[])[0] || null;
+  const workoutPlanRow = (workoutPlanRows[0] as any[])[0] || null;
+  const legacyPlan = (legacyPlanRows[0] as any[])[0] || null;
 
   if (activePlan) {
-    if (activePlan.workout_exercises) activePlan.workout_exercises = JSON.parse(activePlan.workout_exercises);
-    if (activePlan.diet_meals) activePlan.diet_meals = JSON.parse(activePlan.diet_meals);
+    if (activePlan.workout_exercises) {
+      try {
+        activePlan.workout_exercises = typeof activePlan.workout_exercises === 'string'
+          ? JSON.parse(activePlan.workout_exercises)
+          : activePlan.workout_exercises;
+      } catch { activePlan.workout_exercises = null; }
+    }
+    if (activePlan.diet_meals) {
+      try {
+        activePlan.diet_meals = typeof activePlan.diet_meals === 'string'
+          ? JSON.parse(activePlan.diet_meals)
+          : activePlan.diet_meals;
+      } catch { activePlan.diet_meals = null; }
+    }
+  }
+
+  // ── Build today_plan with multi-source fallback ──────────────────────────────
+  // Priority: chatbot_generated_workouts (structured) > workout_plans > daily_plans (markdown)
+  let todayPlan: DashboardData['today_plan'] = null;
+
+  // Check if structured chatbot plan has valid exercises (not the legacy garbage rows)
+  const hasValidChatbotExercises = activePlan?.workout_exercises &&
+    Array.isArray(activePlan.workout_exercises) &&
+    activePlan.workout_exercises.length > 0 &&
+    activePlan.workout_exercises.some((e: any) => e.sets || e.reps); // real structured data has sets/reps
+
+  const hasValidDietMeals = activePlan?.diet_meals &&
+    Array.isArray(activePlan.diet_meals) &&
+    activePlan.diet_meals.length > 0;
+
+  if (activePlan && (hasValidChatbotExercises || activePlan.workout_title || hasValidDietMeals || activePlan.diet_title)) {
+    // Use chatbot plan — but fall back to workout_plans for exercises if chatbot exercises are garbage
+    let exercises = hasValidChatbotExercises ? activePlan.workout_exercises : null;
+
+    // If chatbot exercises are garbage/missing, try workout_plans table
+    if (!exercises && workoutPlanRow) {
+      try {
+        const wpExercises = typeof workoutPlanRow.exercises === 'string'
+          ? JSON.parse(workoutPlanRow.exercises)
+          : workoutPlanRow.exercises;
+        if (Array.isArray(wpExercises) && wpExercises.length > 0 && wpExercises[0].name !== 'Workout') {
+          exercises = wpExercises;
+        }
+      } catch {}
+    }
+
+    // Build meals: filter out the legacy markdown blob meal
+    let meals = hasValidDietMeals
+      ? activePlan.diet_meals.filter((m: any) => !(
+          m.type === 'Full Day' && Array.isArray(m.items) && m.items.length === 1 && typeof m.items[0] === 'string' && m.items[0].length > 200
+        ))
+      : null;
+    if (meals && meals.length === 0) meals = null;
+
+    todayPlan = {
+      workout_title:     workoutPlanRow?.focus || activePlan.workout_title || 'Today\'s Workout',
+      diet_title:        activePlan.diet_title,
+      workout_exercises: exercises,
+      diet_meals:        meals,
+      calories_target:   activePlan.calories_target,
+      protein_goal:      activePlan.protein,
+      carb_goal:         activePlan.carbs,
+      fat_goal:          activePlan.fats,
+      duration:          workoutPlanRow?.duration || activePlan.duration,
+      difficulty:        workoutPlanRow?.difficulty || activePlan.difficulty,
+    };
+  } else if (workoutPlanRow || legacyPlan) {
+    // Fallback: use workout_plans / daily_plans tables
+    let exercises: any[] | null = null;
+    let workoutTitle = 'Today\'s Workout';
+    let duration: string | null = null;
+    let difficulty: string | null = null;
+
+    if (workoutPlanRow) {
+      try {
+        const wpExercises = typeof workoutPlanRow.exercises === 'string'
+          ? JSON.parse(workoutPlanRow.exercises)
+          : workoutPlanRow.exercises;
+        if (Array.isArray(wpExercises) && wpExercises.length > 0 && wpExercises[0].name !== 'Workout') {
+          exercises = wpExercises;
+        }
+      } catch {}
+      workoutTitle = workoutPlanRow.focus || workoutTitle;
+      duration = workoutPlanRow.duration;
+      difficulty = workoutPlanRow.difficulty;
+    }
+
+    // If still no exercises, parse legacy markdown
+    const legacyWorkout = legacyPlan?.workout_plan;
+    const legacyDiet = legacyPlan?.diet_plan;
+    const hasMeaningfulLegacyData = !!(legacyWorkout || legacyDiet);
+
+    if (exercises || hasMeaningfulLegacyData) {
+      // Build meals from legacy markdown if we have it
+      let meals: any[] | null = null;
+      if (legacyDiet && typeof legacyDiet === 'string') {
+        meals = [{ type: 'Diet Plan', items: [legacyDiet.substring(0, 2000)] }];
+      }
+
+      todayPlan = {
+        workout_title:     workoutTitle,
+        diet_title:        legacyDiet ? 'Today\'s Diet Plan' : null,
+        workout_exercises: exercises,
+        diet_meals:        meals,
+        calories_target:   workoutPlanRow?.calories_estimate || null,
+        protein_goal:      null,
+        carb_goal:         null,
+        fat_goal:          null,
+        duration:          duration,
+        difficulty:        difficulty,
+      };
+    }
   }
 
   return {
@@ -411,18 +533,7 @@ export async function buildDashboardSummary(userId: number): Promise<DashboardDa
       carbs: todayStats.carbs || 0,
       fats: todayStats.fats || 0,
     } : null,
-    today_plan: activePlan ? {
-      workout_title: activePlan.workout_title,
-      diet_title: activePlan.diet_title,
-      workout_exercises: activePlan.workout_exercises,
-      diet_meals: activePlan.diet_meals,
-      calories_target: activePlan.calories_target,
-      protein_goal: activePlan.protein,
-      carb_goal: activePlan.carbs,
-      fat_goal: activePlan.fats,
-      duration: activePlan.duration,
-      difficulty: activePlan.difficulty,
-    } : null,
+    today_plan: todayPlan,
   };
 }
 

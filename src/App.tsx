@@ -1308,13 +1308,14 @@ export default function App() {
           <div className="space-y-4">
             {dashboardData?.today_plan ? (
               <div className="p-5 sm:p-6 card transition-colors">
+                {/* Plan header */}
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">Live Active Plan</span>
                     <h4 className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                      {dashboardData.today_plan.workout_title || "Daily Routine"}
+                      {dashboardData.today_plan.workout_title || 'Daily Routine'}
                     </h4>
-                    <div className="flex gap-4 mt-2">
+                    <div className="flex gap-2 flex-wrap mt-2">
                       {dashboardData.today_plan.difficulty && (
                         <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-orange-500/10 text-orange-500 border border-orange-500/20">
                           {dashboardData.today_plan.difficulty}
@@ -1338,29 +1339,35 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Workout Section */}
                   <div className="p-5 rounded-[24px]" style={{ background: 'var(--surface-elevated)' }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <Dumbbell size={18} className="text-emerald-500" />
-                        <span className="text-sm font-bold uppercase tracking-widest text-white">Workout Protocol</span>
-                      </div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Dumbbell size={18} className="text-emerald-500" />
+                      <span className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>Workout Protocol</span>
                     </div>
-                    <div className="space-y-3">
-                      {dashboardData.today_plan.workout_exercises?.map((ex: any, idx: number) => (
-                        <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                          <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                            {idx + 1}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-white">{ex.name}</div>
-                            {ex.description && <div className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{ex.description}</div>}
-                            <div className="flex gap-3 mt-1.5">
-                               {ex.sets && <span className="text-[10px] font-bold text-zinc-500">{ex.sets} Sets</span>}
-                               {ex.reps && <span className="text-[10px] font-bold text-zinc-500">{ex.reps} Reps</span>}
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                      {dashboardData.today_plan.workout_exercises && dashboardData.today_plan.workout_exercises.length > 0 ? (
+                        dashboardData.today_plan.workout_exercises.map((ex: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                            <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{ex.name}</div>
+                              {ex.description && <div className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{ex.description}</div>}
+                              {(ex.sets || ex.reps) && (
+                                <div className="flex gap-2 mt-1.5 flex-wrap">
+                                  {ex.sets && <span className="text-[10px] font-bold text-emerald-500/80 bg-emerald-500/10 px-1.5 py-0.5 rounded">{ex.sets} Sets</span>}
+                                  {ex.reps && <span className="text-[10px] font-bold text-zinc-400">{ex.reps} Reps</span>}
+                                  {ex.weight && ex.weight !== 'bodyweight' && <span className="text-[10px] font-bold text-zinc-500">@ {ex.weight}</span>}
+                                </div>
+                              )}
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="py-6 text-center">
+                          <Dumbbell size={28} className="mx-auto mb-2 opacity-20" style={{ color: 'var(--text-muted)' }} />
+                          <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Workout plan ready — ask coach for a structured exercise list.</p>
                         </div>
-                      )) || (
-                        <p className="text-sm italic text-zinc-500">No specific exercises listed.</p>
                       )}
                     </div>
                   </div>
@@ -1370,65 +1377,93 @@ export default function App() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <Utensils size={18} className="text-orange-500" />
-                        <span className="text-sm font-bold uppercase tracking-widest text-white">Meal Schedule</span>
+                        <span className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>Meal Schedule</span>
                       </div>
-                      <div className="text-xs font-bold text-orange-500">
-                        {dashboardData.today_plan.calories_target} kcal
-                      </div>
+                      {dashboardData.today_plan.calories_target ? (
+                        <div className="text-xs font-bold text-orange-500">{dashboardData.today_plan.calories_target} kcal</div>
+                      ) : null}
                     </div>
-                    <div className="space-y-3">
-                      {dashboardData.today_plan.diet_meals?.map((meal: any, idx: number) => (
-                        <div key={idx} className="p-3 rounded-xl bg-black/20 border border-white/5">
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="text-xs font-bold text-white uppercase tracking-tight">{meal.type || `Meal ${idx+1}`}</div>
-                            {meal.calories && <div className="text-[10px] font-bold text-zinc-500">{meal.calories} kcal</div>}
-                          </div>
-                          <ul className="text-xs text-zinc-400 space-y-1">
-                            {meal.items?.map((item: string, i: number) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-orange-500">•</span> {item}
-                              </li>
-                            ))}
-                          </ul>
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                      {dashboardData.today_plan.diet_meals && dashboardData.today_plan.diet_meals.length > 0 ? (
+                        dashboardData.today_plan.diet_meals.map((meal: any, idx: number) => {
+                          const isMarkdownBlob = meal.items?.length === 1 && typeof meal.items[0] === 'string' && meal.items[0].length > 200;
+                          return (
+                            <div key={idx} className="p-3 rounded-xl bg-black/20 border border-white/5">
+                              {!isMarkdownBlob && (
+                                <div className="flex justify-between items-center mb-1">
+                                  <div className="text-xs font-bold uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>{meal.type || `Meal ${idx+1}`}</div>
+                                  {meal.calories && <div className="text-[10px] font-bold text-zinc-500">{meal.calories} kcal</div>}
+                                </div>
+                              )}
+                              {isMarkdownBlob ? (
+                                <div className="text-xs leading-relaxed prose prose-invert prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+                                  <ReactMarkdown>{meal.items[0]}</ReactMarkdown>
+                                </div>
+                              ) : (
+                                <ul className="text-xs space-y-1" style={{ color: 'var(--text-secondary)' }}>
+                                  {meal.items?.map((item: string, i: number) => (
+                                    <li key={i} className="flex items-start gap-2"><span className="text-orange-500 flex-shrink-0">•</span><span>{item}</span></li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="py-6 text-center">
+                          <Utensils size={28} className="mx-auto mb-2 opacity-20" style={{ color: 'var(--text-muted)' }} />
+                          <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>
+                            {dashboardData.today_plan.diet_title ? `${dashboardData.today_plan.diet_title} ready — ask coach for detailed meals.` : 'No diet plan yet.'}
+                          </p>
                         </div>
-                      )) || (
-                        <p className="text-sm italic text-zinc-500">No specific meals listed.</p>
                       )}
                     </div>
-                    {/* Macros Summary */}
-                    <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
+                    {(dashboardData.today_plan.protein_goal || dashboardData.today_plan.carb_goal || dashboardData.today_plan.fat_goal) ? (
+                      <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
                         <div className="text-center">
-                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.protein_goal}g</div>
-                            <div className="text-[9px] uppercase font-bold text-zinc-500">Protein</div>
+                          <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{dashboardData.today_plan.protein_goal}g</div>
+                          <div className="text-[9px] uppercase font-bold text-zinc-500">Protein</div>
                         </div>
                         <div className="text-center border-x border-white/5">
-                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.carb_goal}g</div>
-                            <div className="text-[9px] uppercase font-bold text-zinc-500">Carbs</div>
+                          <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{dashboardData.today_plan.carb_goal}g</div>
+                          <div className="text-[9px] uppercase font-bold text-zinc-500">Carbs</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-xs font-bold text-white">{dashboardData.today_plan.fat_goal}g</div>
-                            <div className="text-[9px] uppercase font-bold text-zinc-500">Fats</div>
+                          <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{dashboardData.today_plan.fat_goal}g</div>
+                          <div className="text-[9px] uppercase font-bold text-zinc-500">Fats</div>
                         </div>
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
             ) : dailyPlans.length > 0 ? (
-              // Fallback to legacy view if dailyPlans exist but today_plan doesn't
               dailyPlans.slice(0, 1).map((plan, i) => (
                 <div key={i} className="p-5 sm:p-6 card">
-                   <div className="flex justify-between items-start mb-4">
-                      <h4 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Daily Routine (Legacy)</h4>
-                      <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">{plan.date}</span>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-2xl bg-zinc-900/50">
-                        <p className="text-sm whitespace-pre-wrap text-zinc-400">{plan.workout_plan}</p>
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Daily Routine</h4>
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">{plan.date}</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-zinc-900/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Dumbbell size={16} className="text-emerald-500" />
+                        <span className="text-xs font-bold uppercase text-zinc-400">Workout Plan</span>
                       </div>
-                      <div className="p-4 rounded-2xl bg-zinc-900/50">
-                        <p className="text-sm whitespace-pre-wrap text-zinc-400">{plan.diet_plan}</p>
+                      <div className="text-sm prose prose-invert prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+                        <ReactMarkdown>{plan.workout_plan}</ReactMarkdown>
                       </div>
-                   </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-zinc-900/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Utensils size={16} className="text-orange-500" />
+                        <span className="text-xs font-bold uppercase text-zinc-400">Diet Plan</span>
+                      </div>
+                      <div className="text-sm prose prose-invert prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+                        <ReactMarkdown>{plan.diet_plan}</ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))
             ) : (
