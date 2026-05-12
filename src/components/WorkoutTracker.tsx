@@ -38,6 +38,8 @@ function formatTime(seconds: number): string {
 
 export function WorkoutTracker() {
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -118,7 +120,9 @@ export function WorkoutTracker() {
 
   const handleStart = async () => {
     if (!plan) return;
-    
+    setStarting(true);
+    setError(null);
+
     try {
       const res = await fetch('/api/workout/start', {
         method: 'POST',
@@ -126,15 +130,26 @@ export function WorkoutTracker() {
         body: JSON.stringify({ plan_id: plan.id })
       });
       const data = await res.json();
-      
-      if (data.success) {
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to start workout. Please try again.');
+        return;
+      }
+
+      if (data.success && data.session) {
         setSession(data.session);
         setIsActive(true);
         setIsFinished(false);
         setElapsed(0);
+        setError(null);
+      } else {
+        setError('Unexpected response from server. Please refresh and try again.');
       }
     } catch (err) {
       console.error('Failed to start workout:', err);
+      setError('Connection error. Please check your internet and try again.');
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -267,14 +282,28 @@ export function WorkoutTracker() {
               </div>
             </div>
 
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-xs mb-4 px-4 py-3 rounded-2xl text-sm text-center"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                {error}
+              </motion.div>
+            )}
             <motion.button
               onClick={handleStart}
+              disabled={starting}
               className="btn-primary w-full max-w-xs px-10 py-5 rounded-[24px] text-lg font-bold inline-flex items-center justify-center gap-3"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              style={{ opacity: starting ? 0.7 : 1, cursor: starting ? 'not-allowed' : 'pointer' }}
+              whileHover={starting ? {} : { scale: 1.03 }}
+              whileTap={starting ? {} : { scale: 0.97 }}
             >
-              <Play size={22} fill="currentColor" />
-              START WORKOUT
+              {starting
+                ? <><Loader2 size={22} className="animate-spin" /> STARTING...</>
+                : <><Play size={22} fill="currentColor" /> START WORKOUT</>
+              }
             </motion.button>
           </motion.div>
         )}

@@ -70,18 +70,6 @@ export async function saveAIDiet(userId: number, plan: AIDietPlan, planId?: stri
  * Links workout and diet plans to a user's active fitness profile.
  */
 export async function linkActivePlans(userId: number, workoutId?: number, dietId?: number) {
-  // Get current active plan IDs
-  const [currentRows] = await pool.execute(
-    "SELECT workout_plan_id, diet_plan_id FROM user_fitness_plans WHERE user_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1",
-    [userId]
-  );
-  
-  const current = (currentRows as any[])[0] || {};
-  
-  // Use the new id if provided, else keep the existing one
-  const finalWorkoutId = workoutId !== undefined ? workoutId : current.workout_plan_id;
-  const finalDietId = dietId !== undefined ? dietId : current.diet_plan_id;
-
   // Deactivate previous active plans
   await pool.execute(
     "UPDATE user_fitness_plans SET active = 0 WHERE user_id = ? AND active = 1",
@@ -92,7 +80,7 @@ export async function linkActivePlans(userId: number, workoutId?: number, dietId
   const [result] = await pool.execute(
     `INSERT INTO user_fitness_plans (user_id, workout_plan_id, diet_plan_id, active)
      VALUES (?, ?, ?, 1)`,
-    [userId, finalWorkoutId || null, finalDietId || null]
+    [userId, workoutId || null, dietId || null]
   );
   return (result as ResultSetHeader).insertId;
 }

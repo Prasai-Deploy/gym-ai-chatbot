@@ -663,14 +663,13 @@ async function startServer() {
     /(show|see|check|view|get|what(?:'s| is)|how(?:'s| is| am i))\s*.*(progress|improvement|streak|stats|dashboard|improving|doing|gains?)/i;
 
   // ── Workout chat trigger regex ─────────────────────────────────────────────
-  // Matches: "generate today's workout", "create my workout plan", "Workout Plans"
+  // Matches: "generate today's workout", "create my workout plan", etc.
   const WORKOUT_TRIGGER_RE =
-    /(generate|create|make|give me|show me|what(?:'s| is) my).*(today.?s?\s+workout|workout\s+plan|my\s+workout|today.?s?\s+plan|workout\s+routine|workout\s+chart|workout|routine)|(workout\s*plans?)/i;
+    /(generate|create|make|give me|show me|what(?:'s| is) my).*(today.?s?\s+workout|workout\s+plan|my\s+workout|today.?s?\s+plan)/i;
 
   // ── Nutrition chat trigger regex ───────────────────────────────────────────
-  // Matches: "generate diet", "Diet Chart"
   const NUTRITION_GEN_RE =
-    /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat|diet\s+chart|meal\s+chart|diet)|(diet\s*chart|meal\s*plan)/i;
+    /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat)/i;
   
   const NUTRITION_LOG_RE =
     /(track|log|record|i\s+ate|i\s+had|just\s+ate).*(calories|meal|food|lunch|dinner|breakfast|snack)/i;
