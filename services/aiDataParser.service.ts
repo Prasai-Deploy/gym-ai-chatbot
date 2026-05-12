@@ -180,6 +180,74 @@ async function handleMacroGoals(userId: number, mg: NonNullable<AIExtractedData[
 }
 
 /** Handles workout_plan and/or diet_plan keys */
+/** 
+ * Parse a markdown workout plan string into structured exercises.
+ * Handles formats like:
+ *   - "Bench Press: 4 sets x 8-10 reps @ 70 kg"
+ *   - "| Bench Press | 4 | 8-10 | 70 kg |"
+ *   - Numbered lists: "1. Bench Press — 3 sets × 10 reps"
+ */
+function parseMarkdownExercises(markdown: string): Array<{name: string; sets: number; reps: string; weight: string}> {
+  const exercises: Array<{name: string; sets: number; reps: string; weight: string}> = [];
+  const lines = markdown.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('---')) continue;
+
+    // Pattern 1: Markdown table row: | Exercise | Sets | Reps | Weight |
+    const tableMatch = trimmed.match(/^\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|\s*([\d-+]+)\s*\|\s*([^|]*)\s*\|/);
+    if (tableMatch) {
+      const name = tableMatch[1].replace(/\*\*/g, '').trim();
+      if (name.toLowerCase() === 'exercise' || name.toLowerCase() === '---') continue;
+      exercises.push({
+        name,
+        sets: parseInt(tableMatch[2]) || 3,
+        reps: tableMatch[3].trim() || '10',
+        weight: tableMatch[4].replace(/\*\*/g, '').trim() || 'bodyweight',
+      });
+      continue;
+    }
+
+    // Pattern 2: "Name: N sets × R reps @ W kg"
+    const colonMatch = trimmed.match(/^(?:\d+\.\s*)?([A-Z][\w\s]+?):\s*(\d+)\s*(?:sets?|x|×)?[\s×x]+(\d[\d-+]*)\s*(?:reps?)?(?:.*?@\s*([\d.]+\s*kg))?/i);
+    if (colonMatch) {
+      exercises.push({
+        name: colonMatch[1].replace(/\*\*/g, '').trim(),
+        sets: parseInt(colonMatch[2]) || 3,
+        reps: colonMatch[3].trim() || '10',
+        weight: colonMatch[4]?.trim() || 'bodyweight',
+      });
+      continue;
+    }
+
+    // Pattern 3: "- **Name** — N sets × R reps"
+    const dashMatch = trimmed.match(/^[-•*]\s*\*{0,2}([A-Z][\w\s]+?)\*{0,2}\s*[—-]\s*(\d+)\s*(?:sets?|x|×)[\s×x]+(\d[\d-+]*)\s*(?:reps?)?/i);
+    if (dashMatch) {
+      exercises.push({
+        name: dashMatch[1].trim(),
+        sets: parseInt(dashMatch[2]) || 3,
+        reps: dashMatch[3].trim() || '10',
+        weight: 'bodyweight',
+      });
+      continue;
+    }
+
+    // Pattern 4: Numbered list item with exercise name (fallback — no sets info)
+    const numberedMatch = trimmed.match(/^\d+\.\s+\*{0,2}([A-Z][\w\s]{3,40}?)\*{0,2}\s*$/);
+    if (numberedMatch && exercises.length < 12) {
+      exercises.push({
+        name: numberedMatch[1].trim(),
+        sets: 3,
+        reps: '10-12',
+        weight: 'bodyweight',
+      });
+    }
+  }
+
+  return exercises.filter(e => e.name.length > 2 && e.name.length < 60);
+}
+
 async function handlePlans(
   userId: number,
   workoutPlan: any,
@@ -201,10 +269,50 @@ async function handlePlans(
   let dietId: number | undefined;
 
   if (workoutPlan) {
-    const workoutObj = typeof workoutPlan === "string"
-      ? { title: "Today's Workout", exercises: [{ name: "Workout", description: workoutPlan }] }
-      : workoutPlan;
+    let workoutObj: any;
+    let parsedExercises: any[] = [];
+
+    if (typeof workoutPlan === "string") {
+      // Parse markdown into structured exercises
+      parsedExercises = parseMarkdownExercises(workoutPlan);
+      workoutObj = {
+        title: "Today's Workout",
+        exercises: parsedExercises.length > 0
+          ? parsedExercises
+          : [{ name: "AI Workout", description: workoutPlan }],
+        duration: "45 min",
+        difficulty: "Moderate",
+        calories_estimate: 0,
+      };
+    } else {
+      workoutObj = workoutPlan;
+      parsedExercises = workoutPlan.exercises || [];
+    }
+
     workoutId = await saveAIWorkout(userId, workoutObj);
+
+    // 3. Also save to workout_plans table so WorkoutTracker can link sessions
+    if (parsedExercises.length > 0) {
+      // Upsert into workout_plans (ON DUPLICATE KEY handles same-day re-generation)
+      await dbRun(
+        `INSERT INTO workout_plans (user_id, date, focus, duration, exercises, calories_estimate, difficulty)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           focus = VALUES(focus),
+           exercises = VALUES(exercises),
+           calories_estimate = VALUES(calories_estimate)`,
+        [
+          userId,
+          today,
+          workoutObj.title || "Today's Workout",
+          workoutObj.duration || "45 min",
+          JSON.stringify(parsedExercises),
+          workoutObj.calories_estimate || 0,
+          workoutObj.difficulty || "Moderate",
+        ]
+      );
+      console.log(`[aiDataParser] Saved ${parsedExercises.length} exercises to workout_plans for user ${userId}`);
+    }
   }
 
   if (dietPlan) {
