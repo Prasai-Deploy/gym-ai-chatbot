@@ -141,7 +141,7 @@ Respond with ONLY valid JSON in exactly this format (no extra text, no markdown,
 }`;
 }
 // ─────────────────────────────────────────────────────────────────────────────
-// OpenRouter caller
+// Groq AI caller
 // ─────────────────────────────────────────────────────────────────────────────
 /**
  * Send the workout prompt to OpenRouter and parse the JSON response.

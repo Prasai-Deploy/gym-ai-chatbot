@@ -187,7 +187,7 @@ Respond with ONLY valid JSON in exactly this format (no extra text, no markdown,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OpenRouter caller
+// Groq AI caller
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
