@@ -116,9 +116,9 @@ async function startServer() {
 
   app.use(
     session({
-      secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
-      resave: true,
-      saveUninitialized: true,
+      secret: process.env.SESSION_SECRET || "sweat-fix-secret",
+      resave: false,
+      saveUninitialized: false,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -167,8 +167,8 @@ async function startServer() {
   // ───────────────────────────────────────────────────────────────────────────
   const callbackURL =
     process.env.NODE_ENV === "production"
-      ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
-      : "http://localhost:3000/auth/google/callback";
+      ? "https://sweat.prasai.cloud/auth/google/callback"
+      : "http://localhost:5000/auth/google/callback";
 
   passport.use(
     new GoogleStrategy(
@@ -219,7 +219,7 @@ async function startServer() {
   // Auth routes
   // ───────────────────────────────────────────────────────────────────────────
 
-  app.get("/api/auth/google", (req, res, next) => {
+  app.get("/auth/google", (req, res, next) => {
     const state = req.query.state ? String(req.query.state) : undefined;
     passport.authenticate("google", {
       scope: ["openid", "profile", "email"],
@@ -296,7 +296,7 @@ async function startServer() {
   // Google OAuth callback
   app.get(
     "/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/" }),
+    passport.authenticate("google", { failureRedirect: "/login" }),
     async (req, res) => {
       const state = req.query.state as string;
       const user = (req as any).user;
@@ -330,21 +330,10 @@ async function startServer() {
             </html>
           `);
         } else {
-          res.send(`
-            <html>
-              <body>
-                <script>
-                  if (window.opener) {
-                    window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                    window.close();
-                  } else {
-                    window.location.href = '/';
-                  }
-                </script>
-                <p>Authentication successful. This window should close automatically.</p>
-              </body>
-            </html>
-          `);
+          const redirectUrl = process.env.NODE_ENV === "production" 
+            ? "https://sweat.prasai.cloud/dashboard" 
+            : "http://localhost:5173/dashboard";
+          res.redirect(redirectUrl);
         }
       };
 
@@ -360,9 +349,9 @@ async function startServer() {
     }
   );
 
-  app.get("/api/me", (req, res) => {
+  app.get("/auth/me", (req, res) => {
     const user = (req as any).user;
-    console.log("Checking /api/me, user found:", !!user);
+    console.log("Checking /auth/me, user found:", !!user);
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(user || null);
   });
@@ -382,7 +371,7 @@ async function startServer() {
     });
   });
 
-  app.get("/api/logout", async (req, res) => {
+  app.get("/auth/logout", async (req, res) => {
     const user = (req as any).user;
     if (user && user.email === "demo@sweatfix.com") {
       try {
@@ -407,7 +396,15 @@ async function startServer() {
         console.error("Failed to clear demo data:", e);
       }
     }
-    (req as any).logout(() => res.json({ success: true }));
+    (req as any).logout(() => {
+      if ((req as any).session) {
+        (req as any).session.destroy((err: any) => {
+          res.redirect("/");
+        });
+      } else {
+        res.redirect("/");
+      }
+    });
   });
 
   // ───────────────────────────────────────────────────────────────────────────

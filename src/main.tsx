@@ -1,7 +1,11 @@
 import { StrictMode, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App.tsx';
+import { Login } from './components/Login.tsx';
+import { AuthProvider } from './context/AuthContext.tsx';
+import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { UpdateNotification } from './components/UpdateNotification.tsx';
 import './index.css';
 
@@ -37,7 +41,19 @@ function Root() {
 
   return (
     <>
-      <App />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <App />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
       <UpdateNotification
         needRefresh={needRefresh && !dismissed}
         onRefresh={handleRefresh}
