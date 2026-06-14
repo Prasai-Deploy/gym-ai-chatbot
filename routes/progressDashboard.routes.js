@@ -1,237 +1,189 @@
 /**
  * routes/progressDashboard.routes.ts
- * All API endpoints for the Progress Dashboard page.
+ * Progress Dashboard API endpoints via Supabase client.
  */
 import { Router } from "express";
-import pool from "../db.js";
+import supabase from "../db.js";
 const router = Router();
-// ── Auth guard helper ──────────────────────────────────────────────────────
+
 function requireAuth(req, res) {
     const user = req.user;
-    if (!user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return null;
-    }
+    if (!user) { res.status(401).json({ error: "Unauthorized" }); return null; }
     return user.id;
 }
-async function dbAll(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows;
-}
-async function dbGet(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows[0] ?? null;
-}
-// ─────────────────────────────────────────────────────────────────────────────
+
 // GET /api/progress/stats
-// Returns: streak, monthly workouts, weekly calories, daily avg water
-// ─────────────────────────────────────────────────────────────────────────────
 router.get("/stats", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     try {
-        // Monthly workout count from workout_logs
-        const [monthlyRow] = await pool.execute(`SELECT COUNT(*) AS total
-       FROM workout_logs
-       WHERE user_id = ?
-         AND MONTH(date) = MONTH(CURDATE())
-         AND YEAR(date) = YEAR(CURDATE())`, [userId]);
-        const workoutsDone = monthlyRow[0]?.total ?? 0;
-        // Weekly calories burned from user_progress
-        const [weekCalRow] = await pool.execute(`SELECT COALESCE(SUM(calories_burned), 0) AS total
-       FROM user_progress
-       WHERE user_id = ?
-         AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`, [userId]);
-        const weeklyCalories = weekCalRow[0]?.total ?? 0;
-        // Average daily water from user_progress (last 7 days)
-        const [waterRow] = await pool.execute(`SELECT COALESCE(AVG(water_litres), 0) AS avg_water
-       FROM user_progress
-       WHERE user_id = ?
-         AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`, [userId]);
-        const avgWater = parseFloat(waterRow[0]?.avg_water ?? 0).toFixed(1);
-        // Streak: count consecutive days from today with activity in user_progress
-        const recentDays = await dbAll(`SELECT date FROM user_progress
-       WHERE user_id = ? AND activity_minutes > 0
-       ORDER BY date DESC LIMIT 60`, [userId]);
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+        const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekAgoStr = weekAgo.toISOString().split("T")[0];
+        const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const twoWeeksAgoStr = twoWeeksAgo.toISOString().split("T")[0];
+
+        // Monthly workout count
+        const { data: monthLogs } = await supabase.from("workout_logs").select("id").eq("user_id", userId).gte("date", monthStart);
+        const workoutsDone = monthLogs?.length ?? 0;
+
+        // Weekly calories burned
+        const { data: weekProgress } = await supabase.from("user_progress").select("calories_burned").eq("user_id", userId).gte("date", weekAgoStr);
+        const weeklyCalories = (weekProgress || []).reduce((s, r) => s + (r.calories_burned || 0), 0);
+
+        // Average daily water (last 7 days)
+        const { data: waterData } = await supabase.from("user_progress").select("water_litres").eq("user_id", userId).gte("date", weekAgoStr);
+        const avgWater = waterData && waterData.length > 0
+            ? (waterData.reduce((s, r) => s + Number(r.water_litres || 0), 0) / waterData.length).toFixed(1)
+            : "0.0";
+
+        // Streak
+        const { data: recentDays } = await supabase.from("user_progress").select("date").eq("user_id", userId).gt("activity_minutes", 0).order("date", { ascending: false }).limit(60);
         let streak = 0;
         const today = new Date();
-        for (let i = 0; i < recentDays.length; i++) {
+        for (let i = 0; i < (recentDays || []).length; i++) {
             const d = new Date(recentDays[i].date);
             const diff = Math.floor((today.getTime() - d.getTime()) / 86400000);
-            if (diff === i || (i === 0 && diff <= 1))
-                streak++;
-            else
-                break;
+            if (diff === i || (i === 0 && diff <= 1)) streak++;
+            else break;
         }
-        // Trend vs last week for comparison
-        const [lastWeekCalRow] = await pool.execute(`SELECT COALESCE(SUM(calories_burned), 0) AS total
-       FROM user_progress
-       WHERE user_id = ?
-         AND date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
-         AND date < DATE_SUB(CURDATE(), INTERVAL 7 DAY)`, [userId]);
-        const lastWeekCalories = lastWeekCalRow[0]?.total ?? 0;
+
+        // Last week comparison
+        const { data: lastWeekProgress } = await supabase.from("user_progress").select("calories_burned").eq("user_id", userId).gte("date", twoWeeksAgoStr).lt("date", weekAgoStr);
+        const lastWeekCalories = (lastWeekProgress || []).reduce((s, r) => s + (r.calories_burned || 0), 0);
+
         res.json({
-            streak,
-            workoutsDone,
-            weeklyCalories,
+            streak, workoutsDone, weeklyCalories,
             avgWater: parseFloat(avgWater),
             caloriesTrend: weeklyCalories >= lastWeekCalories ? "up" : "down",
             waterTrend: parseFloat(avgWater) >= 2.0 ? "up" : "down",
         });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/progress/activity
-// Returns 7-day activity data for bar chart
-// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/progress/activity — 7-day bar chart data
 router.get("/activity", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     try {
-        // Generate 7-day date series and left join with logged data
-        const rows = await dbAll(`SELECT
-         DATE_FORMAT(d.date, '%a') AS day,
-         COALESCE(up.activity_minutes, 0) AS minutes
-       FROM (
-         SELECT DATE_SUB(CURDATE(), INTERVAL n DAY) AS date
-         FROM (SELECT 6 n UNION SELECT 5 UNION SELECT 4 UNION SELECT 3
-               UNION SELECT 2 UNION SELECT 1 UNION SELECT 0) nums
-       ) d
-       LEFT JOIN user_progress up ON up.date = d.date AND up.user_id = ?
-       ORDER BY d.date ASC`, [userId]);
-        const total = rows.reduce((s, r) => s + r.minutes, 0);
-        const avg = rows.length > 0 ? Math.round(total / rows.length) : 0;
-        res.json({ days: rows, average: avg });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+        // Generate 7-day date series in JS
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            days.push(d.toISOString().split("T")[0]);
+        }
+
+        const { data } = await supabase.from("user_progress").select("date, activity_minutes")
+            .eq("user_id", userId).gte("date", days[0]).lte("date", days[days.length - 1]);
+
+        const dataMap = new Map((data || []).map((r) => [r.date, r.activity_minutes || 0]));
+        const result = days.map((date) => ({
+            day: new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" }),
+            minutes: dataMap.get(date) || 0,
+        }));
+        const total = result.reduce((s, r) => s + r.minutes, 0);
+
+        res.json({ days: result, average: result.length > 0 ? Math.round(total / result.length) : 0 });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/progress/workouts?page=1
-// Paginated workout history
-// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/progress/workouts — paginated workout history
 router.get("/workouts", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const limit = 10;
-    const offset = (page - 1) * limit;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
     try {
-        const rows = await dbAll(`SELECT id, workout_name, DATE_FORMAT(date, '%b %d, %Y') AS date,
-              duration_minutes, difficulty
-       FROM workout_logs
-       WHERE user_id = ?
-       ORDER BY date DESC
-       LIMIT ? OFFSET ?`, [userId, limit, offset]);
-        const [countRow] = await pool.execute(`SELECT COUNT(*) AS total FROM workout_logs WHERE user_id = ?`, [userId]);
-        const total = countRow[0]?.total ?? 0;
-        res.json({ workouts: rows, total, page, hasMore: offset + limit < total });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+        const { data, count } = await supabase.from("workout_logs")
+            .select("id, workout_name, date, duration_minutes, difficulty", { count: "exact" })
+            .eq("user_id", userId).order("date", { ascending: false }).range(from, to);
+        const total = count ?? 0;
+        res.json({ workouts: data || [], total, page, hasMore: from + limit < total });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/progress/nutrition
-// Returns weekly avg macros and user targets from user_profiles
-// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/progress/nutrition — weekly avg macros
 router.get("/nutrition", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     try {
-        // Weekly averages from nutrition_logs
-        const avgRow = await dbGet(`SELECT
-         COALESCE(AVG(protein_g), 0) AS protein,
-         COALESCE(AVG(carbs_g), 0)   AS carbs,
-         COALESCE(AVG(fat_g), 0)     AS fat,
-         COALESCE(AVG(calories), 0)  AS calories
-       FROM nutrition_logs
-       WHERE user_id = ?
-         AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`, [userId]);
-        // User targets from users table
-        const user = await dbGet(`SELECT calorie_goal, protein_goal, carb_goal, fat_goal
-       FROM users WHERE id = ?`, [userId]);
+        const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekAgoStr = weekAgo.toISOString().split("T")[0];
+
+        const { data: logs } = await supabase.from("nutrition_logs").select("protein_g, carbs_g, fat_g, calories")
+            .eq("user_id", userId).gte("date", weekAgoStr);
+
+        const count = logs?.length || 1;
+        const totals = (logs || []).reduce((acc, r) => ({
+            protein: acc.protein + Number(r.protein_g || 0),
+            carbs: acc.carbs + Number(r.carbs_g || 0),
+            fat: acc.fat + Number(r.fat_g || 0),
+            calories: acc.calories + Number(r.calories || 0),
+        }), { protein: 0, carbs: 0, fat: 0, calories: 0 });
+
+        const { data: user } = await supabase.from("users").select("calorie_goal, protein_goal, carb_goal, fat_goal").eq("id", userId).single();
+
         res.json({
             actuals: {
-                protein: Math.round(avgRow?.protein ?? 0),
-                carbs: Math.round(avgRow?.carbs ?? 0),
-                fat: Math.round(avgRow?.fat ?? 0),
-                calories: Math.round(avgRow?.calories ?? 0),
+                protein: Math.round(totals.protein / count), carbs: Math.round(totals.carbs / count),
+                fat: Math.round(totals.fat / count), calories: Math.round(totals.calories / count),
             },
             targets: {
-                protein: user?.protein_goal ?? 150,
-                carbs: user?.carb_goal ?? 250,
-                fat: user?.fat_goal ?? 65,
-                calories: user?.calorie_goal ?? 2200,
+                protein: user?.protein_goal ?? 150, carbs: user?.carb_goal ?? 250,
+                fat: user?.fat_goal ?? 65, calories: user?.calorie_goal ?? 2200,
             },
         });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/progress/activity   – log a day's activity
-// POST /api/progress/nutrition  – log a day's nutrition
-// POST /api/progress/workouts   – log a single workout session
-// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/progress/activity
 router.post("/activity", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     const { date, activity_minutes, calories_burned, water_litres } = req.body;
     try {
-        await pool.execute(`INSERT INTO user_progress (user_id, date, activity_minutes, calories_burned, water_litres)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         activity_minutes = VALUES(activity_minutes),
-         calories_burned  = VALUES(calories_burned),
-         water_litres     = VALUES(water_litres)`, [userId, date, activity_minutes ?? 0, calories_burned ?? 0, water_litres ?? 0]);
+        await supabase.from("user_progress").upsert({
+            user_id: userId, date,
+            activity_minutes: activity_minutes ?? 0,
+            calories_burned: calories_burned ?? 0,
+            water_litres: water_litres ?? 0,
+        }, { onConflict: "user_id,date" });
         res.json({ success: true });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// POST /api/progress/nutrition
 router.post("/nutrition", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     const { date, protein_g, carbs_g, fat_g, calories } = req.body;
     try {
-        await pool.execute(`INSERT INTO nutrition_logs (user_id, date, protein_g, carbs_g, fat_g, calories)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         protein_g = VALUES(protein_g),
-         carbs_g   = VALUES(carbs_g),
-         fat_g     = VALUES(fat_g),
-         calories  = VALUES(calories)`, [userId, date, protein_g ?? 0, carbs_g ?? 0, fat_g ?? 0, calories ?? 0]);
+        await supabase.from("nutrition_logs").insert({
+            user_id: userId, date,
+            protein_g: protein_g ?? 0, carbs_g: carbs_g ?? 0,
+            fat_g: fat_g ?? 0, calories: calories ?? 0,
+        });
         res.json({ success: true });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// POST /api/progress/workouts
 router.post("/workouts", async (req, res) => {
     const userId = requireAuth(req, res);
-    if (!userId)
-        return;
+    if (!userId) return;
     const { workout_name, date, duration_minutes, difficulty } = req.body;
     try {
-        await pool.execute(`INSERT INTO workout_logs (user_id, workout_name, date, duration_minutes, difficulty)
-       VALUES (?, ?, ?, ?, ?)`, [userId, workout_name ?? "Workout", date, duration_minutes ?? 0, difficulty ?? "Medium"]);
+        await supabase.from("workout_logs").insert({
+            user_id: userId,
+            workout_name: workout_name ?? "Workout",
+            date, duration_minutes: duration_minutes ?? 0,
+            difficulty: difficulty ?? "Medium",
+        });
         res.json({ success: true });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
 export default router;

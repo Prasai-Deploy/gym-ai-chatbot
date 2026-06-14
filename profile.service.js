@@ -1,63 +1,30 @@
 /**
- * services/profile.service.ts
- * CRUD operations for the fitness_profiles table.
+ * services/profile.service.ts (root-level)
+ * CRUD for fitness_profiles via Supabase client.
  */
-import pool from "../db.js";
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-/** Returns the user's fitness profile row, or null if it doesn't exist yet. */
+import supabase from "../db.js";
+
 export async function getProfile(userId) {
-    const [rows] = await pool.execute("SELECT * FROM fitness_profiles WHERE user_id = ?", [userId]);
-    return rows[0] ?? null;
+    const { data } = await supabase.from("fitness_profiles").select("*").eq("user_id", userId).maybeSingle();
+    return data ?? null;
 }
-/**
- * INSERT … ON DUPLICATE KEY UPDATE so it works for both create and update.
- * Only the fields present in `data` are written — everything else is untouched.
- */
+
 export async function upsertProfile(userId, data) {
-    // Strip undefined values
     const filtered = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== ""));
-    const fields = Object.keys(filtered);
-    if (fields.length === 0)
-        return;
-    const insertCols = ["user_id", ...fields].join(", ");
-    const placeholders = ["?", ...fields.map(() => "?")].join(", ");
-    const updateClause = fields.map((f) => `${f} = VALUES(${f})`).join(", ");
-    const values = [userId, ...fields.map((f) => filtered[f])];
-    await pool.execute(`INSERT INTO fitness_profiles (${insertCols})
-     VALUES (${placeholders})
-     ON DUPLICATE KEY UPDATE ${updateClause}`, values);
+    if (Object.keys(filtered).length === 0) return;
+    await supabase.from("fitness_profiles").upsert({ user_id: userId, ...filtered }, { onConflict: "user_id" });
 }
-/**
- * Returns true only when all 7 key profile fields are filled in.
- * Used to decide between onboarding mode vs. personalized mode.
- */
+
 export function isProfileComplete(profile) {
-    if (!profile)
-        return false;
-    return !!(profile.goal &&
-        profile.weight_kg &&
-        profile.height_cm &&
-        profile.age &&
-        profile.diet_type &&
-        profile.activity_level &&
-        profile.workout_days);
+    if (!profile) return false;
+    return !!(profile.goal && profile.weight_kg && profile.height_cm && profile.age && profile.diet_type && profile.activity_level && profile.workout_days);
 }
-/** Returns a list of field labels that are still missing from the profile. */
+
 export function getMissingFields(profile) {
     const checks = [
-        ["goal", "Fitness goal (e.g., muscle gain, weight loss)"],
-        ["weight_kg", "Current weight (kg)"],
-        ["height_cm", "Height (cm)"],
-        ["age", "Age"],
-        ["diet_type", "Diet type (e.g., vegetarian, keto, no restrictions)"],
-        ["activity_level", "Activity level (sedentary / lightly active / active / very active)"],
-        ["workout_days", "Workout days per week (1–7)"],
+        ["goal", "Fitness goal"], ["weight_kg", "Current weight (kg)"], ["height_cm", "Height (cm)"],
+        ["age", "Age"], ["diet_type", "Diet type"], ["activity_level", "Activity level"], ["workout_days", "Workout days per week"],
     ];
-    if (!profile)
-        return checks.map(([, label]) => label);
-    return checks
-        .filter(([key]) => !profile[key])
-        .map(([, label]) => label);
+    if (!profile) return checks.map(([, label]) => label);
+    return checks.filter(([key]) => !profile[key]).map(([, label]) => label);
 }

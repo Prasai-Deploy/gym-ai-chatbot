@@ -1,30 +1,19 @@
-// db.js — MySQL connection pool (mysql2/promise)
-import mysql from "mysql2/promise";
+// db.js — Supabase client (server-side)
+import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const pool = mysql.createPool({
-  host:     process.env.DB_HOST,
-  user:     process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port:     Number(process.env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-  timezone: "+00:00",        // store/return UTC
-  decimalNumbers: true,
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("[DB] SUPABASE_URL or SUPABASE_KEY not set. Database features will be disabled.");
+}
+
+const supabase = createClient(supabaseUrl || "", supabaseKey || "", {
+  auth: { persistSession: false },
 });
 
-// Verify connectivity on startup
-pool.getConnection()
-  .then((conn) => {
-    console.log("[DB] MySQL connected successfully.");
-    conn.release();
-  })
-  .catch((err) => {
-    console.warn("[DB] MySQL connection FAILED:", err.message);
-    console.warn("[DB] Proceeding anyway (database features will be disabled)...");
-  });
+console.log("[DB] Supabase client initialised for:", supabaseUrl);
 
-export default pool;
+export default supabase;

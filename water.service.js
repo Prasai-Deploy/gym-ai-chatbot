@@ -1,94 +1,80 @@
 /**
  * services/water.service.ts
- * Logic for smart hydration tracking and AI-connected goals.
+ * Hydration tracking via Supabase client.
  */
-import pool from "../db.js";
+import supabase from "../db.js";
 import { updateWeeklyProgress } from "./progress.service.js";
-/**
- * Adds a water intake entry and updates daily progress.
- */
+
 export async function addWaterIntake(userId, amount, source = 'manual') {
     const date = new Date().toISOString().split('T')[0];
-    // 1. Insert log
-    await pool.execute(`INSERT INTO water_logs (user_id, intake_amount, source) VALUES (?, ?, ?)`, [userId, amount, source]);
-    await pool.execute(`INSERT INTO daily_hydration_progress (user_id, date, total_consumed)
-     VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE 
-       total_consumed = total_consumed + VALUES(total_consumed),
-       completion_percentage = LEAST(100, ROUND((total_consumed / daily_goal) * 100))`, [userId, date, amount]);
-    // 3. Sync with weekly progress
-    const [progRows] = await pool.execute("SELECT completion_percentage FROM daily_hydration_progress WHERE user_id = ? AND date = ?", [userId, date]);
-    const pct = progRows[0]?.completion_percentage || 0;
-    await updateWeeklyProgress(userId, date, {
-        hydration_completion: pct
-    });
+    await supabase.from("water_logs").insert({ user_id: userId, intake_amount: amount, source });
+
+    // Read-modify-write for daily hydration
+    const { data: existing } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    if (existing) {
+        const newTotal = (existing.total_consumed || 0) + amount;
+        const pct = Math.min(100, Math.round((newTotal / (existing.daily_goal || 2000)) * 100));
+        await supabase.from("daily_hydration_progress").update({ total_consumed: newTotal, completion_percentage: pct }).eq("user_id", userId).eq("date", date);
+    } else {
+        await supabase.from("daily_hydration_progress").insert({ user_id: userId, date, total_consumed: amount });
+    }
+
+    const { data: prog } = await supabase.from("daily_hydration_progress").select("completion_percentage").eq("user_id", userId).eq("date", date).maybeSingle();
+    await updateWeeklyProgress(userId, date, { hydration_completion: prog?.completion_percentage || 0 });
     return { success: true };
 }
-/**
- * Updates a water intake entry.
- */
+
 export async function updateWaterIntake(userId, logId, amount) {
-    const [rows] = await pool.execute("SELECT intake_amount FROM water_logs WHERE id = ? AND user_id = ?", [logId, userId]);
-    const oldAmount = rows[0]?.intake_amount || 0;
-    const diff = amount - oldAmount;
-    await pool.execute("UPDATE water_logs SET intake_amount = ? WHERE id = ? AND user_id = ?", [amount, logId, userId]);
+    const { data: old } = await supabase.from("water_logs").select("intake_amount").eq("id", logId).eq("user_id", userId).maybeSingle();
+    const diff = amount - (old?.intake_amount || 0);
+    await supabase.from("water_logs").update({ intake_amount: amount }).eq("id", logId).eq("user_id", userId);
     const date = new Date().toISOString().split('T')[0];
-    await pool.execute(`UPDATE daily_hydration_progress 
-     SET total_consumed = total_consumed + ?,
-         completion_percentage = LEAST(100, ROUND((total_consumed / daily_goal) * 100))
-     WHERE user_id = ? AND date = ?`, [diff, userId, date]);
+    const { data: prog } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    if (prog) {
+        const newTotal = (prog.total_consumed || 0) + diff;
+        const pct = Math.min(100, Math.round((newTotal / (prog.daily_goal || 2000)) * 100));
+        await supabase.from("daily_hydration_progress").update({ total_consumed: newTotal, completion_percentage: pct }).eq("user_id", userId).eq("date", date);
+    }
 }
-/**
- * Deletes a water intake entry.
- */
+
 export async function deleteWaterIntake(userId, logId) {
-    const [rows] = await pool.execute("SELECT intake_amount FROM water_logs WHERE id = ? AND user_id = ?", [logId, userId]);
-    const amount = rows[0]?.intake_amount || 0;
-    await pool.execute("DELETE FROM water_logs WHERE id = ? AND user_id = ?", [logId, userId]);
+    const { data: old } = await supabase.from("water_logs").select("intake_amount").eq("id", logId).eq("user_id", userId).maybeSingle();
+    const amount = old?.intake_amount || 0;
+    await supabase.from("water_logs").delete().eq("id", logId).eq("user_id", userId);
     const date = new Date().toISOString().split('T')[0];
-    await pool.execute(`UPDATE daily_hydration_progress 
-     SET total_consumed = GREATEST(0, total_consumed - ?),
-         completion_percentage = LEAST(100, ROUND((total_consumed / daily_goal) * 100))
-     WHERE user_id = ? AND date = ?`, [amount, userId, date]);
+    const { data: prog } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    if (prog) {
+        const newTotal = Math.max(0, (prog.total_consumed || 0) - amount);
+        const pct = Math.min(100, Math.round((newTotal / (prog.daily_goal || 2000)) * 100));
+        await supabase.from("daily_hydration_progress").update({ total_consumed: newTotal, completion_percentage: pct }).eq("user_id", userId).eq("date", date);
+    }
 }
-/**
- * Sets or updates the daily hydration goal.
- */
+
 export async function setHydrationGoal(userId, goalMl, isAI = false, reason) {
     const date = new Date().toISOString().split('T')[0];
-    // 1. Save goal history
-    await pool.execute(`INSERT INTO water_goals (user_id, daily_goal, generated_by_ai, goal_reason)
-     VALUES (?, ?, ?, ?)`, [userId, goalMl, isAI ? 1 : 0, reason || null]);
-    // 2. Update today's progress goal
-    await pool.execute(`INSERT INTO daily_hydration_progress (user_id, date, daily_goal)
-     VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE 
-       daily_goal = VALUES(daily_goal),
-       completion_percentage = LEAST(100, ROUND((total_consumed / daily_goal) * 100))`, [userId, date, goalMl]);
+    await supabase.from("water_goals").insert({ user_id: userId, daily_goal: goalMl, generated_by_ai: isAI ? 1 : 0, goal_reason: reason || null });
+    const { data: existing } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    if (existing) {
+        const pct = Math.min(100, Math.round(((existing.total_consumed || 0) / goalMl) * 100));
+        await supabase.from("daily_hydration_progress").update({ daily_goal: goalMl, completion_percentage: pct }).eq("user_id", userId).eq("date", date);
+    } else {
+        await supabase.from("daily_hydration_progress").insert({ user_id: userId, date, daily_goal: goalMl });
+    }
 }
-/**
- * Gets today's hydration summary.
- */
+
 export async function getTodayHydration(userId) {
     const date = new Date().toISOString().split('T')[0];
-    const [rows] = await pool.execute("SELECT * FROM daily_hydration_progress WHERE user_id = ? AND date = ?", [userId, date]);
-    return rows[0] || { user_id: userId, date, total_consumed: 0, daily_goal: 2000, completion_percentage: 0 };
+    const { data } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    return data || { user_id: userId, date, total_consumed: 0, daily_goal: 2000, completion_percentage: 0 };
 }
-/**
- * Gets hydration logs for today.
- */
+
 export async function getTodayLogs(userId) {
-    const [rows] = await pool.execute(`SELECT * FROM water_logs 
-     WHERE user_id = ? AND DATE(created_at) = CURDATE() 
-     ORDER BY created_at DESC`, [userId]);
-    return rows;
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase.from("water_logs").select("*").eq("user_id", userId).gte("created_at", today).order("created_at", { ascending: false });
+    return data || [];
 }
-/**
- * Gets hydration history.
- */
+
 export async function getHydrationHistory(userId, limit = 7) {
-    const [rows] = await pool.execute(`SELECT * FROM daily_hydration_progress 
-     WHERE user_id = ? 
-     ORDER BY date DESC LIMIT ?`, [userId, limit]);
-    return rows;
+    const { data } = await supabase.from("daily_hydration_progress").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(limit);
+    return data || [];
 }

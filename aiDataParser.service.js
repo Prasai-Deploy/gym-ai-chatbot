@@ -1,106 +1,70 @@
 /**
  * services/aiDataParser.service.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Centralized AI conversation → fitness data extraction engine.
- *
- * Responsibilities:
- *  1. Parse and validate the JSON block embedded by the AI in every response.
- *  2. Route each extracted field to the correct DB write function.
- *  3. Prevent duplicate same-day entries.
- *  4. Return granular update flags so the frontend knows exactly which
- *     dashboard sections to refresh immediately.
- * ─────────────────────────────────────────────────────────────────────────────
+ * Centralized AI conversation → fitness data extraction engine via Supabase client.
  */
-import pool from "../db.js";
+import supabase from "../db.js";
 import { upsertProfile } from "./profile.service.js";
 import { addWaterIntake, setHydrationGoal } from "./water.service.js";
 import { createActivity } from "./activity.service.js";
 import { logMeal, updateDailyProgress, saveAIWorkout, saveAIDiet, linkActivePlans } from "./plan.service.js";
 import { updateWeeklyProgress } from "./progress.service.js";
-// ─────────────────────────────────────────────────────────────────────────────
-// DB Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-async function dbGet(sql, params = []) {
-    try {
-        const [rows] = await pool.execute(sql, params);
-        return rows[0] ?? null;
-    }
-    catch {
-        return null;
-    }
-}
-async function dbRun(sql, params = []) {
-    try {
-        const [result] = await pool.execute(sql, params);
-        const r = result;
-        return { insertId: r.insertId, affectedRows: r.affectedRows };
-    }
-    catch (err) {
-        console.error("[aiDataParser] dbRun failed:", err);
-        return { insertId: 0, affectedRows: 0 };
-    }
-}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Duplicate Prevention
 // ─────────────────────────────────────────────────────────────────────────────
-/**
- * Returns true if a log of the given type/key was already saved for this user today.
- */
 async function isDuplicateToday(userId, date, dataType, dataKey) {
-    if (!dataKey)
-        return false;
-    const row = await dbGet(`SELECT id FROM ai_chat_logs 
-     WHERE user_id = ? AND date = ? AND data_type = ? AND data_key = ?
-     LIMIT 1`, [userId, date, dataType, dataKey]);
-    return !!row;
+    if (!dataKey) return false;
+    const { data } = await supabase.from("ai_chat_logs").select("id")
+        .eq("user_id", userId).eq("date", date).eq("data_type", dataType).eq("data_key", dataKey).limit(1).maybeSingle();
+    return !!data;
 }
-/**
- * Records that we processed a particular data type/key today (for dedup).
- */
+
 async function recordChatLog(userId, date, dataType, dataKey, dataJson) {
     try {
-        await dbRun(`INSERT INTO ai_chat_logs (user_id, date, data_type, data_key, data_json)
-       VALUES (?, ?, ?, ?, ?)`, [userId, date, dataType, dataKey, JSON.stringify(dataJson)]);
-    }
-    catch {
-        // Non-fatal — dedup logging failure should not block the main write
-    }
+        await supabase.from("ai_chat_logs").insert({
+            user_id: userId, date, data_type: dataType, data_key: dataKey, data_json: JSON.stringify(dataJson),
+        });
+    } catch { /* non-fatal */ }
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-handlers
 // ─────────────────────────────────────────────────────────────────────────────
-/** Handles profile_update key */
 async function handleProfileUpdate(userId, data) {
-    if (!data || Object.keys(data).length === 0)
-        return false;
+    if (!data || Object.keys(data).length === 0) return false;
     await upsertProfile(userId, data);
-    console.log("[aiDataParser] Profile updated for user", userId, ":", data);
+    console.log("[aiDataParser] Profile updated for user", userId);
     return true;
 }
-/** Handles memory key — appends to users.profile_context */
+
 async function handleMemory(userId, memory, currentContext) {
     const newContext = (currentContext ? currentContext + "\n" : "") + "- " + memory;
-    await dbRun("UPDATE users SET profile_context = ? WHERE id = ?", [newContext, userId]);
-    console.log("[aiDataParser] Memory saved for user", userId, ":", memory);
+    await supabase.from("users").update({ profile_context: newContext }).eq("id", userId);
+    console.log("[aiDataParser] Memory saved for user", userId);
     return newContext;
 }
-/** Handles macro_goals key */
+
 async function handleMacroGoals(userId, mg) {
-    await dbRun("UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?", [mg.calories || 0, mg.protein || 0, mg.carbs || 0, mg.fats || 0, userId]);
-    console.log("[aiDataParser] Macro goals updated for user", userId, ":", mg);
+    await supabase.from("users").update({
+        calorie_goal: mg.calories || 0, protein_goal: mg.protein || 0,
+        carb_goal: mg.carbs || 0, fat_goal: mg.fats || 0,
+    }).eq("id", userId);
+    console.log("[aiDataParser] Macro goals updated for user", userId);
     return true;
 }
-/** Handles workout_plan and/or diet_plan keys */
+
 async function handlePlans(userId, workoutPlan, dietPlan) {
-    const today = new Date().toISOString().split("T")[0];
     const formattedDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit" }).format(new Date());
-    // 1. Legacy daily_plans table
-    await dbRun(`INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
-     VALUES (?, ?, ?, ?, 0)
-     ON DUPLICATE KEY UPDATE workout_plan = VALUES(workout_plan), diet_plan = VALUES(diet_plan)`, [userId, formattedDate, workoutPlan ? (typeof workoutPlan === "string" ? workoutPlan : JSON.stringify(workoutPlan)) : "", dietPlan ? (typeof dietPlan === "string" ? dietPlan : JSON.stringify(dietPlan)) : ""]);
-    // 2. Structured tables
-    let workoutId;
-    let dietId;
+
+    // Legacy daily_plans
+    await supabase.from("daily_plans").upsert({
+        user_id: userId, date: formattedDate,
+        workout_plan: workoutPlan ? (typeof workoutPlan === "string" ? workoutPlan : JSON.stringify(workoutPlan)) : "",
+        diet_plan: dietPlan ? (typeof dietPlan === "string" ? dietPlan : JSON.stringify(dietPlan)) : "",
+        completed: 0,
+    }, { onConflict: "user_id,date" });
+
+    let workoutId, dietId;
     if (workoutPlan) {
         const workoutObj = typeof workoutPlan === "string"
             ? { title: "Today's Workout", exercises: [{ name: "Workout", description: workoutPlan }] }
@@ -115,64 +79,50 @@ async function handlePlans(userId, workoutPlan, dietPlan) {
     }
     if (workoutId || dietId) {
         await linkActivePlans(userId, workoutId, dietId);
-        // AI Hydration boost on workout plan
         const hydrationGoal = workoutPlan ? 3500 : 2500;
-        const reason = workoutPlan
-            ? "Increased hydration for your workout day — stay fuelled!"
-            : "Standard daily hydration target.";
+        const reason = workoutPlan ? "Increased hydration for your workout day!" : "Standard daily hydration target.";
         await setHydrationGoal(userId, hydrationGoal, true, reason);
-        // Activity log
-        await createActivity(userId, "chatbot", "AI Plan Generated", `Coach generated a new ${workoutPlan ? "workout" : "diet"} plan and set your hydration target to ${hydrationGoal / 1000}L.`);
+        await createActivity(userId, "chatbot", "AI Plan Generated",
+            `Coach generated a new ${workoutPlan ? "workout" : "diet"} plan and set hydration to ${hydrationGoal / 1000}L.`);
     }
     console.log("[aiDataParser] Plans saved for user", userId);
     return true;
 }
-/** Handles the progress_log key — the most complex handler */
-async function handleProgressLog(userId, p, profileWeightKg) {
+
+async function handleProgressLog(userId, p) {
     const result = { progress: false, hydration: false, weight: false, activity: false };
     const today = new Date().toISOString().split("T")[0];
-    // ── Normalise field aliases ───────────────────────────────────────────────
+
     const caloriesConsumed = p.calories_consumed ?? p.calories ?? 0;
     const caloriesBurned = p.calories_burned ?? 0;
     const protein = p.protein ?? p.protein_g ?? 0;
     const carbs = p.carbs ?? 0;
     const fats = p.fats ?? 0;
-    const waterMl = p.water_ml ?? (p.water ? p.water * 1000 : 0); // p.water legacy = litres
+    const waterMl = p.water_ml ?? (p.water ? p.water * 1000 : 0);
     const bodyWeightKg = p.body_weight_kg ?? null;
     const workoutName = p.workout_name || null;
     const workoutCompleted = p.workout_completed ?? (!!workoutName);
     const muscleGroup = p.muscle_group || null;
-    // ── 1. Workout / Progress log ─────────────────────────────────────────────
+
+    // 1. Workout / Progress log
     if (workoutName || caloriesConsumed || protein || carbs || fats) {
         const dupKey = workoutName || (caloriesConsumed ? `cal_${caloriesConsumed}` : null);
         const isDup = await isDuplicateToday(userId, today, "workout", dupKey);
         if (!isDup) {
-            // Legacy progress table
-            await dbRun(`INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [userId, today, workoutName || "AI Log", caloriesConsumed, protein, Math.round(waterMl / 1000), carbs, fats]);
-            // New user_progress (with macro columns from migration 008)
-            await updateDailyProgress(userId, today, {
-                calories_consumed: caloriesConsumed,
-                calories_burned: caloriesBurned,
-                water_ml: waterMl,
-                protein,
-                carbs,
-                fats,
-                weight_kg: bodyWeightKg,
+            await supabase.from("progress").insert({
+                user_id: userId, date: today, workout_name: workoutName || "AI Log",
+                calories: caloriesConsumed, protein, water: Math.round(waterMl / 1000), carbs, fats,
             });
-            // Meal tracking (nutrition entries)
-            const foodItem = p.food_item || workoutName || "AI Log";
+            await updateDailyProgress(userId, today, {
+                calories_consumed: caloriesConsumed, calories_burned: caloriesBurned,
+                water_ml: waterMl, protein, carbs, fats, weight_kg: bodyWeightKg,
+            });
             if (caloriesConsumed || protein) {
                 await logMeal(userId, today, {
-                    meal_type: "AI Log",
-                    food_item: foodItem,
-                    calories: caloriesConsumed,
-                    protein,
-                    carbs,
-                    fats,
+                    meal_type: "AI Log", food_item: p.food_item || workoutName || "AI Log",
+                    calories: caloriesConsumed, protein, carbs, fats,
                 });
             }
-            // Weekly progress sync
             if (workoutCompleted || caloriesBurned) {
                 await updateWeeklyProgress(userId, today, {
                     workouts_completed: workoutCompleted ? 1 : 0,
@@ -181,55 +131,51 @@ async function handleProgressLog(userId, p, profileWeightKg) {
                     diet_completion: caloriesConsumed ? 25 : 0,
                 });
             }
-            // Workout-specific exercise logs
             if (p.exercises && p.exercises.length > 0) {
-                for (const ex of p.exercises) {
-                    await dbRun(`INSERT INTO workout_logs (user_id, date, exercise_name, sets_done, reps_done, weight_used)
-             VALUES (?, ?, ?, ?, ?, ?)`, [userId, today, ex.name, ex.sets || null, ex.reps || null, ex.weight_kg || null]);
-                }
+                const rows = p.exercises.map((ex) => ({
+                    user_id: userId, date: today, exercise_name: ex.name,
+                    sets_done: ex.sets || null, reps_done: ex.reps || null, weight_used: ex.weight_kg || null,
+                }));
+                await supabase.from("workout_logs").insert(rows);
             }
-            // Activity feed entry
             if (workoutCompleted && workoutName) {
-                await createActivity(userId, "chat", `Workout Logged: ${workoutName}${muscleGroup ? ` (${muscleGroup})` : ""}`, `AI auto-logged your ${workoutName}${p.exercises?.length ? ` — ${p.exercises.length} exercises tracked` : ""}.`);
+                await createActivity(userId, "chat",
+                    `Workout Logged: ${workoutName}${muscleGroup ? ` (${muscleGroup})` : ""}`,
+                    `AI auto-logged your ${workoutName}${p.exercises?.length ? ` — ${p.exercises.length} exercises tracked` : ""}.`);
             }
             await recordChatLog(userId, today, "workout", dupKey, { workoutName, caloriesConsumed, protein, carbs, fats });
             result.progress = true;
         }
-        else {
-            console.log(`[aiDataParser] Duplicate workout/nutrition log skipped for user ${userId}: "${dupKey}"`);
-        }
     }
-    // ── 2. Hydration ──────────────────────────────────────────────────────────
+
+    // 2. Hydration
     if (waterMl > 0) {
-        // Water is accumulative — no duplicate check, always add
         await addWaterIntake(userId, waterMl, "ai");
-        await createActivity(userId, "chat", `Water Logged: ${waterMl >= 1000 ? (waterMl / 1000).toFixed(1) + "L" : waterMl + "ml"}`, `AI auto-logged ${waterMl >= 1000 ? (waterMl / 1000).toFixed(1) + "L" : waterMl + "ml"} of water intake.`);
+        await createActivity(userId, "chat",
+            `Water Logged: ${waterMl >= 1000 ? (waterMl / 1000).toFixed(1) + "L" : waterMl + "ml"}`,
+            `AI auto-logged ${waterMl >= 1000 ? (waterMl / 1000).toFixed(1) + "L" : waterMl + "ml"} of water intake.`);
         result.hydration = true;
     }
-    // ── 3. Body weight ────────────────────────────────────────────────────────
+
+    // 3. Body weight
     if (bodyWeightKg && bodyWeightKg > 0) {
-        // progress_logs has UNIQUE KEY (user_id, date), so ON DUPLICATE KEY handles dedup
-        await dbRun(`INSERT INTO progress_logs (user_id, date, weight_kg)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE weight_kg = VALUES(weight_kg)`, [userId, today, bodyWeightKg]);
-        // Also update fitness_profiles.weight_kg for context
-        await dbRun(`INSERT INTO fitness_profiles (user_id, weight_kg)
-       VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE weight_kg = VALUES(weight_kg)`, [userId, bodyWeightKg]);
+        await supabase.from("progress_logs").upsert({ user_id: userId, date: today, weight_kg: bodyWeightKg }, { onConflict: "user_id,date" });
+        await supabase.from("fitness_profiles").upsert({ user_id: userId, weight_kg: bodyWeightKg }, { onConflict: "user_id" });
         await createActivity(userId, "chat", `Weight Logged: ${bodyWeightKg}kg`, `AI auto-logged your body weight as ${bodyWeightKg}kg.`);
         result.weight = true;
     }
-    // ── 4. Cardio ─────────────────────────────────────────────────────────────
+
+    // 4. Cardio
     if (p.cardio_type) {
         const cardioKey = `${p.cardio_type}_${today}`;
         const isDupCardio = await isDuplicateToday(userId, today, "cardio", cardioKey);
         if (!isDupCardio) {
             const calBurned = p.calories_burned || estimateCardioCals(p.cardio_type, p.cardio_duration_min || 0);
-            await createActivity(userId, "cardio", `${capitalise(p.cardio_type)}${p.cardio_distance_km ? ` — ${p.cardio_distance_km}km` : ""}`, `${capitalise(p.cardio_type)} session${p.cardio_duration_min ? ` for ${p.cardio_duration_min} minutes` : ""}${p.cardio_distance_km ? `, ${p.cardio_distance_km}km` : ""}. ~${calBurned} kcal burned.`);
+            await createActivity(userId, "cardio",
+                `${capitalise(p.cardio_type)}${p.cardio_distance_km ? ` — ${p.cardio_distance_km}km` : ""}`,
+                `${capitalise(p.cardio_type)} session${p.cardio_duration_min ? ` for ${p.cardio_duration_min} minutes` : ""}. ~${calBurned} kcal.`);
             await updateWeeklyProgress(userId, today, {
-                calories_burned: calBurned,
-                workout_duration: p.cardio_duration_min || 0,
-                workouts_completed: 1,
+                calories_burned: calBurned, workout_duration: p.cardio_duration_min || 0, workouts_completed: 1,
             });
             await recordChatLog(userId, today, "cardio", cardioKey, { ...p });
             result.activity = true;
@@ -237,110 +183,44 @@ async function handleProgressLog(userId, p, profileWeightKg) {
     }
     return result;
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────────────────────
-function capitalise(s) {
-    return s.charAt(0).toUpperCase() + s.slice(1);
-}
-/**
- * Rough MET-based calorie estimate for common cardio types.
- * Formula: MET × 3.5 × weight_kg × duration_min / 200
- * (defaults to 70kg if no profile weight available)
- */
+
+function capitalise(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
 function estimateCardioCals(type, durationMin) {
-    const metMap = {
-        running: 9.8,
-        jogging: 7.0,
-        cycling: 7.5,
-        swimming: 6.0,
-        walking: 3.5,
-        hiit: 10.0,
-        rowing: 7.0,
-        skipping: 10.0,
-        elliptical: 5.0,
-        jump_rope: 10.0,
-    };
+    const metMap = { running: 9.8, jogging: 7.0, cycling: 7.5, swimming: 6.0, walking: 3.5, hiit: 10.0, rowing: 7.0, skipping: 10.0, elliptical: 5.0, jump_rope: 10.0 };
     const met = metMap[type.toLowerCase()] || 6.0;
     return Math.round((met * 3.5 * 70 * durationMin) / 200);
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
-/**
- * Parses the raw AI response content, extracts the JSON block,
- * validates it, and fans out to all appropriate DB handlers.
- *
- * @param rawAIContent  — the full text returned by the AI (may include JSON block)
- * @param userId        — authenticated user ID
- * @param user          — user object (for profile_context, weight_goal etc.)
- * @returns             — { cleanedText, updates, newProfileContext }
- */
 export async function parseAndApplyAIData(rawAIContent, userId, user) {
-    const updates = {
-        userProfile: false,
-        progress: false,
-        plans: false,
-        hydration: false,
-        weight: false,
-        activity: false,
-        macros: false,
-    };
+    const updates = { userProfile: false, progress: false, plans: false, hydration: false, weight: false, activity: false, macros: false };
     let cleanedText = rawAIContent;
     let newProfileContext;
-    // ── Extract JSON block ─────────────────────────────────────────────────────
-    // Match ```json ... ``` or ``` ... ``` blocks
+
     const jsonMatch = rawAIContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    if (!jsonMatch) {
-        return { cleanedText, updates };
-    }
-    // Strip the JSON block from the user-visible text
+    if (!jsonMatch) return { cleanedText, updates };
+
     cleanedText = rawAIContent.replace(/```(?:json)?\s*[\s\S]*?\s*```/gi, "").trim();
     let parsed;
+    try { parsed = JSON.parse(jsonMatch[1]); }
+    catch (e) { console.error("[aiDataParser] Failed to parse AI JSON:", e); return { cleanedText, updates }; }
+
+    console.log("[aiDataParser] Extracted data for user", userId);
     try {
-        parsed = JSON.parse(jsonMatch[1]);
-    }
-    catch (e) {
-        console.error("[aiDataParser] Failed to parse AI JSON block:", e);
-        return { cleanedText, updates };
-    }
-    console.log("[aiDataParser] Extracted data for user", userId, ":", JSON.stringify(parsed, null, 2));
-    // ── Fan out to handlers ────────────────────────────────────────────────────
-    try {
-        // 1. Profile update
-        if (parsed.profile_update) {
-            updates.userProfile = await handleProfileUpdate(userId, parsed.profile_update);
-        }
-        // 2. Memory
-        if (parsed.memory) {
-            newProfileContext = await handleMemory(userId, parsed.memory, user.profile_context || "");
-            updates.userProfile = true;
-        }
-        // 3. Macro goals
-        if (parsed.macro_goals) {
-            updates.macros = await handleMacroGoals(userId, parsed.macro_goals);
-            updates.userProfile = true;
-        }
-        // 4. Workout + Diet Plans
-        if (parsed.workout_plan || parsed.diet_plan) {
-            updates.plans = await handlePlans(userId, parsed.workout_plan, parsed.diet_plan);
-        }
-        // 5. Progress log (most complex — handles workout, nutrition, water, weight, cardio)
+        if (parsed.profile_update) updates.userProfile = await handleProfileUpdate(userId, parsed.profile_update);
+        if (parsed.memory) { newProfileContext = await handleMemory(userId, parsed.memory, user.profile_context || ""); updates.userProfile = true; }
+        if (parsed.macro_goals) { updates.macros = await handleMacroGoals(userId, parsed.macro_goals); updates.userProfile = true; }
+        if (parsed.workout_plan || parsed.diet_plan) updates.plans = await handlePlans(userId, parsed.workout_plan, parsed.diet_plan);
         if (parsed.progress_log) {
-            const subResults = await handleProgressLog(userId, parsed.progress_log, user.weight_kg || null);
-            if (subResults.progress)
-                updates.progress = true;
-            if (subResults.hydration)
-                updates.hydration = true;
-            if (subResults.weight)
-                updates.weight = true;
-            if (subResults.activity)
-                updates.activity = true;
+            const sub = await handleProgressLog(userId, parsed.progress_log);
+            if (sub.progress) updates.progress = true;
+            if (sub.hydration) updates.hydration = true;
+            if (sub.weight) updates.weight = true;
+            if (sub.activity) updates.activity = true;
         }
-    }
-    catch (err) {
-        console.error("[aiDataParser] Error processing AI data:", err.message);
-        // Return partial updates — don't let a DB error kill the whole chat response
-    }
+    } catch (err) { console.error("[aiDataParser] Error processing AI data:", err.message); }
     return { cleanedText, updates, newProfileContext };
 }

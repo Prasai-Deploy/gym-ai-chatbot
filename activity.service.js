@@ -1,42 +1,42 @@
 /**
  * services/activity.service.ts
- * Logic for tracking user actions and generating the Recent Activity feed.
+ * Activity feed tracking via Supabase client.
  */
-import pool from "../db.js";
-/**
- * Creates a new activity log entry.
- */
+import supabase from "../db.js";
+
 export async function createActivity(userId, type, title, description, metadata) {
-    const [result] = await pool.execute(`INSERT INTO activity_logs (user_id, activity_type, activity_title, activity_description, metadata_json)
-     VALUES (?, ?, ?, ?, ?)`, [userId, type, title, description || null, metadata ? JSON.stringify(metadata) : null]);
-    const activityId = result.insertId;
-    // Update tracking state
-    await pool.execute(`INSERT INTO activity_tracking_state (user_id, latest_activity_id, unread_activity_count)
-     VALUES (?, ?, 1)
-     ON DUPLICATE KEY UPDATE 
-       latest_activity_id = VALUES(latest_activity_id),
-       unread_activity_count = unread_activity_count + 1`, [userId, activityId]);
+    const { data } = await supabase.from("activity_logs").insert({
+        user_id: userId, activity_type: type, activity_title: title,
+        activity_description: description || null,
+        metadata_json: metadata ? JSON.stringify(metadata) : null,
+    }).select("id").single();
+    const activityId = data?.id;
+
+    // Upsert tracking state
+    const { data: existing } = await supabase.from("activity_tracking_state").select("unread_activity_count").eq("user_id", userId).maybeSingle();
+    if (existing) {
+        await supabase.from("activity_tracking_state").update({
+            latest_activity_id: activityId,
+            unread_activity_count: (existing.unread_activity_count || 0) + 1,
+        }).eq("user_id", userId);
+    } else {
+        await supabase.from("activity_tracking_state").insert({
+            user_id: userId, latest_activity_id: activityId, unread_activity_count: 1,
+        });
+    }
     return activityId;
 }
-/**
- * Fetches the most recent activities for a user.
- */
+
 export async function getRecentActivities(userId, limit = 15, offset = 0) {
-    const [rows] = await pool.execute(`SELECT * FROM activity_logs 
-     WHERE user_id = ? 
-     ORDER BY created_at DESC 
-     LIMIT ? OFFSET ?`, [userId, limit, offset]);
-    return rows;
+    const { data } = await supabase.from("activity_logs").select("*").eq("user_id", userId)
+        .order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    return data || [];
 }
-/**
- * Marks all activities as read for a user.
- */
+
 export async function markActivitiesAsRead(userId) {
-    await pool.execute("UPDATE activity_tracking_state SET unread_activity_count = 0 WHERE user_id = ?", [userId]);
+    await supabase.from("activity_tracking_state").update({ unread_activity_count: 0 }).eq("user_id", userId);
 }
-/**
- * Deletes an activity log.
- */
+
 export async function deleteActivity(userId, activityId) {
-    await pool.execute("DELETE FROM activity_logs WHERE id = ? AND user_id = ?", [activityId, userId]);
+    await supabase.from("activity_logs").delete().eq("id", activityId).eq("user_id", userId);
 }

@@ -1,89 +1,84 @@
 /**
  * services/workout.service.ts
- * Data-access layer for workout_plans and workout_logs tables.
- * Contains ONLY database queries — no AI logic, no HTTP concerns.
+ * Data-access layer for workout_plans and workout_logs tables via Supabase.
  */
-import pool from "../db.js";
-// ─────────────────────────────────────────────────────────────────────────────
-// workout_plans queries
-// ─────────────────────────────────────────────────────────────────────────────
-/**
- * Fetch the most recent workout plan for a user.
- * Returns null if none exists yet.
- */
+import supabase from "../db.js";
+
+/** Fetch the most recent workout plan for a user. */
 export async function getLatestPlan(userId) {
-    const [rows] = await pool.execute(`SELECT * FROM workout_plans
-     WHERE user_id = ?
-     ORDER BY date DESC
-     LIMIT 1`, [userId]);
-    return rows[0] ?? null;
+    const { data } = await supabase
+        .from("workout_plans")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    return data ?? null;
 }
-/**
- * Fetch the workout plan for a specific date.
- * Returns null if no plan exists for that date.
- */
+
+/** Fetch the workout plan for a specific date. */
 export async function getPlanByDate(userId, date) {
-    const [rows] = await pool.execute(`SELECT * FROM workout_plans
-     WHERE user_id = ? AND date = ?`, [userId, date]);
-    return rows[0] ?? null;
+    const { data } = await supabase
+        .from("workout_plans")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("date", date)
+        .maybeSingle();
+    return data ?? null;
 }
-/**
- * Save (upsert) a generated workout plan.
- * Uses ON DUPLICATE KEY UPDATE so only one plan per user per day.
- * Returns the saved plan row.
- */
+
+/** Save (upsert) a generated workout plan. */
 export async function savePlan(userId, date, plan, rawPrompt) {
     const exercisesJson = JSON.stringify(plan.exercises);
-    await pool.execute(`INSERT INTO workout_plans (user_id, date, focus, duration, exercises, raw_prompt)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-       focus      = VALUES(focus),
-       duration   = VALUES(duration),
-       exercises  = VALUES(exercises),
-       raw_prompt = VALUES(raw_prompt)`, [userId, date, plan.focus, plan.duration, exercisesJson, rawPrompt]);
-    // Re-fetch so we always return the actual DB row (with id, created_at etc.)
+    await supabase.from("workout_plans").upsert({
+        user_id: userId,
+        date,
+        focus: plan.focus,
+        duration: plan.duration,
+        exercises: exercisesJson,
+        raw_prompt: rawPrompt,
+    }, { onConflict: "user_id,date" });
     return getPlanByDate(userId, date);
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// workout_logs queries
-// ─────────────────────────────────────────────────────────────────────────────
-/**
- * Return the most recent log entry for a specific exercise.
- * Used by the AI service to apply progressive overload.
- */
+
+/** Return the most recent log entry for a specific exercise. */
 export async function getLastLog(userId, exerciseName) {
-    const [rows] = await pool.execute(`SELECT * FROM workout_logs
-     WHERE user_id = ? AND exercise_name = ?
-     ORDER BY date DESC, logged_at DESC
-     LIMIT 1`, [userId, exerciseName]);
-    return rows[0] ?? null;
+    const { data } = await supabase
+        .from("workout_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("exercise_name", exerciseName)
+        .order("date", { ascending: false })
+        .order("logged_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    return data ?? null;
 }
-/**
- * Return the focus (split label) for the last N days of workout_plans.
- * Used to avoid repeating the same muscle group consecutively.
- */
+
+/** Return the focus for the last N days of workout_plans. */
 export async function getRecentFocuses(userId, days = 4) {
-    const [rows] = await pool.execute(`SELECT focus FROM workout_plans
-     WHERE user_id = ?
-     ORDER BY date DESC
-     LIMIT ?`, [userId, days]);
-    return rows.map((r) => r.focus).filter(Boolean);
+    const { data } = await supabase
+        .from("workout_plans")
+        .select("focus")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .limit(days);
+    return (data || []).map((r) => r.focus).filter(Boolean);
 }
-/**
- * Bulk-insert completed exercise logs for a session.
- */
+
+/** Bulk-insert completed exercise logs for a session. */
 export async function saveLogs(userId, planId, date, exercises) {
-    if (exercises.length === 0)
-        return;
-    const values = [];
-    const placeholders = exercises
-        .map((ex) => {
-        values.push(userId, planId ?? null, date, ex.exercise_name, ex.sets_done ?? null, ex.reps_done ?? null, ex.weight_used ?? null, ex.difficulty ?? null, ex.notes ?? null);
-        return "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    })
-        .join(", ");
-    await pool.execute(`INSERT INTO workout_logs
-       (user_id, plan_id, date, exercise_name, sets_done, reps_done,
-        weight_used, difficulty, notes)
-     VALUES ${placeholders}`, values);
+    if (exercises.length === 0) return;
+    const rows = exercises.map((ex) => ({
+        user_id: userId,
+        plan_id: planId ?? null,
+        date,
+        exercise_name: ex.exercise_name,
+        sets_done: ex.sets_done ?? null,
+        reps_done: ex.reps_done ?? null,
+        weight_used: ex.weight_used ?? null,
+        difficulty: ex.difficulty ?? null,
+        notes: ex.notes ?? null,
+    }));
+    await supabase.from("workout_logs").insert(rows);
 }

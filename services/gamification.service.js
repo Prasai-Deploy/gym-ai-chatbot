@@ -1,11 +1,9 @@
 /**
  * services/gamification.service.ts
- * Streak tracking + badge awarding logic.
+ * Streak tracking + badge awarding via Supabase client.
  */
-import pool from "../db.js";
-// ─────────────────────────────────────────────────────────────────────────────
-// Badge catalogue
-// ─────────────────────────────────────────────────────────────────────────────
+import supabase from "../db.js";
+
 export const BADGE_CATALOGUE = [
     { key: "first_chat", name: "First Steps", icon: "💬", description: "Sent your first message to the AI coach" },
     { key: "first_workout", name: "Gym Rookie", icon: "🏋️", description: "Logged your very first workout" },
@@ -18,129 +16,119 @@ export const BADGE_CATALOGUE = [
     { key: "goal_setter", name: "Goal Setter", icon: "🎯", description: "Completed the onboarding flow" },
     { key: "early_bird", name: "Early Bird", icon: "🌅", description: "Logged a workout before 8 AM" },
 ];
-async function dbGet(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows[0] ?? null;
-}
-async function dbAll(sql, params = []) {
-    const [rows] = await pool.execute(sql, params);
-    return rows;
-}
-// ─────────────────────────────────────────────────────────────────────────────
-// Streak logic
-// ─────────────────────────────────────────────────────────────────────────────
+
 export async function touchStreak(userId) {
     const todayStr = new Date().toISOString().split("T")[0];
-    const row = await dbGet("SELECT * FROM user_streaks WHERE user_id = ?", [userId]);
+    const { data: row } = await supabase
+        .from("user_streaks")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
     if (!row) {
-        // First time — create with streak = 1
-        await pool.execute(`INSERT INTO user_streaks (user_id, current_streak, longest_streak, last_active_date)
-       VALUES (?, 1, 1, ?)`, [userId, todayStr]);
+        await supabase.from("user_streaks").insert({
+            user_id: userId, current_streak: 1, longest_streak: 1, last_active_date: todayStr,
+        });
         return { current_streak: 1, longest_streak: 1, milestone: 1 };
     }
+
     const lastDate = row.last_active_date
-        ? new Date(row.last_active_date).toISOString().split("T")[0]
+        ? (typeof row.last_active_date === "string" ? row.last_active_date : new Date(row.last_active_date).toISOString().split("T")[0])
         : null;
+
     if (lastDate === todayStr) {
-        // Already touched today — just return
-        return {
-            current_streak: row.current_streak,
-            longest_streak: row.longest_streak,
-            milestone: null,
-        };
+        return { current_streak: row.current_streak, longest_streak: row.longest_streak, milestone: null };
     }
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
-    let newStreak;
-    if (lastDate === yesterdayStr) {
-        newStreak = row.current_streak + 1;
-    }
-    else {
-        newStreak = 1; // Missed a day — reset
-    }
+    const newStreak = lastDate === yesterdayStr ? row.current_streak + 1 : 1;
     const newLongest = Math.max(newStreak, row.longest_streak ?? 0);
-    await pool.execute(`UPDATE user_streaks
-     SET current_streak = ?, longest_streak = ?, last_active_date = ?
-     WHERE user_id = ?`, [newStreak, newLongest, todayStr, userId]);
-    // Determine milestone
+
+    await supabase.from("user_streaks").update({
+        current_streak: newStreak, longest_streak: newLongest, last_active_date: todayStr,
+    }).eq("user_id", userId);
+
     let milestone = null;
     const prev = row.current_streak;
-    if (newStreak === 3 && prev < 3)
-        milestone = 3;
-    else if (newStreak === 7 && prev < 7)
-        milestone = 7;
-    else if (newStreak === 30 && prev < 30)
-        milestone = 30;
+    if (newStreak === 3 && prev < 3) milestone = 3;
+    else if (newStreak === 7 && prev < 7) milestone = 7;
+    else if (newStreak === 30 && prev < 30) milestone = 30;
+
     return { current_streak: newStreak, longest_streak: newLongest, milestone };
 }
+
 export async function getStreak(userId) {
-    const row = await dbGet("SELECT current_streak, longest_streak FROM user_streaks WHERE user_id = ?", [userId]);
-    return { current_streak: row?.current_streak ?? 0, longest_streak: row?.longest_streak ?? 0 };
+    const { data } = await supabase.from("user_streaks").select("current_streak, longest_streak").eq("user_id", userId).maybeSingle();
+    return { current_streak: data?.current_streak ?? 0, longest_streak: data?.longest_streak ?? 0 };
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Badge logic
-// ─────────────────────────────────────────────────────────────────────────────
+
 export async function awardBadge(userId, badgeKey) {
-    // Idempotent — ignore if already earned
-    try {
-        await pool.execute(`INSERT IGNORE INTO user_badges (user_id, badge_key) VALUES (?, ?)`, [userId, badgeKey]);
-        const result = await dbGet(`SELECT id FROM user_badges WHERE user_id = ? AND badge_key = ? AND earned_at >= NOW() - INTERVAL 3 SECOND`, [userId, badgeKey]);
-        return !!result;
-    }
-    catch {
-        return false;
-    }
+    // Upsert — if conflict on (user_id, badge_key), it's already earned
+    const { error } = await supabase.from("user_badges").upsert(
+        { user_id: userId, badge_key: badgeKey },
+        { onConflict: "user_id,badge_key", ignoreDuplicates: true }
+    );
+    if (error) return false;
+    // Check if it was just earned (within last 3 seconds)
+    const threeSecsAgo = new Date(Date.now() - 3000).toISOString();
+    const { data } = await supabase.from("user_badges").select("id")
+        .eq("user_id", userId).eq("badge_key", badgeKey).gte("earned_at", threeSecsAgo).maybeSingle();
+    return !!data;
 }
+
 export async function getUserBadges(userId) {
-    return dbAll("SELECT badge_key, DATE_FORMAT(earned_at, '%b %d, %Y') AS earned_at FROM user_badges WHERE user_id = ? ORDER BY earned_at ASC", [userId]);
+    const { data } = await supabase.from("user_badges").select("badge_key, earned_at").eq("user_id", userId).order("earned_at", { ascending: true });
+    return (data || []).map((b) => ({
+        badge_key: b.badge_key,
+        earned_at: b.earned_at ? new Date(b.earned_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
+    }));
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Check and award badge conditions
-// Returns list of newly awarded badge keys
-// ─────────────────────────────────────────────────────────────────────────────
+
 export async function checkAndAwardBadges(userId, triggers) {
     const newlyAwarded = [];
     const tryAward = async (key) => {
         const awarded = await awardBadge(userId, key);
-        if (awarded)
-            newlyAwarded.push(key);
+        if (awarded) newlyAwarded.push(key);
     };
-    if (triggers.firstChat)
-        await tryAward("first_chat");
-    if (triggers.firstWorkout)
-        await tryAward("first_workout");
-    if (triggers.goalSetter)
-        await tryAward("goal_setter");
-    if (triggers.earlyBird)
-        await tryAward("early_bird");
+    if (triggers.firstChat) await tryAward("first_chat");
+    if (triggers.firstWorkout) await tryAward("first_workout");
+    if (triggers.goalSetter) await tryAward("goal_setter");
+    if (triggers.earlyBird) await tryAward("early_bird");
     if (triggers.streak) {
-        if (triggers.streak >= 3)
-            await tryAward("streak_3");
-        if (triggers.streak >= 7)
-            await tryAward("streak_7");
-        if (triggers.streak >= 30)
-            await tryAward("streak_30");
+        if (triggers.streak >= 3) await tryAward("streak_3");
+        if (triggers.streak >= 7) await tryAward("streak_7");
+        if (triggers.streak >= 30) await tryAward("streak_30");
     }
     if (triggers.workoutCount) {
-        if (triggers.workoutCount >= 10)
-            await tryAward("workout_10");
-        if (triggers.workoutCount >= 50)
-            await tryAward("workout_50");
+        if (triggers.workoutCount >= 10) await tryAward("workout_10");
+        if (triggers.workoutCount >= 50) await tryAward("workout_50");
     }
     if (triggers.nutritionConsecutiveDays && triggers.nutritionConsecutiveDays >= 7) {
         await tryAward("nutrition_week");
     }
     return newlyAwarded;
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Leaderboard
-// ─────────────────────────────────────────────────────────────────────────────
+
 export async function getStreakLeaderboard() {
-    const rows = await dbAll(`SELECT us.user_id, u.name, u.avatar, us.current_streak
-     FROM user_streaks us
-     JOIN users u ON u.id = us.user_id
-     ORDER BY us.current_streak DESC
-     LIMIT 5`);
-    return rows.map((r, i) => ({ rank: i + 1, ...r }));
+    const { data } = await supabase
+        .from("user_streaks")
+        .select("user_id, current_streak")
+        .order("current_streak", { ascending: false })
+        .limit(5);
+
+    if (!data || data.length === 0) return [];
+
+    // Fetch user details for the leaderboard
+    const userIds = data.map((r) => r.user_id);
+    const { data: users } = await supabase.from("users").select("id, name, avatar").in("id", userIds);
+    const userMap = new Map((users || []).map((u) => [u.id, u]));
+
+    return data.map((r, i) => ({
+        rank: i + 1,
+        user_id: r.user_id,
+        name: userMap.get(r.user_id)?.name ?? "Unknown",
+        avatar: userMap.get(r.user_id)?.avatar ?? null,
+        current_streak: r.current_streak,
+    }));
 }

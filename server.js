@@ -12,7 +12,7 @@ import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
-import pool from "./db.js";
+import supabase from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -23,55 +23,24 @@ import { callAIWithRouting } from "./services/ai.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
-// Helper functions for DB access using the shared pool
-// Helpers – thin wrappers so the rest of the code stays readable
-async function dbGet(sql, params = []) {
-    try {
-        const [rows] = await pool.execute(sql, params);
-        return rows[0] ?? null;
-    }
-    catch (err) {
-        console.error("[DB] dbGet failed:", err);
-        return null;
-    }
-}
-async function dbAll(sql, params = []) {
-    try {
-        const [rows] = await pool.execute(sql, params);
-        return rows;
-    }
-    catch (err) {
-        console.error("[DB] dbAll failed:", err);
-        return [];
-    }
-}
-async function dbRun(sql, params = []) {
-    try {
-        const [result] = await pool.execute(sql, params);
-        const r = result;
-        return { insertId: r.insertId, affectedRows: r.affectedRows };
-    }
-    catch (err) {
-        console.error("[DB] dbRun failed:", err);
-        return { insertId: 0, affectedRows: 0 };
-    }
-}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth event emitter (for long-polling Telegram bot flow)
 // ─────────────────────────────────────────────────────────────────────────────
 const authEvents = new EventEmitter();
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Server bootstrap
 // ─────────────────────────────────────────────────────────────────────────────
 async function startServer() {
     // Verify DB connectivity before starting
     try {
-        const conn = await pool.getConnection();
-        console.log("[DB] MySQL connected successfully.");
-        conn.release();
+        const { error } = await supabase.from("users").select("id").limit(1);
+        if (error) throw error;
+        console.log("[DB] Supabase connected successfully.");
     }
     catch (err) {
-        console.warn("[DB] MySQL connection FAILED during startServer:", err.message);
+        console.warn("[DB] Supabase connection test failed:", err.message);
     }
     const app = express();
     const PORT = Number(process.env.PORT) || 3000;
@@ -113,7 +82,7 @@ async function startServer() {
                     fat_goal: 70
                 });
             }
-            const user = await dbGet("SELECT * FROM users WHERE id = ?", [id]);
+            const { data: user } = await supabase.from("users").select("*").eq("id", id).single();
             done(null, user);
         }
         catch (err) {
@@ -133,27 +102,24 @@ async function startServer() {
     }, async (_accessToken, _refreshToken, profile, done) => {
         try {
             const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-            let user = await dbGet("SELECT * FROM users WHERE google_id = ?", [profile.id]);
+            const { data: user } = await supabase.from("users").select("*").eq("google_id", profile.id).maybeSingle();
             if (!user) {
-                const { insertId } = await dbRun(`INSERT INTO users (google_id, name, email, avatar, created_at, last_login)
-               VALUES (?, ?, ?, ?, ?, ?)`, [
-                    profile.id,
-                    profile.displayName,
-                    profile.emails?.[0]?.value ?? null,
-                    profile.photos?.[0]?.value ?? null,
-                    now,
-                    now,
-                ]);
-                user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+                const { data: newUser, error } = await supabase.from("users").insert({
+                    google_id: profile.id,
+                    name: profile.displayName,
+                    email: profile.emails?.[0]?.value ?? null,
+                    avatar: profile.photos?.[0]?.value ?? null,
+                    created_at: now,
+                    last_login: now,
+                }).select("*").single();
+                if (error) throw error;
+                return done(null, newUser);
             }
             else {
-                await dbRun("UPDATE users SET last_login = ? WHERE id = ?", [
-                    now,
-                    user.id,
-                ]);
-                user = await dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+                await supabase.from("users").update({ last_login: now }).eq("id", user.id);
+                const { data: refreshed } = await supabase.from("users").select("*").eq("id", user.id).single();
+                return done(null, refreshed);
             }
-            return done(null, user);
         }
         catch (err) {
             return done(err);
@@ -174,26 +140,25 @@ async function startServer() {
         try {
             let user;
             try {
-                user = await dbGet("SELECT * FROM users WHERE email = ?", ["demo@sweatfix.com"]);
-                if (!user) {
-                    const { insertId } = await dbRun(`INSERT INTO users (email, name, avatar, profile_context, water_goal)
-             VALUES (?, ?, ?, ?, ?)`, [
-                        "demo@sweatfix.com",
-                        "Demo User",
-                        "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-                        "",
-                        2000,
-                    ]);
-                    user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
-                    if (!user)
-                        throw new Error("DB insertion failed, fallback to mock");
+                const { data: existing } = await supabase.from("users").select("*").eq("email", "demo@sweatfix.com").maybeSingle();
+                if (!existing) {
+                    const { data: created, error } = await supabase.from("users").insert({
+                        email: "demo@sweatfix.com",
+                        name: "Demo User",
+                        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+                        profile_context: "",
+                        water_goal: 2000,
+                    }).select("*").single();
+                    if (error) throw new Error("DB insertion failed, fallback to mock");
+                    user = created;
                 }
                 else {
+                    user = existing;
                     // Refresh demo user state
-                    await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-                    await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-                    await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-                    await dbRun("UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?", [user.id]);
+                    await supabase.from("progress").delete().eq("user_id", user.id);
+                    await supabase.from("daily_plans").delete().eq("user_id", user.id);
+                    await supabase.from("fitness_profiles").delete().eq("user_id", user.id);
+                    await supabase.from("users").update({ profile_context: "", name: "Demo User" }).eq("id", user.id);
                 }
             }
             catch (dbErr) {
@@ -233,10 +198,8 @@ async function startServer() {
         const renderResponse = () => {
             if (state && user) {
                 try {
-                    dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
-                        state,
-                        user.id,
-                    ]).catch(e => console.error("Failed to link chat_id:", e));
+                    supabase.from("users").update({ chat_id: state }).eq("id", user.id)
+                        .then(({ error }) => { if (error) console.error("Failed to link chat_id:", error); });
                     console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
                     authEvents.emit(`auth_success_${state}`, user);
                 }
@@ -276,11 +239,9 @@ async function startServer() {
           `);
             }
         };
-        // Explicitly save the session before responding to avoid race conditions
         if (req.session) {
             req.session.save((err) => {
-                if (err)
-                    console.error("Session save error:", err);
+                if (err) console.error("Session save error:", err);
                 renderResponse();
             });
         }
@@ -319,21 +280,13 @@ async function startServer() {
             return res.status(401).json({ error: "Unauthorized" });
         const { name, water_goal } = req.body;
         try {
-            if (name && typeof name === "string") {
-                await dbRun("UPDATE users SET name = ? WHERE id = ?", [
-                    name.trim(),
-                    user.id,
-                ]);
+            const updates = {};
+            if (name && typeof name === "string") updates.name = name.trim();
+            if (water_goal !== undefined) updates.water_goal = Number(water_goal);
+            if (Object.keys(updates).length > 0) {
+                await supabase.from("users").update(updates).eq("id", user.id);
             }
-            if (water_goal !== undefined) {
-                await dbRun("UPDATE users SET water_goal = ? WHERE id = ?", [
-                    Number(water_goal),
-                    user.id,
-                ]);
-            }
-            const updatedUser = await dbGet("SELECT * FROM users WHERE id = ?", [
-                user.id,
-            ]);
+            const { data: updatedUser } = await supabase.from("users").select("*").eq("id", user.id).single();
             res.json(updatedUser);
         }
         catch (e) {
@@ -344,35 +297,27 @@ async function startServer() {
     // Progress routes
     // ───────────────────────────────────────────────────────────────────────────
     app.get("/api/progress", async (req, res) => {
-        if (!req.user)
-            return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         const userId = req.user.id;
         try {
-            const data = await dbAll("SELECT * FROM progress WHERE user_id = ? ORDER BY date DESC LIMIT 7", [userId]);
+            const { data, error } = await supabase.from("progress").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(7);
+            if (error) throw error;
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            res.json(data);
+            res.json(data || []);
         }
         catch (e) {
             res.status(500).json({ error: e.message });
         }
     });
     app.post("/api/progress", async (req, res) => {
-        if (!req.user)
-            return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         const userId = req.user.id;
         const { date, workout_name, calories, protein, water, carbs, fats } = req.body;
         try {
-            await dbRun(`INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
-                userId,
-                date,
-                workout_name,
-                calories,
-                protein,
-                water,
-                carbs ?? 0,
-                fats ?? 0,
-            ]);
+            const { error } = await supabase.from("progress").insert({
+                user_id: userId, date, workout_name, calories, protein, water, carbs: carbs ?? 0, fats: fats ?? 0,
+            });
+            if (error) throw error;
             res.json({ success: true });
         }
         catch (e) {
@@ -383,30 +328,25 @@ async function startServer() {
     // Daily plans routes
     // ───────────────────────────────────────────────────────────────────────────
     app.get("/api/plans", async (req, res) => {
-        if (!req.user)
-            return res.status(401).json({ error: "Unauthorized" });
-        const userId = req.user.id;
+        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         try {
-            const data = await dbAll("SELECT * FROM daily_plans WHERE user_id = ? ORDER BY date DESC LIMIT 14", [userId]);
+            const { data, error } = await supabase.from("daily_plans").select("*").eq("user_id", req.user.id).order("date", { ascending: false }).limit(14);
+            if (error) throw error;
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            res.json(data);
+            res.json(data || []);
         }
         catch (e) {
             res.status(500).json({ error: e.message });
         }
     });
     app.post("/api/plans", async (req, res) => {
-        if (!req.user)
-            return res.status(401).json({ error: "Unauthorized" });
-        const userId = req.user.id;
+        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         const { date, workout_plan, diet_plan } = req.body;
         try {
-            // MySQL equivalent of SQLite's ON CONFLICT … DO UPDATE
-            await dbRun(`INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed)
-         VALUES (?, ?, ?, ?, 0)
-         ON DUPLICATE KEY UPDATE
-           workout_plan = VALUES(workout_plan),
-           diet_plan    = VALUES(diet_plan)`, [userId, date, workout_plan, diet_plan]);
+            const { error } = await supabase.from("daily_plans").upsert({
+                user_id: req.user.id, date, workout_plan, diet_plan, completed: 0,
+            }, { onConflict: "user_id,date" });
+            if (error) throw error;
             res.json({ success: true });
         }
         catch (e) {
@@ -414,12 +354,11 @@ async function startServer() {
         }
     });
     app.put("/api/plans/:id/complete", async (req, res) => {
-        if (!req.user)
-            return res.status(401).json({ error: "Unauthorized" });
-        const userId = req.user.id;
+        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
         const { completed } = req.body;
         try {
-            await dbRun("UPDATE daily_plans SET completed = ? WHERE id = ? AND user_id = ?", [completed ? 1 : 0, req.params.id, userId]);
+            const { error } = await supabase.from("daily_plans").update({ completed: completed ? 1 : 0 }).eq("id", req.params.id).eq("user_id", req.user.id);
+            if (error) throw error;
             res.json({ success: true });
         }
         catch (e) {
@@ -427,38 +366,24 @@ async function startServer() {
         }
     });
     // ───────────────────────────────────────────────────────────────────────────
-    // Profile routes (modular)
+    // Modular route mounts
     // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/profile", profileRouter);
-    // ───────────────────────────────────────────────────────────────────────────
-    // Workout routes (modular)
-    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/workout", workoutRouter);
-    // ───────────────────────────────────────────────────────────────────────────
-    // Nutrition routes (modular)
-    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/nutrition", nutritionRouter);
-    // ───────────────────────────────────────────────────────────────────────────
-    // Dashboard routes (modular) — GET /api/dashboard/:userId, POST /api/progress/metrics
-    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api", dashboardRouter);
     // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
-    // ── Progress chat trigger regex ────────────────────────────────────────────
-    // Matches: "show my progress", "how am I improving?", "check my streak", etc.
     const PROGRESS_TRIGGER_RE = /(show|see|check|view|get|what(?:'s| is)|how(?:'s| is| am i))\s*.*(progress|improvement|streak|stats|dashboard|improving|doing|gains?)/i;
-    // ── Workout chat trigger regex ─────────────────────────────────────────────
-    // Matches: "generate today's workout", "create my workout plan", etc.
     const WORKOUT_TRIGGER_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(today.?s?\s+workout|workout\s+plan|my\s+workout|today.?s?\s+plan)/i;
-    // ── Nutrition chat trigger regex ───────────────────────────────────────────
     const NUTRITION_GEN_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat)/i;
     const NUTRITION_LOG_RE = /(track|log|record|i\s+ate|i\s+had|just\s+ate).*(calories|meal|food|lunch|dinner|breakfast|snack)/i;
     app.post("/api/chat", async (req, res) => {
         try {
             const { message, history } = req.body;
             const user = req.user;
-            // ── Progress trigger: show dashboard insights ─────────────────────────
+            // ── Progress trigger ──────────────────────────────────────────────────
             if (user && message && PROGRESS_TRIGGER_RE.test(message) && !WORKOUT_TRIGGER_RE.test(message)) {
                 try {
                     const data = await buildDashboardSummary(user.id);
@@ -467,10 +392,9 @@ async function startServer() {
                 }
                 catch (dashErr) {
                     console.error("[Chat/Progress trigger] Error:", dashErr.message);
-                    // Fall through to normal AI chat on error
                 }
             }
-            // ── Workout trigger: intercept before hitting the general AI ─────────
+            // ── Workout trigger ───────────────────────────────────────────────────
             if (user && message && WORKOUT_TRIGGER_RE.test(message)) {
                 try {
                     const profile = await getProfile(user.id);
@@ -488,7 +412,6 @@ async function startServer() {
                         const formatted = formatWorkoutForChat({ ...existingPlan, exercises });
                         return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}` });
                     }
-                    // Build history map for progressive overload
                     const recentFocuses = await getRecentFocuses(user.id, 4);
                     const todayFocus = decideSplit(profile.workout_days ?? 3, recentFocuses);
                     const lastPlan = await getLatestPlan(user.id);
@@ -499,8 +422,7 @@ async function startServer() {
                             : lastPlan.exercises;
                         await Promise.all(lastExercises.slice(0, 8).map(async (ex) => {
                             const log = await getLastLog(user.id, ex.name);
-                            if (log)
-                                historyMap.set(ex.name, { name: ex.name, weight_used: log.weight_used, reps_done: log.reps_done, difficulty: log.difficulty });
+                            if (log) historyMap.set(ex.name, { name: ex.name, weight_used: log.weight_used, reps_done: log.reps_done, difficulty: log.difficulty });
                         }));
                     }
                     const prompt = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
@@ -511,10 +433,9 @@ async function startServer() {
                 }
                 catch (workoutErr) {
                     console.error("[Chat/Workout trigger] Error:", workoutErr.message);
-                    // Fall through to normal AI chat on error
                 }
             }
-            // ── Nutrition Generate trigger ─────────────────────────────────────────
+            // ── Nutrition Generate trigger ────────────────────────────────────────
             if (user && message && NUTRITION_GEN_RE.test(message)) {
                 try {
                     const profile = await getProfile(user.id);
@@ -535,7 +456,7 @@ async function startServer() {
                     console.error("[Chat/Nutrition Gen] Error:", nutriErr.message);
                 }
             }
-            // ── Nutrition Log trigger ──────────────────────────────────────────────
+            // ── Nutrition Log trigger ─────────────────────────────────────────────
             if (user && message && NUTRITION_LOG_RE.test(message)) {
                 try {
                     const { logFoodIntake } = await import("./services/nutrition.service.js");
@@ -548,21 +469,21 @@ async function startServer() {
                     console.error("[Chat/Nutrition Log] Error:", logErr.message);
                 }
             }
-            // ── 1. Fetch structured fitness profile ────────────────────────────────
+            // ── 1. Fetch structured fitness profile ───────────────────────────────
             let fitnessProfile = null;
             if (user) {
                 fitnessProfile = await getProfile(user.id);
             }
-            // ── 2. Regex-extract any inline field updates from this message ────────
+            // ── 2. Regex-extract any inline field updates from this message ───────
             if (user && message) {
                 const inlineUpdate = extractProfileUpdate(message);
                 if (Object.keys(inlineUpdate).length > 0) {
                     await upsertProfile(user.id, inlineUpdate);
-                    fitnessProfile = await getProfile(user.id); // refresh
+                    fitnessProfile = await getProfile(user.id);
                     console.log("[Profile] Inline update saved for user", user.id, ":", inlineUpdate);
                 }
             }
-            // ── 3. Build context string (onboarding vs. partial vs. complete) ──────
+            // ── 3. Build context string ───────────────────────────────────────────
             const userContextStr = user
                 ? buildSystemContext(fitnessProfile, user.profile_context)
                 : "";
@@ -628,76 +549,61 @@ ${userContextStr}`;
             catch (apiError) {
                 console.error("=== [SERVER ERROR] Chat API Failure ===");
                 console.error(`Message: ${apiError.message}`);
-                if (apiError.stack)
-                    console.error(`Stack: ${apiError.stack}`);
                 return res.json({
                     text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
                 });
             }
             // Extract memory / macro_goals / progress_log / plans from AI JSON block
-            let updates = {
-                userProfile: false,
-                progress: false,
-                plans: false
-            };
+            let updates = { userProfile: false, progress: false, plans: false };
             if (user) {
                 const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
                 if (jsonMatch) {
                     try {
                         const parsed = JSON.parse(jsonMatch[1]);
-                        // Remove the JSON block from the text sent to the user
                         aiContent = aiContent.replace(/```json\n([\s\S]*?)\n```/g, "").trim();
-                        // ── profile_update: AI-driven profile save (used during onboarding) ──
                         if (parsed.profile_update) {
                             await upsertProfile(user.id, parsed.profile_update);
-                            console.log("[Profile] AI profile_update saved for user", user.id, ":", parsed.profile_update);
+                            console.log("[Profile] AI profile_update saved for user", user.id);
                             updates.userProfile = true;
                         }
                         if (parsed.memory) {
-                            const currentContext = user.profile_context
-                                ? user.profile_context + "\n"
-                                : "";
+                            const currentContext = user.profile_context ? user.profile_context + "\n" : "";
                             const newContext = currentContext + "- " + parsed.memory;
-                            await dbRun("UPDATE users SET profile_context = ? WHERE id = ?", [newContext, user.id]);
+                            await supabase.from("users").update({ profile_context: newContext }).eq("id", user.id);
                             user.profile_context = newContext;
-                            console.log("Saved new memory for user", user.id, ":", parsed.memory);
+                            console.log("Saved new memory for user", user.id);
                             updates.userProfile = true;
                         }
                         if (parsed.macro_goals) {
                             const mg = parsed.macro_goals;
-                            await dbRun("UPDATE users SET calorie_goal = ?, protein_goal = ?, carb_goal = ?, fat_goal = ? WHERE id = ?", [
-                                mg.calories || 0,
-                                mg.protein || 0,
-                                mg.carbs || 0,
-                                mg.fats || 0,
-                                user.id,
-                            ]);
-                            console.log("Saved new macro goals for user", user.id, ":", mg);
+                            await supabase.from("users").update({
+                                calorie_goal: mg.calories || 0,
+                                protein_goal: mg.protein || 0,
+                                carb_goal: mg.carbs || 0,
+                                fat_goal: mg.fats || 0,
+                            }).eq("id", user.id);
+                            console.log("Saved new macro goals for user", user.id);
                             updates.userProfile = true;
                         }
                         if (parsed.progress_log) {
                             const p = parsed.progress_log;
                             const today = new Date().toISOString().split("T")[0];
-                            await dbRun(`INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
-                                user.id,
-                                today,
-                                p.workout_name || "Log",
-                                p.calories || 0,
-                                p.protein || 0,
-                                p.water || 0,
-                                p.carbs || 0,
-                                p.fats || 0,
-                            ]);
-                            console.log("Saved new progress log for user", user.id, ":", p);
+                            await supabase.from("progress").insert({
+                                user_id: user.id, date: today,
+                                workout_name: p.workout_name || "Log",
+                                calories: p.calories || 0, protein: p.protein || 0,
+                                water: p.water || 0, carbs: p.carbs || 0, fats: p.fats || 0,
+                            });
+                            console.log("Saved new progress log for user", user.id);
                             updates.progress = true;
                         }
                         if (parsed.workout_plan || parsed.diet_plan) {
-                            const today = new Date().toISOString().split("T")[0];
                             const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
-                            // Using formattedDate (e.g., 'May 06') for consistency with frontend
-                            await dbRun(`INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed) 
-                 VALUES (?, ?, ?, ?, 0)`, [user.id, formattedDate, parsed.workout_plan || "", parsed.diet_plan || ""]);
+                            await supabase.from("daily_plans").insert({
+                                user_id: user.id, date: formattedDate,
+                                workout_plan: parsed.workout_plan || "",
+                                diet_plan: parsed.diet_plan || "", completed: 0,
+                            });
                             console.log("Saved new plans for user", user.id);
                             updates.plans = true;
                         }

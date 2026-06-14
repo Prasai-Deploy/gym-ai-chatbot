@@ -1,143 +1,137 @@
 /**
  * services/plan.service.ts
- * Logic for managing AI-generated workout and diet plans.
+ * AI-generated workout and diet plan management via Supabase client.
  */
-import pool from "../db.js";
+import supabase from "../db.js";
 import { updateWeeklyProgress } from "./progress.service.js";
-/**
- * Saves a generated workout plan to the database.
- */
+
 export async function saveAIWorkout(userId, plan, planId) {
-    const [result] = await pool.execute(`INSERT INTO chatbot_generated_workouts 
-     (user_id, plan_id, title, exercises, duration, difficulty, calories_estimate)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`, [
-        userId,
-        planId || null,
-        plan.title || "AI Workout Plan",
-        JSON.stringify(plan.exercises),
-        plan.duration || null,
-        plan.difficulty || "Moderate",
-        plan.calories_estimate || 0
-    ]);
-    return result.insertId;
+    const { data } = await supabase.from("chatbot_generated_workouts").insert({
+        user_id: userId, plan_id: planId || null,
+        title: plan.title || "AI Workout Plan",
+        exercises: JSON.stringify(plan.exercises),
+        duration: plan.duration || null,
+        difficulty: plan.difficulty || "Moderate",
+        calories_estimate: plan.calories_estimate || 0,
+    }).select("id").single();
+    return data?.id;
 }
-/**
- * Saves a generated diet plan to the database.
- */
+
 export async function saveAIDiet(userId, plan, planId) {
-    const [result] = await pool.execute(`INSERT INTO chatbot_generated_diets
-     (user_id, plan_id, title, meals, calories_target, protein, carbs, fats)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
-        userId,
-        planId || null,
-        plan.title || "AI Diet Plan",
-        JSON.stringify(plan.meals),
-        plan.calories_target || 0,
-        plan.protein || 0,
-        plan.carbs || 0,
-        plan.fats || 0
-    ]);
-    return result.insertId;
+    const { data } = await supabase.from("chatbot_generated_diets").insert({
+        user_id: userId, plan_id: planId || null,
+        title: plan.title || "AI Diet Plan",
+        meals: JSON.stringify(plan.meals),
+        calories_target: plan.calories_target || 0,
+        protein: plan.protein || 0, carbs: plan.carbs || 0, fats: plan.fats || 0,
+    }).select("id").single();
+    return data?.id;
 }
-/**
- * Links workout and diet plans to a user's active fitness profile.
- */
+
 export async function linkActivePlans(userId, workoutId, dietId) {
-    // Deactivate previous active plans
-    await pool.execute("UPDATE user_fitness_plans SET active = 0 WHERE user_id = ? AND active = 1", [userId]);
-    // Insert new active plan
-    const [result] = await pool.execute(`INSERT INTO user_fitness_plans (user_id, workout_plan_id, diet_plan_id, active)
-     VALUES (?, ?, ?, 1)`, [userId, workoutId || null, dietId || null]);
-    return result.insertId;
+    await supabase.from("user_fitness_plans").update({ active: 0 }).eq("user_id", userId).eq("active", 1);
+    const { data } = await supabase.from("user_fitness_plans").insert({
+        user_id: userId, workout_plan_id: workoutId || null, diet_plan_id: dietId || null, active: 1,
+    }).select("id").single();
+    return data?.id;
 }
-/**
- * Fetches the latest active plans for a user.
- */
+
 export async function getLatestActivePlan(userId) {
-    const [rows] = await pool.execute(`SELECT ufp.*, 
-            cgw.title as workout_title, cgw.exercises as workout_exercises, cgw.duration, cgw.difficulty, cgw.calories_estimate,
-            cgd.title as diet_title, cgd.meals as diet_meals, cgd.calories_target, cgd.protein, cgd.carbs, cgd.fats
-     FROM user_fitness_plans ufp
-     LEFT JOIN chatbot_generated_workouts cgw ON ufp.workout_plan_id = cgw.id
-     LEFT JOIN chatbot_generated_diets cgd ON ufp.diet_plan_id = cgd.id
-     WHERE ufp.user_id = ? AND ufp.active = 1
-     ORDER BY ufp.created_at DESC LIMIT 1`, [userId]);
-    const plan = rows[0];
-    if (plan) {
-        if (plan.workout_exercises)
-            plan.workout_exercises = JSON.parse(plan.workout_exercises);
-        if (plan.diet_meals)
-            plan.diet_meals = JSON.parse(plan.diet_meals);
+    // Fetch the plan link
+    const { data: ufp } = await supabase.from("user_fitness_plans").select("*")
+        .eq("user_id", userId).eq("active", 1).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!ufp) return null;
+
+    // Fetch workout and diet details
+    let workout = null, diet = null;
+    if (ufp.workout_plan_id) {
+        const { data } = await supabase.from("chatbot_generated_workouts").select("*").eq("id", ufp.workout_plan_id).maybeSingle();
+        workout = data;
     }
-    return plan || null;
+    if (ufp.diet_plan_id) {
+        const { data } = await supabase.from("chatbot_generated_diets").select("*").eq("id", ufp.diet_plan_id).maybeSingle();
+        diet = data;
+    }
+
+    const plan = { ...ufp };
+    if (workout) {
+        plan.workout_title = workout.title;
+        plan.workout_exercises = typeof workout.exercises === "string" ? JSON.parse(workout.exercises) : workout.exercises;
+        plan.duration = workout.duration;
+        plan.difficulty = workout.difficulty;
+        plan.calories_estimate = workout.calories_estimate;
+    }
+    if (diet) {
+        plan.diet_title = diet.title;
+        plan.diet_meals = typeof diet.meals === "string" ? JSON.parse(diet.meals) : diet.meals;
+        plan.calories_target = diet.calories_target;
+        plan.protein = diet.protein;
+        plan.carbs = diet.carbs;
+        plan.fats = diet.fats;
+    }
+    return plan;
 }
-/**
- * Fetches the history of plans for a user.
- */
+
 export async function getPlanHistory(userId, limit = 10) {
-    const [rows] = await pool.execute(`SELECT ufp.*, 
-            cgw.title as workout_title, cgd.title as diet_title
-     FROM user_fitness_plans ufp
-     LEFT JOIN chatbot_generated_workouts cgw ON ufp.workout_plan_id = cgw.id
-     LEFT JOIN chatbot_generated_diets cgd ON ufp.diet_plan_id = cgd.id
-     WHERE ufp.user_id = ?
-     ORDER BY ufp.created_at DESC LIMIT ?`, [userId, limit]);
-    return rows;
+    const { data: plans } = await supabase.from("user_fitness_plans").select("*")
+        .eq("user_id", userId).order("created_at", { ascending: false }).limit(limit);
+    if (!plans || plans.length === 0) return [];
+
+    // Fetch titles for each plan
+    const workoutIds = plans.map((p) => p.workout_plan_id).filter(Boolean);
+    const dietIds = plans.map((p) => p.diet_plan_id).filter(Boolean);
+
+    const { data: workouts } = workoutIds.length > 0
+        ? await supabase.from("chatbot_generated_workouts").select("id, title").in("id", workoutIds)
+        : { data: [] };
+    const { data: diets } = dietIds.length > 0
+        ? await supabase.from("chatbot_generated_diets").select("id, title").in("id", dietIds)
+        : { data: [] };
+
+    const wMap = new Map((workouts || []).map((w) => [w.id, w.title]));
+    const dMap = new Map((diets || []).map((d) => [d.id, d.title]));
+
+    return plans.map((p) => ({
+        ...p,
+        workout_title: wMap.get(p.workout_plan_id) ?? null,
+        diet_title: dMap.get(p.diet_plan_id) ?? null,
+    }));
 }
-/**
- * Logs user meal tracking.
- */
+
 export async function logMeal(userId, date, meal) {
-    const [result] = await pool.execute(`INSERT INTO user_meal_tracking (user_id, date, meal_type, food_item, calories, protein, carbs, fats)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
-        userId,
-        date,
-        meal.meal_type || null,
-        meal.food_item || null,
-        meal.calories || 0,
-        meal.protein || 0,
-        meal.carbs || 0,
-        meal.fats || 0
-    ]);
-    const insertId = result.insertId;
-    // Sync with weekly progress (diet consistency)
-    await updateWeeklyProgress(userId, date, {
-        diet_completion: 25 // Increment by 25% per meal logged
-    });
-    return insertId;
+    const { data } = await supabase.from("user_meal_tracking").insert({
+        user_id: userId, date,
+        meal_type: meal.meal_type || null, food_item: meal.food_item || null,
+        calories: meal.calories || 0, protein: meal.protein || 0,
+        carbs: meal.carbs || 0, fats: meal.fats || 0,
+    }).select("id").single();
+    await updateWeeklyProgress(userId, date, { diet_completion: 25 });
+    return data?.id;
 }
-/**
- * Updates daily progress stats — includes macro nutrients (migration 008).
- */
+
 export async function updateDailyProgress(userId, date, data) {
-    const [result] = await pool.execute(`INSERT INTO user_progress 
-       (user_id, date, calories_consumed, calories_burned, water_ml, completed_percentage, weight_kg, protein, carbs, fats)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-       calories_consumed    = calories_consumed    + VALUES(calories_consumed),
-       calories_burned      = calories_burned      + VALUES(calories_burned),
-       water_ml             = water_ml             + VALUES(water_ml),
-       completed_percentage = GREATEST(completed_percentage, VALUES(completed_percentage)),
-       weight_kg            = COALESCE(VALUES(weight_kg), weight_kg),
-       protein              = IFNULL(protein, 0)  + VALUES(protein),
-       carbs                = IFNULL(carbs, 0)    + VALUES(carbs),
-       fats                 = IFNULL(fats, 0)     + VALUES(fats),
-       updated_at           = CURRENT_TIMESTAMP`, [
-        userId,
-        date,
-        data.calories_consumed || 0,
-        data.calories_burned || 0,
-        data.water_ml || 0,
-        data.completed_percentage || 0,
-        data.weight_kg || null,
-        data.protein || 0,
-        data.carbs || 0,
-        data.fats || 0,
-    ]);
-    const affected = result.affectedRows;
-    // Sync with weekly progress
-    await updateWeeklyProgress(userId, date, {
-        calories_burned: data.calories_burned || 0,
-    });
-    return affected;
+    const { data: existing } = await supabase.from("user_progress").select("*").eq("user_id", userId).eq("date", date).maybeSingle();
+    if (existing) {
+        await supabase.from("user_progress").update({
+            calories_consumed: (existing.calories_consumed || 0) + (data.calories_consumed || 0),
+            calories_burned: (existing.calories_burned || 0) + (data.calories_burned || 0),
+            water_ml: (existing.water_ml || 0) + (data.water_ml || 0),
+            completed_percentage: Math.max(existing.completed_percentage || 0, data.completed_percentage || 0),
+            weight_kg: data.weight_kg ?? existing.weight_kg,
+            protein: (existing.protein || 0) + (data.protein || 0),
+            carbs: (existing.carbs || 0) + (data.carbs || 0),
+            fats: (existing.fats || 0) + (data.fats || 0),
+        }).eq("user_id", userId).eq("date", date);
+    } else {
+        await supabase.from("user_progress").insert({
+            user_id: userId, date,
+            calories_consumed: data.calories_consumed || 0,
+            calories_burned: data.calories_burned || 0,
+            water_ml: data.water_ml || 0,
+            completed_percentage: data.completed_percentage || 0,
+            weight_kg: data.weight_kg || null,
+            protein: data.protein || 0, carbs: data.carbs || 0, fats: data.fats || 0,
+        });
+    }
+    await updateWeeklyProgress(userId, date, { calories_burned: data.calories_burned || 0 });
 }
