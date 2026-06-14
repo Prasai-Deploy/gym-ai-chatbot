@@ -3,7 +3,7 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import mysql from "mysql2/promise";
+
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -14,7 +14,7 @@ import profileRouter from "./routes/profile.routes.js";
 import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
-import pool from "./db.js";
+import supabase from "./db.js";
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -81,40 +81,7 @@ declare global {
 
 // Helper functions for DB access using the shared pool
 
-// Helpers – thin wrappers so the rest of the code stays readable
-async function dbGet(sql: string, params: any[] = []): Promise<any> {
-  try {
-    const [rows] = await pool.execute(sql, params);
-    return (rows as any[])[0] ?? null;
-  } catch (err) {
-    console.error("[DB] dbGet failed:", err);
-    return null;
-  }
-}
 
-async function dbAll(sql: string, params: any[] = []): Promise<any[]> {
-  try {
-    const [rows] = await pool.execute(sql, params);
-    return rows as any[];
-  } catch (err) {
-    console.error("[DB] dbAll failed:", err);
-    return [];
-  }
-}
-
-async function dbRun(
-  sql: string,
-  params: any[] = []
-): Promise<{ insertId: number; affectedRows: number }> {
-  try {
-    const [result] = await pool.execute(sql, params);
-    const r = result as mysql.ResultSetHeader;
-    return { insertId: r.insertId, affectedRows: r.affectedRows };
-  } catch (err) {
-    console.error("[DB] dbRun failed:", err);
-    return { insertId: 0, affectedRows: 0 };
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth event emitter (for long-polling Telegram bot flow)
@@ -139,14 +106,7 @@ function broadcastToUser(userId: number, event: string, data: any) {
 // Server bootstrap
 // ─────────────────────────────────────────────────────────────────────────────
 async function startServer() {
-  // Verify DB connectivity before starting
-  try {
-    const conn = await pool.getConnection();
-    console.log("[DB] MySQL connected successfully.");
-    conn.release();
-  } catch (err: any) {
-    console.warn("[DB] MySQL connection FAILED during startServer:", err.message);
-  }
+  // Verified DB connectivity implicitly via Supabase client
 
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -195,7 +155,7 @@ async function startServer() {
           fat_goal: 70
         });
       }
-      const user = await dbGet("SELECT * FROM users WHERE id = ?", [id]);
+      const { data: user } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
       done(null, user);
     } catch (err) {
       done(err, null);
@@ -220,31 +180,31 @@ async function startServer() {
       async (_accessToken, _refreshToken, profile, done) => {
         try {
           const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-          let user = await dbGet(
-            "SELECT * FROM users WHERE google_id = ?",
-            [profile.id]
-          );
+          let { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('google_id', profile.id)
+            .maybeSingle();
 
           if (!user) {
-            const { insertId } = await dbRun(
-              `INSERT INTO users (google_id, name, email, avatar, created_at, last_login)
-               VALUES (?, ?, ?, ?, ?, ?)`,
-              [
-                profile.id,
-                profile.displayName,
-                profile.emails?.[0]?.value ?? null,
-                profile.photos?.[0]?.value ?? null,
-                now,
-                now,
-              ]
-            );
-            user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
+            const { data: newUser, error } = await supabase.from('users').insert({
+              google_id: profile.id,
+              name: profile.displayName,
+              email: profile.emails?.[0]?.value ?? null,
+              avatar: profile.photos?.[0]?.value ?? null,
+              created_at: now,
+              last_login: now,
+            }).select().maybeSingle();
+            
+            if (error) console.error("Insert error", error);
+            user = newUser;
           } else {
-            await dbRun("UPDATE users SET last_login = ? WHERE id = ?", [
-              now,
-              user.id,
-            ]);
-            user = await dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+            const { data: updatedUser, error } = await supabase.from('users').update({
+              last_login: now,
+            }).eq('id', user.id).select().maybeSingle();
+            
+            if (error) console.error("Update error", error);
+            user = updatedUser;
           }
 
           return done(null, user);
@@ -272,46 +232,37 @@ async function startServer() {
     try {
       let user;
       try {
-        user = await dbGet(
-          "SELECT * FROM users WHERE email = ?",
-          ["demo@sweatfix.com"]
-        );
+        const { data: existingUser } = await supabase.from('users').select('*').eq('email', 'demo@sweatfix.com').maybeSingle();
+        user = existingUser;
 
         if (!user) {
-          const { insertId } = await dbRun(
-            `INSERT INTO users (email, name, avatar, profile_context, water_goal)
-             VALUES (?, ?, ?, ?, ?)`,
-            [
-              "demo@sweatfix.com",
-              "Demo User",
-              "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-              "",
-              2000,
-            ]
-          );
-          user = await dbGet("SELECT * FROM users WHERE id = ?", [insertId]);
-          if (!user) throw new Error("DB insertion failed, fallback to mock");
-          } else {
+          const { data: newUser, error } = await supabase.from('users').insert({
+              email: "demo@sweatfix.com",
+              name: "Demo User",
+              avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+              profile_context: "",
+              water_goal: 2000,
+          }).select().maybeSingle();
+          if (error || !newUser) throw new Error("DB insertion failed, fallback to mock");
+          user = newUser;
+        } else {
             // Refresh demo user state
-            await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM workout_plans WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM workout_sessions WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM chatbot_generated_plans WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM workout_logs WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM progress_logs WHERE user_id = ?", [user.id]);
+            await supabase.from('progress').delete().eq('user_id', user.id);
+            await supabase.from('daily_plans').delete().eq('user_id', user.id);
+            await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
+            await supabase.from('workout_plans').delete().eq('user_id', user.id);
+            await supabase.from('workout_sessions').delete().eq('user_id', user.id);
+            await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
+            await supabase.from('workout_logs').delete().eq('user_id', user.id);
+            await supabase.from('progress_logs').delete().eq('user_id', user.id);
             
             // Cleanup new tables
-            await dbRun("DELETE FROM chatbot_generated_workouts WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM chatbot_generated_diets WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM user_fitness_plans WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM user_meal_tracking WHERE user_id = ?", [user.id]);
-            await dbRun("DELETE FROM user_progress WHERE user_id = ?", [user.id]);
-            await dbRun(
-              "UPDATE users SET profile_context = '', name = 'Demo User' WHERE id = ?",
-              [user.id]
-            );
+            await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
+            await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
+            await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
+            await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
+            await supabase.from('user_progress').delete().eq('user_id', user.id);
+            await supabase.from('users').update({ profile_context: '', name: 'Demo User' }).eq('id', user.id);
           }
       } catch (dbErr: any) {
         console.warn("[DB] Demo login fallback to MOCK user due to DB error:", dbErr.message);
@@ -353,10 +304,8 @@ async function startServer() {
       const renderResponse = () => {
         if (state && user) {
           try {
-            dbRun("UPDATE users SET chat_id = ? WHERE id = ?", [
-              state,
-              user.id,
-            ]).catch(e => console.error("Failed to link chat_id:", e));
+            supabase.from('users').update({ chat_id: state }).eq('id', user.id)
+              .then(({ error }) => { if (error) console.error("Failed to link chat_id:", error); });
             
             console.log(
               `[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`
@@ -437,23 +386,23 @@ async function startServer() {
     const user = (req as any).user;
     if (user && user.email === "demo@sweatfix.com") {
       try {
-        await dbRun("DELETE FROM progress WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM daily_plans WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM fitness_profiles WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM workout_plans WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM workout_sessions WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM chatbot_generated_plans WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM workout_logs WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM progress_logs WHERE user_id = ?", [user.id]);
+        await supabase.from('progress').delete().eq('user_id', user.id);
+        await supabase.from('daily_plans').delete().eq('user_id', user.id);
+        await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
+        await supabase.from('workout_plans').delete().eq('user_id', user.id);
+        await supabase.from('workout_sessions').delete().eq('user_id', user.id);
+        await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
+        await supabase.from('workout_logs').delete().eq('user_id', user.id);
+        await supabase.from('progress_logs').delete().eq('user_id', user.id);
 
         // Cleanup new tables
-        await dbRun("DELETE FROM chatbot_generated_workouts WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM chatbot_generated_diets WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM user_fitness_plans WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM user_meal_tracking WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM user_progress WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM weekly_progress WHERE user_id = ?", [user.id]);
-        await dbRun("DELETE FROM daily_fitness_stats WHERE user_id = ?", [user.id]);
+        await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
+        await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
+        await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
+        await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
+        await supabase.from('user_progress').delete().eq('user_id', user.id);
+        await supabase.from('weekly_progress').delete().eq('user_id', user.id);
+        await supabase.from('daily_fitness_stats').delete().eq('user_id', user.id);
       } catch (e) {
         console.error("Failed to clear demo data:", e);
       }
@@ -472,20 +421,13 @@ async function startServer() {
 
     try {
       if (name && typeof name === "string") {
-        await dbRun("UPDATE users SET name = ? WHERE id = ?", [
-          name.trim(),
-          user.id,
-        ]);
+        await supabase.from('users').update({ name: name.trim() }).eq('id', user.id);
       }
       if (water_goal !== undefined) {
-        await dbRun("UPDATE users SET water_goal = ? WHERE id = ?", [
-          Number(water_goal),
-          user.id,
-        ]);
+        await supabase.from('users').update({ water_goal: Number(water_goal) }).eq('id', user.id);
       }
-      const updatedUser = await dbGet("SELECT * FROM users WHERE id = ?", [
-        user.id,
-      ]);
+      const { data: updatedUser, error } = await supabase.from('users').select('*').eq('id', user.id).single();
+      if (error) throw error;
       res.json(updatedUser);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -501,12 +443,10 @@ async function startServer() {
     const userId = (req as any).user.id;
 
     try {
-      const data = await dbAll(
-        "SELECT * FROM progress WHERE user_id = ? ORDER BY date DESC LIMIT 7",
-        [userId]
-      );
+      const { data, error } = await supabase.from('progress').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(7);
+      if (error) throw error;
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.json(data);
+      res.json(data || []);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
@@ -520,20 +460,17 @@ async function startServer() {
       req.body;
 
     try {
-      await dbRun(
-        `INSERT INTO progress (user_id, date, workout_name, calories, protein, water, carbs, fats)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          userId,
+      const { error } = await supabase.from('progress').insert({
+          user_id: userId,
           date,
           workout_name,
           calories,
           protein,
           water,
-          carbs ?? 0,
-          fats ?? 0,
-        ]
-      );
+          carbs: carbs ?? 0,
+          fats: fats ?? 0,
+      });
+      if (error) throw error;
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -549,12 +486,10 @@ async function startServer() {
     const userId = (req as any).user.id;
 
     try {
-      const data = await dbAll(
-        "SELECT * FROM daily_plans WHERE user_id = ? ORDER BY date DESC LIMIT 14",
-        [userId]
-      );
+      const { data, error } = await supabase.from('daily_plans').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(14);
+      if (error) throw error;
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.json(data);
+      res.json(data || []);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
@@ -567,15 +502,23 @@ async function startServer() {
     const { date, workout_plan, diet_plan } = req.body;
 
     try {
-      // MySQL equivalent of SQLite's ON CONFLICT … DO UPDATE
-      await dbRun(
-        `INSERT INTO daily_plans (user_id, date, workout_plan, diet_plan, completed)
-         VALUES (?, ?, ?, ?, 0)
-         ON DUPLICATE KEY UPDATE
-           workout_plan = VALUES(workout_plan),
-           diet_plan    = VALUES(diet_plan)`,
-        [userId, date, workout_plan, diet_plan]
-      );
+      const { data: existing } = await supabase.from('daily_plans').select('*').eq('user_id', userId).eq('date', date).maybeSingle();
+      if (existing) {
+        const { error } = await supabase.from('daily_plans').update({
+          workout_plan,
+          diet_plan
+        }).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('daily_plans').insert({
+          user_id: userId,
+          date,
+          workout_plan,
+          diet_plan,
+          completed: 0
+        });
+        if (error) throw error;
+      }
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -589,10 +532,10 @@ async function startServer() {
     const { completed } = req.body;
 
     try {
-      await dbRun(
-        "UPDATE daily_plans SET completed = ? WHERE id = ? AND user_id = ?",
-        [completed ? 1 : 0, req.params.id, userId]
-      );
+      const { error } = await supabase.from('daily_plans').update({
+        completed: completed ? 1 : 0
+      }).eq('id', req.params.id).eq('user_id', userId);
+      if (error) throw error;
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
