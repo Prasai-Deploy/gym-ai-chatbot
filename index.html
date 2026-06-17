@@ -23,6 +23,10 @@
   
   <!-- manifest link removed — PWA/SW disabled -->
   
+  <!-- Preload & Preconnect for critical assets -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
   <title>Sweatfix Ai</title>
 
   <!-- Unregister any previously installed service worker immediately -->
@@ -39,6 +43,20 @@
 </head>
 
 <body>
+  <div id="app-loader" style="
+    position:fixed; inset:0; background:#09090b;
+    display:flex; align-items:center; justify-content:center;
+    z-index:9999; flex-direction:column; gap:16px;
+  ">
+    <div style="
+      width:40px; height:40px; border:3px solid #27272a;
+      border-top-color:#10b981; border-radius:50%;
+      animation:spin 0.8s linear infinite;
+    "></div>
+  </div>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

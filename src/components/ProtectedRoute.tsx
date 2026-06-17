@@ -20,8 +20,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (session === undefined) {
     return (
-      <div className="h-screen flex items-center justify-center font-bold">
-        Loading...
+      <div style={{
+        position: 'fixed', inset: 0, background: '#09090b',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{
+          width: 40, height: 40, border: '3px solid #27272a',
+          borderTopColor: '#10b981', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
       </div>
     );
   }
