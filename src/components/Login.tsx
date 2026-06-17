@@ -8,7 +8,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 export function Login() {
   const [showQR, setShowQR] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
-  const { user, loading, setUser } = useAuth();
+  const { user, loading, setUser, rehydrate } = useAuth();
   const navigate = useNavigate();
 
   if (loading) {
@@ -31,21 +31,22 @@ export function Login() {
         method: 'POST',
         credentials: 'include',
       });
-      if (res.ok) {
-        const userData = await res.json();
-        if (userData && userData.id) {
-          // Store user in context immediately, then navigate
-          setUser(userData);
-          navigate('/dashboard', { replace: true });
-        } else {
-          alert('Demo login failed — no user returned');
-        }
-      } else {
-        alert('Demo login failed');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Demo login error');
+      console.log('[Login] /api/auth/demo status:', res.status);
+      if (!res.ok) throw new Error(`Demo login failed with status ${res.status}`);
+
+      const userData = await res.json();
+      console.log('[Login] /api/auth/demo response:', userData);
+      setUser(userData);
+
+      // Verify the session cookie was actually set by the server
+      const restoredUser = await rehydrate();
+      console.log('[Login] Session restore after demo login:', restoredUser);
+      if (!restoredUser) throw new Error('Session was not restored after demo login');
+
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error('[Login] Demo login error:', error);
+      alert('Demo login failed. Please try again.');
     } finally {
       setDemoLoading(false);
     }
@@ -53,7 +54,6 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'var(--surface-primary)' }}>
-      {/* Decorative Blobs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -17,7 +17,7 @@ interface AuthContextType {
   loading: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
-  rehydrate: () => Promise<void>;
+  rehydrate: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,21 +26,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const rehydrate = useCallback(async () => {
+  const rehydrate = useCallback(async (): Promise<User | null> => {
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/me', {
         credentials: 'include',
         headers: { 'Cache-Control': 'no-cache' },
       });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data && data.id ? data : null);
-      } else {
-        setUser(null);
-      }
+      console.log('[AuthContext] /api/auth/me status:', res.status);
+      const data = await res.json();
+      console.log('[AuthContext] /api/auth/me response:', data);
+      const resolvedUser = data && data.id ? data : null;
+      setUser(resolvedUser);
+      return resolvedUser;
     } catch (error) {
-      console.error('Failed to rehydrate user session', error);
+      console.error('[AuthContext] Failed to rehydrate user session:', error);
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }

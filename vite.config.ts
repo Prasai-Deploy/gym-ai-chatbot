@@ -11,9 +11,9 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       VitePWA({
-        registerType: 'prompt', // Changed from 'autoUpdate' to 'prompt' so we can show update UI
+        registerType: 'autoUpdate', // Auto-replace old SW on new deploy
         devOptions: {
-          enabled: true, // Enable in dev for testing
+          enabled: true,
           type: 'module',
         },
         includeAssets: [
@@ -64,6 +64,8 @@ export default defineConfig(({mode}) => {
           ],
         },
         workbox: {
+          skipWaiting: true,     // New SW takes over without waiting
+          clientsClaim: true,    // New SW claims all open tabs immediately
           // Precache all built assets (JS, CSS, HTML, icons)
           globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
           // Don't precache source maps
