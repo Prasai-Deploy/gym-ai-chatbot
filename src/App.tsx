@@ -1045,20 +1045,7 @@ export default function App() {
     }
   };
 
-  if (!user) {
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, background: '#09090b',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <div style={{
-          width: 40, height: 40, border: '3px solid #27272a',
-          borderTopColor: '#10b981', borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }} />
-      </div>
-    );
-  }
+
 
   const today1 = format(new Date(), 'MMM dd');
   const today2 = new Date().toISOString().split('T')[0];
@@ -1102,7 +1089,7 @@ export default function App() {
           {/* --- END FEATURE: THEME TOGGLE --- */}
           <div className="flex items-center gap-3">
             <button onClick={() => setShowProfile(true)} className="hover:scale-105 transition-transform">
-              <img src={user.avatar} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--border-subtle)' }} alt={user.name} />
+              <img src={user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fallback'} className="w-8 h-8 rounded-full" style={{ border: '1px solid var(--border-subtle)' }} alt={user?.name || 'User'} />
             </button>
             <button onClick={handleLogout} className="p-2 rounded-full hover:text-red-400 transition-colors" style={{ color: 'var(--text-muted)' }}>
               <LogOut size={18} />
@@ -1119,18 +1106,18 @@ export default function App() {
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         {/* Welcome Section */}
         <section id="dashboard-top">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {user.name.split(' ')[0]}!</h1>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Hello, {(user?.name || 'User').split(' ')[0]}!</h1>
           <p style={{ color: 'var(--text-muted)' }}>Ready to crush your goals today?</p>
         </section>
 
         {/* --- START FEATURE: CALORIES RING --- */}
-        <CaloriesRing burned={totalCalories} goal={user.calorie_goal || 2000} />
+        <CaloriesRing burned={totalCalories} goal={user?.calorie_goal || 2000} />
         {/* --- END FEATURE: CALORIES RING --- */}
 
         {/* --- START FEATURE: MACRO TRACKER (upper section) --- */}
         <MacroTracker 
           protein={totalProtein} carbs={totalCarbs} fats={totalFats}
-          proteinGoal={user.protein_goal} carbsGoal={user.carb_goal} fatsGoal={user.fat_goal}
+          proteinGoal={user?.protein_goal} carbsGoal={user?.carb_goal} fatsGoal={user?.fat_goal}
         />
         {/* --- END FEATURE: MACRO TRACKER (upper section) --- */}
 
@@ -1829,7 +1816,7 @@ export default function App() {
                   <Plus className="rotate-45" size={24} />
                 </button>
               </div>
-              <img src={user.avatar} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-zinc-800 shadow-xl" />
+              <img src={user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fallback'} alt={user?.name || 'User'} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-zinc-800 shadow-xl" />
 
               {isEditingProfile ? (
                 <div className="flex items-center gap-2 mb-6">
@@ -1845,24 +1832,24 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center mb-6 relative group">
-                  <h3 className="text-white text-2xl font-bold">{user.name}</h3>
+                  <h3 className="text-white text-2xl font-bold">{user?.name || 'User'}</h3>
                   <button
                     onClick={() => {
-                      setEditName(user.name);
+                      setEditName(user?.name || 'User');
                       setIsEditingProfile(true);
                     }}
                     className="absolute -right-2 top-0 p-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Edit2 size={14} />
                   </button>
-                  <p className="text-zinc-500 mt-1">{user.email}</p>
+                  <p className="text-zinc-500 mt-1">{user?.email || ''}</p>
                 </div>
               )}
 
               <div className="rounded-2xl p-4 mb-8 text-left" style={{ background: 'var(--surface-elevated)' }}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-zinc-400 text-sm">Member ID</span>
-                  <span className="text-white font-mono text-sm">#{user.id.toString().padStart(4, '0')}</span>
+                  <span className="text-white font-mono text-sm">#{user?.id?.toString().padStart(4, '0') || '0000'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400 text-sm">Status</span>

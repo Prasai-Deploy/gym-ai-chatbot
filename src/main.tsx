@@ -11,18 +11,12 @@ import './index.css';
 // Lazy load the main App (Dashboard)
 const App = lazy(() => import('./App.tsx'));
 
-const FullScreenSpinner = () => (
-  <div className="h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
-    <div className="w-10 h-10 border-4 border-zinc-800 border-t-emerald-500 rounded-full animate-spin"></div>
-  </div>
-);
-
 function Root() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <Suspense fallback={<FullScreenSpinner />}>
+          <Suspense fallback={null}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />

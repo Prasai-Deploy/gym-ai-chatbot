@@ -31,20 +31,5 @@ export function AuthCallback() {
     handleCallback();
   }, [navigate]);
 
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: '#121212',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'column', gap: '16px', color: 'white'
-    }}>
-      <div style={{
-        width: 40, height: 40,
-        border: '3px solid #1f1f1f',
-        borderTop: '3px solid #22c55e',
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite'
-      }} />
-      <p style={{ color: '#9ca3af' }}>Completing sign in...</p>
-    </div>
-  );
+  return null;
 }
