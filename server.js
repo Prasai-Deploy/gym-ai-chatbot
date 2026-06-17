@@ -68,8 +68,8 @@ async function startServer() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: false, // Fixes missing cookies behind proxies
+            sameSite: "lax", // API and frontend share the same origin
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         },
