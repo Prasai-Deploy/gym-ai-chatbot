@@ -32,7 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch('/auth/me');
         if (res.ok) {
           const data = await res.json();
-          setUser(data);
+          if (data && data.id) {
+            setUser(data);
+          } else {
+            setUser(null);
+          }
         } else {
           setUser(null);
         }
@@ -44,14 +48,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Initial check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      fetchBackendUser();
-    });
-
-    // Listen for auth changes (like signing in via OAuth)
+    // Use onAuthStateChange as the single source of truth.
+    // This handles:
+    //  - Initial page load (fires INITIAL_SESSION)
+    //  - Redirect callback with #access_token hash (fires SIGNED_IN)
+    //  - Token refreshes and sign outs
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      console.log('[Auth] Event:', event, '| Has session:', !!session);
+      if (event === 'INITIAL_SESSION') {
+        // This fires on every page load. If there's a session, fetch the user.
+        if (session) {
+          fetchBackendUser();
+        } else {
+          // No session — stop loading and show login
+          setUser(null);
+          setLoading(false);
+        }
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         fetchBackendUser();
       } else if (event === 'SIGNED_OUT') {
         setUser(null);

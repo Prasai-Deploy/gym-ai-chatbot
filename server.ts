@@ -15,6 +15,13 @@ import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
 import supabase from "./db.js";
+import { createClient } from "@supabase/supabase-js";
+// Admin client uses service_role key — can verify user JWTs
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || "",
+  { auth: { persistSession: false } }
+);
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
@@ -139,7 +146,7 @@ async function startServer() {
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
       try {
-        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
+        const { data: { user: sbUser }, error } = await supabaseAdmin.auth.getUser(token);
         if (sbUser && sbUser.email) {
           let { data: dbUser } = await supabase.from('users').select('*').eq('email', sbUser.email).maybeSingle();
           if (!dbUser) {
