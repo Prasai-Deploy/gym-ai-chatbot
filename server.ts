@@ -349,15 +349,10 @@ async function startServer() {
           try {
             supabase.from('users').update({ chat_id: state }).eq('id', user.id)
               .then(({ error }) => { if (error) console.error("Failed to link chat_id:", error); });
-            
-            console.log(
-              `[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`
-            );
             authEvents.emit(`auth_success_${state}`, user);
           } catch (e) {
             console.error("Failed to link chat_id:", e);
           }
-
           res.send(`
             <html>
               <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #09090b; color: #fff; margin: 0;">
@@ -366,17 +361,15 @@ async function startServer() {
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                   <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
-                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
+                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>.</p>
                   <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
                 </div>
               </body>
             </html>
           `);
         } else {
-          const redirectUrl = process.env.NODE_ENV === "production" 
-            ? "https://sweat.prasai.cloud/dashboard" 
-            : "http://localhost:5173/dashboard";
-          res.redirect(redirectUrl);
+          // Always redirect to the production dashboard after Google login
+          res.redirect("https://sweat.prasai.cloud/dashboard");
         }
       };
 
@@ -392,12 +385,14 @@ async function startServer() {
     }
   );
 
-  app.get("/auth/me", (req, res) => {
-    const user = (req as any).user;
-    console.log("Checking /auth/me, user found:", !!user);
+  const authMeHandler = (req: any, res: any) => {
+    const user = req.user;
+    console.log("[/auth/me] user found:", user ? `id=${user.id} email=${user.email}` : 'none');
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(user || null);
-  });
+  };
+  app.get("/auth/me", authMeHandler);
+  app.get("/api/auth/me", authMeHandler);
 
   // Long-polling endpoint for Telegram bot auth flow
   app.get("/api/auth/status/:chat_id", (req, res) => {

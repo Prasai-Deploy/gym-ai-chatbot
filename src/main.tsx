@@ -8,7 +8,6 @@ import { AuthProvider } from './context/AuthContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { UpdateNotification } from './components/UpdateNotification.tsx';
 import './index.css';
-import './lib/supabase.ts'; // Initialize global interceptor
 
 function Root() {
   const [dismissed, setDismissed] = useState(false);

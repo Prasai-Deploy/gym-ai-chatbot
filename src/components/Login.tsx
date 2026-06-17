@@ -3,12 +3,13 @@ import { Dumbbell, QrCode } from 'lucide-react';
 import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 export function Login() {
   const [showQR, setShowQR] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { user, loading, setUser } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return <div className="h-screen flex items-center justify-center font-bold">Loading...</div>;
@@ -18,34 +19,35 @@ export function Login() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Automatically redirect to the correct domain (localhost or production)
-        redirectTo: 'https://sweat.prasai.cloud/dashboard'
-      }
-    });
-    if (error) {
-      console.error('Error logging in:', error.message);
-    }
+  // Google login goes through the backend Passport OAuth flow
+  const handleLogin = () => {
+    window.location.href = '/auth/google';
   };
 
   const handleDemoLogin = async () => {
+    setDemoLoading(true);
     try {
-      const res = await fetch('/api/auth/demo', { method: 'POST' });
+      const res = await fetch('/api/auth/demo', {
+        method: 'POST',
+        credentials: 'include',
+      });
       if (res.ok) {
         const userData = await res.json();
         if (userData && userData.id) {
+          // Store user in context immediately, then navigate
           setUser(userData);
+          navigate('/dashboard', { replace: true });
         } else {
-          window.location.href = '/dashboard';
+          alert('Demo login failed — no user returned');
         }
       } else {
         alert('Demo login failed');
       }
     } catch (e) {
       console.error(e);
+      alert('Demo login error');
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -76,9 +78,10 @@ export function Login() {
           <p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>Experience the full platform without creating an account.</p>
           <button
             onClick={handleDemoLogin}
-            className="w-full btn-primary py-3 rounded-xl font-semibold"
+            disabled={demoLoading}
+            className="w-full btn-primary py-3 rounded-xl font-semibold disabled:opacity-60"
           >
-            Explore as Demo User
+            {demoLoading ? 'Loading...' : 'Explore as Demo User'}
           </button>
         </div>
 
@@ -97,7 +100,7 @@ export function Login() {
               animate={{ opacity: 1, scale: 1 }}
               className="mt-6 p-4 bg-white rounded-2xl inline-block"
             >
-              <QRCodeSVG value={window.location.href} size={150} />
+              <QRCodeSVG value="https://sweat.prasai.cloud" size={150} />
             </motion.div>
           )}
         </div>

@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: number;
@@ -18,6 +17,7 @@ interface AuthContextType {
   loading: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
+  rehydrate: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,75 +26,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBackendUser = async () => {
-      try {
-        const res = await fetch('/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.id) {
-            setUser(data);
-          } else {
-            setUser(null);
-          }
+  const rehydrate = useCallback(async () => {
+    try {
+      // credentials: 'include' ensures the session cookie is sent cross-origin
+      const res = await fetch('/auth/me', {
+        credentials: 'include',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id) {
+          setUser(data);
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.error("Failed to fetch user session", error);
+      } else {
         setUser(null);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    // Use onAuthStateChange as the single source of truth.
-    // This handles:
-    //  - Initial page load (fires INITIAL_SESSION)
-    //  - Redirect callback with #access_token hash (fires SIGNED_IN)
-    //  - Token refreshes and sign outs
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Auth] Event:', event, '| Has session:', !!session);
-      if (event === 'INITIAL_SESSION') {
-        // This fires on every page load. If there's a session, fetch the user.
-        if (session) {
-          fetchBackendUser().then(() => {
-            // If we have an access_token in the URL hash (OAuth redirect callback),
-            // navigate to the dashboard once the user is loaded.
-            if (window.location.hash.includes('access_token')) {
-              window.location.replace('/dashboard');
-            }
-          });
-        } else {
-          // No session — stop loading and show login
-          setUser(null);
-          setLoading(false);
-        }
-      } else if (event === 'SIGNED_IN') {
-        fetchBackendUser().then(() => {
-          // After sign-in, always navigate to dashboard
-          if (window.location.pathname !== '/dashboard') {
-            window.location.replace('/dashboard');
-          }
-        });
-      } else if (event === 'TOKEN_REFRESHED') {
-        fetchBackendUser();
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    } catch (error) {
+      console.error('Failed to rehydrate user session', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  useEffect(() => {
+    rehydrate();
+  }, [rehydrate]);
+
+  const logout = () => {
+    setUser(null);
     window.location.href = '/auth/logout';
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, setUser, logout }}>
+    <AuthContext.Provider value={{ user, loading, setUser, logout, rehydrate }}>
       {children}
     </AuthContext.Provider>
   );
