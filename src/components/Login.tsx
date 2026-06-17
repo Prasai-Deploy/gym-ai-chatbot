@@ -22,8 +22,8 @@ export function Login() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Tell Supabase to send them to the dashboard after logging in
-        redirectTo: 'https://sweat.prasai.cloud/dashboard' 
+        // Automatically redirect to the correct domain (localhost or production)
+        redirectTo: `${window.location.origin}/dashboard` 
       }
     });
     if (error) {
