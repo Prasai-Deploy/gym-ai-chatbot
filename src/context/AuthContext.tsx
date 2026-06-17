@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    window.location.href = '/api/logout'; // Clear backend session too for demo users
+    window.location.href = '/auth/logout'; // Clear backend session too for demo users and redirect to root
   };
 
   return (

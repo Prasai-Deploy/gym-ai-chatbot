@@ -293,7 +293,7 @@ function WaterTracker({ currentWater, waterGoal, onAddWater, onUpdateGoal, onRem
 
 export default function App() {
   useTheme(); // Initialize theme from localStorage on load
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [progress, setProgress] = useState<ProgressData[]>([]);
   const [dailyPlans, setDailyPlans] = useState<DailyPlan[]>([]);
   const [showQR, setShowQR] = useState(false);
@@ -783,11 +783,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await fetch('/auth/logout');
-    setUser(null);
-    setProgress([]);
-    setDailyPlans([]);
-    setMessages([{ role: 'model', content: "Welcome to Sweat Fix. How can I assist with your fitness goals or macros today?" }]);
+    await logout();
   };
 
   const handleDemoLogin = async () => {
