@@ -23,7 +23,7 @@ export function Login() {
       provider: 'google',
       options: {
         // Automatically redirect to the correct domain (localhost or production)
-        redirectTo: `${window.location.origin}/dashboard` 
+        redirectTo: 'https://sweat.prasai.cloud/dashboard'
       }
     });
     if (error) {
