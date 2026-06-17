@@ -20,7 +20,7 @@ export function AuthCallback() {
       } else {
         // Wait for hash fragment to be processed by Supabase
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session) {
+          if (session) {
             navigate('/dashboard', { replace: true });
             subscription.unsubscribe();
           }
