@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="description" content="Sweatfix AI — Your premium AI-powered fitness companion for tracking workouts, macros, and reaching peak performance." />
   
-  <!-- PWA Meta Tags -->
+  <!-- PWA Meta Tags (kept for display only; service worker disabled) -->
   <meta name="theme-color" content="#121212" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -21,10 +21,21 @@
   <link rel="icon" href="/icons/icon-192x192.png" sizes="192x192" type="image/png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png">
   
-  <!-- Manifest — also injected by vite-plugin-pwa, but explicit link ensures dev-mode compat -->
-  <link rel="manifest" href="/manifest.webmanifest">
+  <!-- manifest link removed — PWA/SW disabled -->
   
   <title>Sweatfix Ai</title>
+
+  <!-- Unregister any previously installed service worker immediately -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var registration of registrations) {
+          registration.unregister();
+          console.log('[SW] Unregistered stale service worker:', registration.scope);
+        }
+      });
+    }
+  </script>
 </head>
 
 <body>
