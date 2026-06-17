@@ -128,6 +128,8 @@ Respond with ONLY valid JSON in exactly this format (no extra text, no markdown,
 {
   "focus": "${todayFocus}",
   "duration": "45 min",
+  "calories_estimate": 350,
+  "difficulty": "Moderate",
   "exercises": [
     {
       "name": "Bench Press",

@@ -13,7 +13,7 @@ import { getMissingFields } from "./profile.service.js";
  * • Profile partially filled → show existing data + list missing fields
  * • Profile complete         → rich structured context
  */
-export function buildSystemContext(profile, legacyMemory) {
+export function buildSystemContext(profile, legacyMemory, progressInsight) {
     const missing = getMissingFields(profile);
     if (!profile || missing.length === 7) {
         // ── Case 1: no profile at all ────────────────────────────────────────────
@@ -26,7 +26,7 @@ export function buildSystemContext(profile, legacyMemory) {
             buildOnboardingBlock(missing, legacyMemory, /* partial */ true));
     }
     // ── Case 3: complete profile ─────────────────────────────────────────────
-    return buildProfileBlock(contextLines, legacyMemory);
+    return buildProfileBlock(contextLines, legacyMemory, progressInsight);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal helpers
@@ -49,10 +49,13 @@ function buildProfileLines(profile) {
         lines.push(`Workout Days/Week: ${profile.workout_days}`);
     return lines;
 }
-function buildProfileBlock(lines, legacyMemory) {
+function buildProfileBlock(lines, legacyMemory, progressInsight) {
     let block = `\n\n[USER FITNESS PROFILE — personalise every response using this]\n${lines.join(" | ")}`;
     if (legacyMemory) {
         block += `\n[Memory Notes]\n${legacyMemory}`;
+    }
+    if (progressInsight) {
+        block += `\n[WEEKLY PROGRESS TRENDS — use this to provide adaptive recommendations and specific praise]\n${progressInsight}`;
     }
     return block;
 }

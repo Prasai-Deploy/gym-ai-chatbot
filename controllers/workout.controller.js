@@ -1,6 +1,8 @@
 import { getProfile, isProfileComplete } from "../services/profile.service.js";
-import { getLatestPlan, getPlanByDate, savePlan, saveLogs, getLastLog, getRecentFocuses, } from "../services/workout.service.js";
+import { getLatestPlan, getPlanByDate, savePlan, saveLogs, getLastLog, getRecentFocuses, startSession, updateSessionProgress, completeSession, getTodaySession, getWorkoutHistory, } from "../services/workout.service.js";
+import { getLatestActivePlan } from "../services/plan.service.js";
 import { decideSplit, buildWorkoutPrompt, callWorkoutAI, } from "../services/workoutAI.service.js";
+import pool from "../db.js";
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared auth guard
 // ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +13,31 @@ function requireAuth(req, res) {
         return null;
     }
     return user;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: ensure a workout_plans row exists and return its id
+// This bridges the gap between chatbot_generated_workouts and workout_sessions FK
+// ─────────────────────────────────────────────────────────────────────────────
+async function ensureWorkoutPlanRow(userId, activePlan) {
+    const today = new Date().toISOString().split("T")[0];
+    // 1. Check if a workout_plans row already exists for today
+    const [existingRows] = await pool.execute("SELECT id FROM workout_plans WHERE user_id = ? AND date = ?", [userId, today]);
+    const existing = existingRows[0];
+    if (existing)
+        return existing.id;
+    // 2. No row — create one from the chatbot_generated_workouts data
+    const exercises = activePlan.workout_exercises || [];
+    const [result] = await pool.execute(`INSERT INTO workout_plans (user_id, date, focus, duration, exercises, calories_estimate, difficulty)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+        userId,
+        today,
+        activePlan.workout_title || "Today's Workout",
+        activePlan.duration || "45 min",
+        JSON.stringify(exercises),
+        activePlan.calories_estimate || 0,
+        activePlan.difficulty || "Moderate",
+    ]);
+    return result.insertId;
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/workout/generate
@@ -157,6 +184,163 @@ export async function logWorkoutHandler(req, res) {
     }
     catch (e) {
         console.error("[Workout] logWorkoutHandler error:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/workout/today
+// Returns today's workout plan + active session (if any).
+// Priority: workout_plans table (has an ID valid for session FK) > activePlan from new tables
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getTodayWorkoutHandler(req, res) {
+    const user = requireAuth(req, res);
+    if (!user)
+        return;
+    const today = new Date().toISOString().split("T")[0];
+    try {
+        // 1. Always try workout_plans first — this has a valid ID for FK in workout_sessions
+        let plan = await getPlanByDate(user.id, today);
+        // 2. If no workout_plans row today, try the newer chatbot_generated_workouts path
+        if (!plan) {
+            const activePlan = await getLatestActivePlan(user.id);
+            if (activePlan && activePlan.workout_title) {
+                // Ensure a workout_plans row is created (needed for the FK in workout_sessions)
+                const workoutPlanId = await ensureWorkoutPlanRow(user.id, activePlan);
+                // Re-fetch the newly created row so we have a real DB object
+                plan = await getPlanByDate(user.id, today);
+                // Fallback if refetch somehow fails — construct a minimal plan
+                if (!plan) {
+                    plan = {
+                        id: workoutPlanId,
+                        focus: activePlan.workout_title,
+                        duration: activePlan.duration || "45 min",
+                        difficulty: activePlan.difficulty || "Moderate",
+                        exercises: activePlan.workout_exercises || [],
+                        calories_estimate: activePlan.calories_estimate || 0,
+                    };
+                }
+            }
+        }
+        if (!plan) {
+            res.status(404).json({ plan: null, session: null, message: "No workout plan for today." });
+            return;
+        }
+        const exercises = typeof plan.exercises === "string"
+            ? JSON.parse(plan.exercises)
+            : plan.exercises;
+        // 3. Fetch active session for today
+        const session = await getTodaySession(user.id);
+        res.json({
+            plan: { ...plan, exercises },
+            session: session
+                ? {
+                    ...session,
+                    completed_exercises: typeof session.completed_exercises === "string"
+                        ? JSON.parse(session.completed_exercises)
+                        : (session.completed_exercises || []),
+                }
+                : null,
+        });
+    }
+    catch (e) {
+        console.error("[Workout] getTodayWorkoutHandler error:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/start
+// ─────────────────────────────────────────────────────────────────────────────
+export async function startWorkoutHandler(req, res) {
+    const user = requireAuth(req, res);
+    if (!user)
+        return;
+    const { plan_id } = req.body;
+    if (!plan_id) {
+        res.status(400).json({ error: "plan_id is required." });
+        return;
+    }
+    try {
+        // Verify the plan_id belongs to this user and exists in workout_plans
+        const [planRows] = await pool.execute("SELECT id FROM workout_plans WHERE id = ? AND user_id = ?", [plan_id, user.id]);
+        if (planRows.length === 0) {
+            // plan_id not found in workout_plans — try to find today's plan and use that instead
+            const today = new Date().toISOString().split("T")[0];
+            const todayPlan = await getPlanByDate(user.id, today);
+            if (!todayPlan) {
+                res.status(404).json({ error: "No workout plan found for today. Please generate one first." });
+                return;
+            }
+            // Cancel any previously active session for this user
+            await pool.execute("UPDATE workout_sessions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'", [user.id]);
+            const session = await startSession(user.id, todayPlan.id);
+            res.json({ success: true, session });
+            return;
+        }
+        // Cancel any previously active session for this user before starting a new one
+        await pool.execute("UPDATE workout_sessions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'", [user.id]);
+        const session = await startSession(user.id, plan_id);
+        res.json({ success: true, session });
+    }
+    catch (e) {
+        console.error("[Workout] startWorkoutHandler error:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/progress
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateProgressHandler(req, res) {
+    const user = requireAuth(req, res);
+    if (!user)
+        return;
+    const { session_id, completed_exercises, progress_percentage, calories_burned } = req.body;
+    if (!session_id) {
+        res.status(400).json({ error: "session_id is required." });
+        return;
+    }
+    try {
+        await updateSessionProgress(session_id, completed_exercises || [], progress_percentage || 0, calories_burned || 0);
+        res.json({ success: true });
+    }
+    catch (e) {
+        console.error("[Workout] updateProgressHandler error:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workout/complete
+// ─────────────────────────────────────────────────────────────────────────────
+export async function completeWorkoutHandler(req, res) {
+    const user = requireAuth(req, res);
+    if (!user)
+        return;
+    const { session_id } = req.body;
+    if (!session_id) {
+        res.status(400).json({ error: "session_id is required." });
+        return;
+    }
+    try {
+        await completeSession(session_id);
+        res.json({ success: true });
+    }
+    catch (e) {
+        console.error("[Workout] completeWorkoutHandler error:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/workout/history
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getHistoryHandler(req, res) {
+    const user = requireAuth(req, res);
+    if (!user)
+        return;
+    try {
+        const history = await getWorkoutHistory(user.id);
+        res.json({ history });
+    }
+    catch (e) {
+        console.error("[Workout] getHistoryHandler error:", e.message);
         res.status(500).json({ error: e.message });
     }
 }

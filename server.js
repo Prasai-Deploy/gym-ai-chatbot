@@ -13,43 +13,60 @@ import workoutRouter from "./routes/workout.routes.js";
 import nutritionRouter from "./routes/nutrition.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
 import supabase from "./db.js";
+import { createClient } from "@supabase/supabase-js";
+// Admin client uses service_role key — can verify user JWTs
+const supabaseAdmin = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || "", { auth: { persistSession: false } });
 import { getProfile, upsertProfile, isProfileComplete } from "./services/profile.service.js";
 import { buildSystemContext } from "./services/chatContext.service.js";
 import { extractProfileUpdate } from "./services/updateExtractor.service.js";
 import { decideSplit, buildWorkoutPrompt, callWorkoutAI, formatWorkoutForChat, } from "./services/workoutAI.service.js";
-import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, } from "./services/workout.service.js";
+import { getPlanByDate, getLatestPlan, savePlan, getLastLog, getRecentFocuses, saveToChatbotLog, } from "./services/workout.service.js";
 import { buildDashboardSummary, buildChatInsight, } from "./services/dashboard.service.js";
 import { callAIWithRouting } from "./services/ai.service.js";
+import waterRouter from "./routes/water.routes.js";
+import activityRouter from "./routes/activity.routes.js";
+import progressRouter from "./routes/progress.routes.js";
+import { buildProgressInsight } from "./services/progress.service.js";
+import { parseAndApplyAIData } from "./services/aiDataParser.service.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
-
+// Helper functions for DB access using the shared pool
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth event emitter (for long-polling Telegram bot flow)
 // ─────────────────────────────────────────────────────────────────────────────
 const authEvents = new EventEmitter();
-
+// ─────────────────────────────────────────────────────────────────────────────
+// SSE — per-user stream clients map (userId → Set of response objects)
+// ─────────────────────────────────────────────────────────────────────────────
+const sseClients = new Map();
+function broadcastToUser(userId, event, data) {
+    const clients = sseClients.get(userId);
+    if (!clients || clients.size === 0)
+        return;
+    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const res of clients) {
+        try {
+            res.write(payload);
+        }
+        catch {
+            clients.delete(res);
+        }
+    }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Server bootstrap
 // ─────────────────────────────────────────────────────────────────────────────
 async function startServer() {
-    // Verify DB connectivity before starting
-    try {
-        const { error } = await supabase.from("users").select("id").limit(1);
-        if (error) throw error;
-        console.log("[DB] Supabase connected successfully.");
-    }
-    catch (err) {
-        console.warn("[DB] Supabase connection test failed:", err.message);
-    }
+    // Verified DB connectivity implicitly via Supabase client
     const app = express();
     const PORT = Number(process.env.PORT) || 3000;
     app.set("trust proxy", 1);
     app.use(express.json());
     app.use(session({
-        secret: process.env.NEXTAUTH_SECRET || "sweat-fix-secret",
-        resave: true,
-        saveUninitialized: true,
+        secret: process.env.SESSION_SECRET || "sweat-fix-secret",
+        resave: false,
+        saveUninitialized: false,
         cookie: {
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -59,6 +76,43 @@ async function startServer() {
     }));
     app.use(passport.initialize());
     app.use(passport.session());
+    // ───────────────────────────────────────────────────────────────────────────
+    // Supabase Bearer Token Middleware
+    // ───────────────────────────────────────────────────────────────────────────
+    app.use(async (req, res, next) => {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            const token = authHeader.split(" ")[1];
+            try {
+                const { data: { user: sbUser }, error } = await supabaseAdmin.auth.getUser(token);
+                if (sbUser && sbUser.email) {
+                    let { data: dbUser } = await supabase.from('users').select('*').eq('email', sbUser.email).maybeSingle();
+                    if (!dbUser) {
+                        const now = new Date().toISOString();
+                        const { data: newUser } = await supabase.from('users').insert({
+                            email: sbUser.email,
+                            name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+                            avatar: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || null,
+                            created_at: now,
+                            last_login: now,
+                        }).select().maybeSingle();
+                        dbUser = newUser;
+                    }
+                    else {
+                        const now = new Date().toISOString();
+                        await supabase.from('users').update({ last_login: now }).eq('id', dbUser.id);
+                    }
+                    if (dbUser) {
+                        req.user = dbUser;
+                    }
+                }
+            }
+            catch (err) {
+                console.error("Supabase JWT validation failed:", err);
+            }
+        }
+        next();
+    });
     // ───────────────────────────────────────────────────────────────────────────
     // Passport – serialize / deserialize
     // ───────────────────────────────────────────────────────────────────────────
@@ -82,7 +136,7 @@ async function startServer() {
                     fat_goal: 70
                 });
             }
-            const { data: user } = await supabase.from("users").select("*").eq("id", id).single();
+            const { data: user } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
             done(null, user);
         }
         catch (err) {
@@ -93,8 +147,8 @@ async function startServer() {
     // Google OAuth strategy
     // ───────────────────────────────────────────────────────────────────────────
     const callbackURL = process.env.NODE_ENV === "production"
-        ? `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/google/callback`
-        : "http://localhost:3000/auth/google/callback";
+        ? "https://sweat.prasai.cloud/auth/google/callback"
+        : "http://localhost:5000/auth/google/callback";
     passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID || "placeholder",
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
@@ -102,24 +156,33 @@ async function startServer() {
     }, async (_accessToken, _refreshToken, profile, done) => {
         try {
             const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-            const { data: user } = await supabase.from("users").select("*").eq("google_id", profile.id).maybeSingle();
+            let { data: user } = await supabase
+                .from('users')
+                .select('*')
+                .eq('google_id', profile.id)
+                .maybeSingle();
             if (!user) {
-                const { data: newUser, error } = await supabase.from("users").insert({
+                const { data: newUser, error } = await supabase.from('users').insert({
                     google_id: profile.id,
                     name: profile.displayName,
                     email: profile.emails?.[0]?.value ?? null,
                     avatar: profile.photos?.[0]?.value ?? null,
                     created_at: now,
                     last_login: now,
-                }).select("*").single();
-                if (error) throw error;
-                return done(null, newUser);
+                }).select().maybeSingle();
+                if (error)
+                    console.error("Insert error", error);
+                user = newUser;
             }
             else {
-                await supabase.from("users").update({ last_login: now }).eq("id", user.id);
-                const { data: refreshed } = await supabase.from("users").select("*").eq("id", user.id).single();
-                return done(null, refreshed);
+                const { data: updatedUser, error } = await supabase.from('users').update({
+                    last_login: now,
+                }).eq('id', user.id).select().maybeSingle();
+                if (error)
+                    console.error("Update error", error);
+                user = updatedUser;
             }
+            return done(null, user);
         }
         catch (err) {
             return done(err);
@@ -128,7 +191,7 @@ async function startServer() {
     // ───────────────────────────────────────────────────────────────────────────
     // Auth routes
     // ───────────────────────────────────────────────────────────────────────────
-    app.get("/api/auth/google", (req, res, next) => {
+    app.get("/auth/google", (req, res, next) => {
         const state = req.query.state ? String(req.query.state) : undefined;
         passport.authenticate("google", {
             scope: ["openid", "profile", "email"],
@@ -140,25 +203,37 @@ async function startServer() {
         try {
             let user;
             try {
-                const { data: existing } = await supabase.from("users").select("*").eq("email", "demo@sweatfix.com").maybeSingle();
-                if (!existing) {
-                    const { data: created, error } = await supabase.from("users").insert({
+                const { data: existingUser } = await supabase.from('users').select('*').eq('email', 'demo@sweatfix.com').maybeSingle();
+                user = existingUser;
+                if (!user) {
+                    const { data: newUser, error } = await supabase.from('users').insert({
                         email: "demo@sweatfix.com",
                         name: "Demo User",
                         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
                         profile_context: "",
                         water_goal: 2000,
-                    }).select("*").single();
-                    if (error) throw new Error("DB insertion failed, fallback to mock");
-                    user = created;
+                    }).select().maybeSingle();
+                    if (error || !newUser)
+                        throw new Error("DB insertion failed, fallback to mock");
+                    user = newUser;
                 }
                 else {
-                    user = existing;
                     // Refresh demo user state
-                    await supabase.from("progress").delete().eq("user_id", user.id);
-                    await supabase.from("daily_plans").delete().eq("user_id", user.id);
-                    await supabase.from("fitness_profiles").delete().eq("user_id", user.id);
-                    await supabase.from("users").update({ profile_context: "", name: "Demo User" }).eq("id", user.id);
+                    await supabase.from('progress').delete().eq('user_id', user.id);
+                    await supabase.from('daily_plans').delete().eq('user_id', user.id);
+                    await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
+                    await supabase.from('workout_plans').delete().eq('user_id', user.id);
+                    await supabase.from('workout_sessions').delete().eq('user_id', user.id);
+                    await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
+                    await supabase.from('workout_logs').delete().eq('user_id', user.id);
+                    await supabase.from('progress_logs').delete().eq('user_id', user.id);
+                    // Cleanup new tables
+                    await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
+                    await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
+                    await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
+                    await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
+                    await supabase.from('user_progress').delete().eq('user_id', user.id);
+                    await supabase.from('users').update({ profile_context: '', name: 'Demo User' }).eq('id', user.id);
                 }
             }
             catch (dbErr) {
@@ -191,15 +266,16 @@ async function startServer() {
             res.status(500).json({ error: err.message });
         }
     });
-    // Google OAuth callback — redirect to dashboard after login
+    // Google OAuth callback
     app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), async (req, res) => {
         const state = req.query.state;
         const user = req.user;
         const renderResponse = () => {
             if (state && user) {
                 try {
-                    supabase.from("users").update({ chat_id: state }).eq("id", user.id)
-                        .then(({ error }) => { if (error) console.error("Failed to link chat_id:", error); });
+                    supabase.from('users').update({ chat_id: state }).eq('id', user.id)
+                        .then(({ error }) => { if (error)
+                        console.error("Failed to link chat_id:", error); });
                     authEvents.emit(`auth_success_${state}`, user);
                 }
                 catch (e) {
@@ -213,7 +289,7 @@ async function startServer() {
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                   <h2 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.5rem;">Authentication Successful!</h2>
-                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>. Your account is now securely linked to your chat session.</p>
+                  <p style="color: #a1a1aa; margin: 0 0 1.5rem 0; line-height: 1.5;">Welcome, <strong style="color: #fff;">${user.name}</strong>.</p>
                   <p style="color: #52525b; font-size: 0.875rem; margin: 0;">You can safely close this window and return to the chat.</p>
                 </div>
               </body>
@@ -221,13 +297,15 @@ async function startServer() {
           `);
             }
             else {
-                // Regular browser login — redirect to dashboard
+                // Always redirect to the production dashboard after Google login
                 res.redirect("https://sweat.prasai.cloud/dashboard");
             }
         };
+        // Explicitly save the session before responding to avoid race conditions
         if (req.session) {
             req.session.save((err) => {
-                if (err) console.error("Session save error:", err);
+                if (err)
+                    console.error("Session save error:", err);
                 renderResponse();
             });
         }
@@ -235,14 +313,13 @@ async function startServer() {
             renderResponse();
         }
     });
-    // Session check endpoints — both paths supported
     const authMeHandler = (req, res) => {
         const user = req.user;
-        console.log("[/api/auth/me] user found:", user ? `id=${user.id} email=${user.email}` : 'none');
+        console.log("[/auth/me] user found:", user ? `id=${user.id} email=${user.email}` : 'none');
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.json(user || null);
     };
-    app.get("/api/me", authMeHandler);
+    app.get("/auth/me", authMeHandler);
     app.get("/api/auth/me", authMeHandler);
     // Long-polling endpoint for Telegram bot auth flow
     app.get("/api/auth/status/:chat_id", (req, res) => {
@@ -257,8 +334,41 @@ async function startServer() {
             res.json({ status: "success", user });
         });
     });
-    app.get("/api/logout", (req, res) => {
-        req.logout(() => res.json({ success: true }));
+    app.get("/auth/logout", async (req, res) => {
+        const user = req.user;
+        if (user && user.email === "demo@sweatfix.com") {
+            try {
+                await supabase.from('progress').delete().eq('user_id', user.id);
+                await supabase.from('daily_plans').delete().eq('user_id', user.id);
+                await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
+                await supabase.from('workout_plans').delete().eq('user_id', user.id);
+                await supabase.from('workout_sessions').delete().eq('user_id', user.id);
+                await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
+                await supabase.from('workout_logs').delete().eq('user_id', user.id);
+                await supabase.from('progress_logs').delete().eq('user_id', user.id);
+                // Cleanup new tables
+                await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
+                await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
+                await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
+                await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
+                await supabase.from('user_progress').delete().eq('user_id', user.id);
+                await supabase.from('weekly_progress').delete().eq('user_id', user.id);
+                await supabase.from('daily_fitness_stats').delete().eq('user_id', user.id);
+            }
+            catch (e) {
+                console.error("Failed to clear demo data:", e);
+            }
+        }
+        req.logout(() => {
+            if (req.session) {
+                req.session.destroy((err) => {
+                    res.redirect("/");
+                });
+            }
+            else {
+                res.redirect("/");
+            }
+        });
     });
     // ───────────────────────────────────────────────────────────────────────────
     // User update
@@ -269,13 +379,15 @@ async function startServer() {
             return res.status(401).json({ error: "Unauthorized" });
         const { name, water_goal } = req.body;
         try {
-            const updates = {};
-            if (name && typeof name === "string") updates.name = name.trim();
-            if (water_goal !== undefined) updates.water_goal = Number(water_goal);
-            if (Object.keys(updates).length > 0) {
-                await supabase.from("users").update(updates).eq("id", user.id);
+            if (name && typeof name === "string") {
+                await supabase.from('users').update({ name: name.trim() }).eq('id', user.id);
             }
-            const { data: updatedUser } = await supabase.from("users").select("*").eq("id", user.id).single();
+            if (water_goal !== undefined) {
+                await supabase.from('users').update({ water_goal: Number(water_goal) }).eq('id', user.id);
+            }
+            const { data: updatedUser, error } = await supabase.from('users').select('*').eq('id', user.id).single();
+            if (error)
+                throw error;
             res.json(updatedUser);
         }
         catch (e) {
@@ -286,11 +398,13 @@ async function startServer() {
     // Progress routes
     // ───────────────────────────────────────────────────────────────────────────
     app.get("/api/progress", async (req, res) => {
-        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user)
+            return res.status(401).json({ error: "Unauthorized" });
         const userId = req.user.id;
         try {
-            const { data, error } = await supabase.from("progress").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(7);
-            if (error) throw error;
+            const { data, error } = await supabase.from('progress').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(7);
+            if (error)
+                throw error;
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             res.json(data || []);
         }
@@ -299,14 +413,23 @@ async function startServer() {
         }
     });
     app.post("/api/progress", async (req, res) => {
-        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user)
+            return res.status(401).json({ error: "Unauthorized" });
         const userId = req.user.id;
         const { date, workout_name, calories, protein, water, carbs, fats } = req.body;
         try {
-            const { error } = await supabase.from("progress").insert({
-                user_id: userId, date, workout_name, calories, protein, water, carbs: carbs ?? 0, fats: fats ?? 0,
+            const { error } = await supabase.from('progress').insert({
+                user_id: userId,
+                date,
+                workout_name,
+                calories,
+                protein,
+                water,
+                carbs: carbs ?? 0,
+                fats: fats ?? 0,
             });
-            if (error) throw error;
+            if (error)
+                throw error;
             res.json({ success: true });
         }
         catch (e) {
@@ -317,10 +440,13 @@ async function startServer() {
     // Daily plans routes
     // ───────────────────────────────────────────────────────────────────────────
     app.get("/api/plans", async (req, res) => {
-        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user)
+            return res.status(401).json({ error: "Unauthorized" });
+        const userId = req.user.id;
         try {
-            const { data, error } = await supabase.from("daily_plans").select("*").eq("user_id", req.user.id).order("date", { ascending: false }).limit(14);
-            if (error) throw error;
+            const { data, error } = await supabase.from('daily_plans').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(14);
+            if (error)
+                throw error;
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             res.json(data || []);
         }
@@ -329,13 +455,31 @@ async function startServer() {
         }
     });
     app.post("/api/plans", async (req, res) => {
-        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user)
+            return res.status(401).json({ error: "Unauthorized" });
+        const userId = req.user.id;
         const { date, workout_plan, diet_plan } = req.body;
         try {
-            const { error } = await supabase.from("daily_plans").upsert({
-                user_id: req.user.id, date, workout_plan, diet_plan, completed: 0,
-            }, { onConflict: "user_id,date" });
-            if (error) throw error;
+            const { data: existing } = await supabase.from('daily_plans').select('*').eq('user_id', userId).eq('date', date).maybeSingle();
+            if (existing) {
+                const { error } = await supabase.from('daily_plans').update({
+                    workout_plan,
+                    diet_plan
+                }).eq('id', existing.id);
+                if (error)
+                    throw error;
+            }
+            else {
+                const { error } = await supabase.from('daily_plans').insert({
+                    user_id: userId,
+                    date,
+                    workout_plan,
+                    diet_plan,
+                    completed: 0
+                });
+                if (error)
+                    throw error;
+            }
             res.json({ success: true });
         }
         catch (e) {
@@ -343,11 +487,16 @@ async function startServer() {
         }
     });
     app.put("/api/plans/:id/complete", async (req, res) => {
-        if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+        if (!req.user)
+            return res.status(401).json({ error: "Unauthorized" });
+        const userId = req.user.id;
         const { completed } = req.body;
         try {
-            const { error } = await supabase.from("daily_plans").update({ completed: completed ? 1 : 0 }).eq("id", req.params.id).eq("user_id", req.user.id);
-            if (error) throw error;
+            const { error } = await supabase.from('daily_plans').update({
+                completed: completed ? 1 : 0
+            }).eq('id', req.params.id).eq('user_id', userId);
+            if (error)
+                throw error;
             res.json({ success: true });
         }
         catch (e) {
@@ -355,24 +504,77 @@ async function startServer() {
         }
     });
     // ───────────────────────────────────────────────────────────────────────────
-    // Modular route mounts
+    // Profile routes (modular)
     // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/profile", profileRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Workout routes (modular)
+    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/workout", workoutRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Nutrition routes (modular)
+    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api/nutrition", nutritionRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // Dashboard routes (modular) — GET /api/dashboard/:userId, POST /api/progress/metrics
+    // ───────────────────────────────────────────────────────────────────────────
     app.use("/api", dashboardRouter);
+    app.use("/api/water", waterRouter);
+    app.use("/api/activity", activityRouter);
+    app.use("/api/progress", progressRouter);
+    // ───────────────────────────────────────────────────────────────────────────
+    // SSE — Real-time push to dashboard
+    // GET /api/stream
+    // ───────────────────────────────────────────────────────────────────────────
+    app.get("/api/stream", (req, res) => {
+        const user = req.user;
+        if (!user) {
+            res.status(401).end();
+            return;
+        }
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("X-Accel-Buffering", "no"); // Nginx / Hostinger pass-through
+        res.flushHeaders();
+        // Register this client
+        if (!sseClients.has(user.id))
+            sseClients.set(user.id, new Set());
+        sseClients.get(user.id).add(res);
+        console.log(`[SSE] Client connected for user ${user.id} (${sseClients.get(user.id).size} total)`);
+        // Keep-alive ping every 25 seconds
+        const ping = setInterval(() => {
+            try {
+                res.write(": ping\n\n");
+            }
+            catch {
+                clearInterval(ping);
+            }
+        }, 25000);
+        // Cleanup on disconnect
+        req.on("close", () => {
+            clearInterval(ping);
+            sseClients.get(user.id)?.delete(res);
+            console.log(`[SSE] Client disconnected for user ${user.id}`);
+        });
+    });
     // ───────────────────────────────────────────────────────────────────────────
     // Chat route
     // ───────────────────────────────────────────────────────────────────────────
+    // ── Progress chat trigger regex ────────────────────────────────────────────
+    // Matches: "show my progress", "how am I improving?", "check my streak", etc.
     const PROGRESS_TRIGGER_RE = /(show|see|check|view|get|what(?:'s| is)|how(?:'s| is| am i))\s*.*(progress|improvement|streak|stats|dashboard|improving|doing|gains?)/i;
+    // ── Workout chat trigger regex ─────────────────────────────────────────────
+    // Matches: "generate today's workout", "create my workout plan", etc.
     const WORKOUT_TRIGGER_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(today.?s?\s+workout|workout\s+plan|my\s+workout|today.?s?\s+plan)/i;
+    // ── Nutrition chat trigger regex ───────────────────────────────────────────
     const NUTRITION_GEN_RE = /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat)/i;
     const NUTRITION_LOG_RE = /(track|log|record|i\s+ate|i\s+had|just\s+ate).*(calories|meal|food|lunch|dinner|breakfast|snack)/i;
     app.post("/api/chat", async (req, res) => {
         try {
             const { message, history } = req.body;
             const user = req.user;
-            // ── Progress trigger ──────────────────────────────────────────────────
+            // ── Progress trigger: show dashboard insights ─────────────────────────
             if (user && message && PROGRESS_TRIGGER_RE.test(message) && !WORKOUT_TRIGGER_RE.test(message)) {
                 try {
                     const data = await buildDashboardSummary(user.id);
@@ -381,9 +583,10 @@ async function startServer() {
                 }
                 catch (dashErr) {
                     console.error("[Chat/Progress trigger] Error:", dashErr.message);
+                    // Fall through to normal AI chat on error
                 }
             }
-            // ── Workout trigger ───────────────────────────────────────────────────
+            // ── Workout trigger: intercept before hitting the general AI ─────────
             if (user && message && WORKOUT_TRIGGER_RE.test(message)) {
                 try {
                     const profile = await getProfile(user.id);
@@ -399,8 +602,10 @@ async function startServer() {
                             ? JSON.parse(existingPlan.exercises)
                             : existingPlan.exercises;
                         const formatted = formatWorkoutForChat({ ...existingPlan, exercises });
-                        return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}` });
+                        broadcastToUser(user.id, "dashboard-update", { plans: true });
+                        return res.json({ text: `Here's your workout for today (already generated earlier):\n\n${formatted}`, updates: { plans: true } });
                     }
+                    // Build history map for progressive overload
                     const recentFocuses = await getRecentFocuses(user.id, 4);
                     const todayFocus = decideSplit(profile.workout_days ?? 3, recentFocuses);
                     const lastPlan = await getLatestPlan(user.id);
@@ -411,20 +616,24 @@ async function startServer() {
                             : lastPlan.exercises;
                         await Promise.all(lastExercises.slice(0, 8).map(async (ex) => {
                             const log = await getLastLog(user.id, ex.name);
-                            if (log) historyMap.set(ex.name, { name: ex.name, weight_used: log.weight_used, reps_done: log.reps_done, difficulty: log.difficulty });
+                            if (log)
+                                historyMap.set(ex.name, { name: ex.name, weight_used: log.weight_used, reps_done: log.reps_done, difficulty: log.difficulty });
                         }));
                     }
                     const prompt = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
                     const generatedPlan = await callWorkoutAI(prompt);
                     await savePlan(user.id, today, generatedPlan, prompt);
+                    await saveToChatbotLog(user.id, generatedPlan);
                     const formatted = formatWorkoutForChat(generatedPlan);
-                    return res.json({ text: formatted });
+                    broadcastToUser(user.id, "dashboard-update", { plans: true });
+                    return res.json({ text: formatted, updates: { plans: true } });
                 }
                 catch (workoutErr) {
                     console.error("[Chat/Workout trigger] Error:", workoutErr.message);
+                    // Fall through to normal AI chat on error
                 }
             }
-            // ── Nutrition Generate trigger ────────────────────────────────────────
+            // ── Nutrition Generate trigger ─────────────────────────────────────────
             if (user && message && NUTRITION_GEN_RE.test(message)) {
                 try {
                     const profile = await getProfile(user.id);
@@ -439,42 +648,46 @@ async function startServer() {
                     plan.meals.forEach((m) => {
                         responseText += `**${m.type}** (${m.calories} kcal)\n- ${m.items.join("\n- ")}\n\n`;
                     });
-                    return res.json({ text: responseText });
+                    broadcastToUser(user.id, "dashboard-update", { plans: true });
+                    return res.json({ text: responseText, updates: { plans: true } });
                 }
                 catch (nutriErr) {
                     console.error("[Chat/Nutrition Gen] Error:", nutriErr.message);
                 }
             }
-            // ── Nutrition Log trigger ─────────────────────────────────────────────
+            // ── Nutrition Log trigger ──────────────────────────────────────────────
             if (user && message && NUTRITION_LOG_RE.test(message)) {
                 try {
                     const { logFoodIntake } = await import("./services/nutrition.service.js");
                     const log = await logFoodIntake(user.id, message);
+                    broadcastToUser(user.id, "dashboard-update", { progress: true });
                     return res.json({
-                        text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`
+                        text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`,
+                        updates: { progress: true }
                     });
                 }
                 catch (logErr) {
                     console.error("[Chat/Nutrition Log] Error:", logErr.message);
                 }
             }
-            // ── 1. Fetch structured fitness profile ───────────────────────────────
+            // ── 1. Fetch structured fitness profile ────────────────────────────────
             let fitnessProfile = null;
             if (user) {
                 fitnessProfile = await getProfile(user.id);
             }
-            // ── 2. Regex-extract any inline field updates from this message ───────
+            // ── 2. Regex-extract any inline field updates from this message ────────
             if (user && message) {
                 const inlineUpdate = extractProfileUpdate(message);
                 if (Object.keys(inlineUpdate).length > 0) {
                     await upsertProfile(user.id, inlineUpdate);
-                    fitnessProfile = await getProfile(user.id);
+                    fitnessProfile = await getProfile(user.id); // refresh
                     console.log("[Profile] Inline update saved for user", user.id, ":", inlineUpdate);
                 }
             }
-            // ── 3. Build context string ───────────────────────────────────────────
+            // ── 3. Build context string (onboarding vs. partial vs. complete) ──────
+            const progressInsight = user ? await buildProgressInsight(user.id) : "";
             const userContextStr = user
-                ? buildSystemContext(fitnessProfile, user.profile_context)
+                ? buildSystemContext(fitnessProfile, user.profile_context, progressInsight)
                 : "";
             const systemPrompt = `Role & Identity
 You are the high-energy, motivating virtual assistant for Sweat Fix Gym.
@@ -495,13 +708,19 @@ Onboarding & Details Gathering: Before creating any diet or workout plan, you MU
 DO NOT generate a plan until you have this information.
 
 Auto-Fill Protocol & Centralized AI Extraction:
-Whenever the user discusses their fitness data (workouts, diets, weight, goals, macros, etc.), YOU MUST append a JSON block at the very end of your response inside triple backticks like this:
+Whenever the user provides ANY fitness-related information in their message, YOU MUST append a structured JSON block at the VERY END of your response inside triple backticks. This JSON is parsed by the dashboard to automatically update all fitness tracking sections — do NOT skip it when relevant data is present.
+
+Full JSON schema (only include keys relevant to this specific message — omit irrelevant ones):
 \`\`\`json
 {
   "profile_update": {
     "goal": "muscle gain",
-    "weight": 75,
-    "diet_type": "vegetarian"
+    "weight_kg": 75,
+    "height_cm": 178,
+    "age": 25,
+    "diet_type": "vegetarian",
+    "activity_level": "active",
+    "workout_days": 4
   },
   "macro_goals": {
     "calories": 2500,
@@ -509,27 +728,44 @@ Whenever the user discusses their fitness data (workouts, diets, weight, goals, 
     "carbs": 250,
     "fats": 65
   },
-  "workout_plan": "Detailed per-day workout chart...",
-  "diet_plan": "Fully detailed diet plan explicitly structured by their preferred meal frequency...",
+  "workout_plan": "Detailed per-day workout chart as markdown...",
+  "diet_plan": "Fully detailed meal plan as markdown...",
   "progress_log": {
-    "workout_name": "Chicken Breast & Rice",
-    "calories": 450,
-    "protein": 45,
-    "carbs": 50,
-    "fats": 5,
-    "water": 0
+    "workout_name": "Chest & Triceps",
+    "workout_completed": true,
+    "muscle_group": "chest",
+    "calories_consumed": 2400,
+    "calories_burned": 350,
+    "protein": 120,
+    "carbs": 200,
+    "fats": 55,
+    "water_ml": 2000,
+    "body_weight_kg": 80,
+    "cardio_type": "running",
+    "cardio_duration_min": 30,
+    "cardio_distance_km": 5,
+    "exercises": [
+      { "name": "Bench Press", "sets": 4, "reps": "8-10", "weight_kg": 80 },
+      { "name": "Tricep Pushdown", "sets": 3, "reps": "12", "weight_kg": 25 }
+    ]
   },
-  "memory": "User has a bad left knee and only has access to dumbbells."
+  "memory": "User has a bad left knee and only trains with dumbbells."
 }
 \`\`\`
-This JSON will be used to automatically update their Daily Protocol dashboard in real-time. Only include the keys that are actively relevant to the current conversation. 
 
-Rules for the JSON block:
-1. "profile_update": Include if the user states a new goal, weight, or diet type. (Weight should be a number in kg).
-2. "macro_goals": Include if you have calculated or the user has stated their target daily calories/macros.
-3. "workout_plan" & "diet_plan": Include as detailed markdown strings if the user asked for a generated plan.
-4. "progress_log": Include if the user indicates they just completed a workout, drank water, or ate a meal. Estimate the nutritional values.
-5. "memory": Include a concise summary of any new, permanent fact about the user (e.g., injuries, equipment). Do not repeat existing memory.
+Detailed rules for the JSON block — read carefully:
+1. "profile_update": Include ONLY when the user states a new goal, weight, height, age, or diet type. weight_kg must be a number.
+2. "macro_goals": Include when you calculate or the user states their target daily calories/macros.
+3. "workout_plan" & "diet_plan": Include as detailed markdown strings only when explicitly asked to generate a plan.
+4. "progress_log": Include whenever the user mentions ANYTHING they did today — completed a workout, ate a meal, drank water, went for a run, updated their weight. Be generous in interpreting these:
+   - Workout completed → set workout_name, workout_completed: true, muscle_group
+   - Food/meal eaten → set calories_consumed, protein, carbs, fats (estimate if not stated)
+   - Water drunk → set water_ml (convert litres to ml: 2L = 2000)
+   - Weight check → set body_weight_kg
+   - Cardio done → set cardio_type (running/cycling/swimming/walking/hiit etc.), cardio_duration_min, cardio_distance_km, calories_burned
+   - Individual exercises → populate the exercises array with name, sets, reps, weight_kg
+5. "memory": Include a concise one-sentence summary of any NEW permanent fact about the user (injuries, equipment, preferences). Do NOT repeat already-known facts.
+6. IMPORTANT: Do NOT include the JSON block in your visible response text — it is stripped automatically. Only the human-readable message is shown to the user.
 ${userContextStr}`;
             let aiContent;
             try {
@@ -538,69 +774,60 @@ ${userContextStr}`;
             catch (apiError) {
                 console.error("=== [SERVER ERROR] Chat API Failure ===");
                 console.error(`Message: ${apiError.message}`);
+                if (apiError.stack)
+                    console.error(`Stack: ${apiError.stack}`);
                 return res.json({
                     text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
                 });
             }
-            // Extract memory / macro_goals / progress_log / plans from AI JSON block
-            let updates = { userProfile: false, progress: false, plans: false };
+            // ── Centralized AI data extraction (aiDataParser.service.ts) ────────────
+            let updates = {
+                userProfile: false,
+                progress: false,
+                plans: false,
+                hydration: false,
+                weight: false,
+                activity: false,
+                macros: false,
+            };
             if (user) {
-                const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/);
-                if (jsonMatch) {
-                    try {
-                        const parsed = JSON.parse(jsonMatch[1]);
-                        aiContent = aiContent.replace(/```json\n([\s\S]*?)\n```/g, "").trim();
-                        if (parsed.profile_update) {
-                            await upsertProfile(user.id, parsed.profile_update);
-                            console.log("[Profile] AI profile_update saved for user", user.id);
-                            updates.userProfile = true;
-                        }
-                        if (parsed.memory) {
-                            const currentContext = user.profile_context ? user.profile_context + "\n" : "";
-                            const newContext = currentContext + "- " + parsed.memory;
-                            await supabase.from("users").update({ profile_context: newContext }).eq("id", user.id);
-                            user.profile_context = newContext;
-                            console.log("Saved new memory for user", user.id);
-                            updates.userProfile = true;
-                        }
-                        if (parsed.macro_goals) {
-                            const mg = parsed.macro_goals;
-                            await supabase.from("users").update({
-                                calorie_goal: mg.calories || 0,
-                                protein_goal: mg.protein || 0,
-                                carb_goal: mg.carbs || 0,
-                                fat_goal: mg.fats || 0,
-                            }).eq("id", user.id);
-                            console.log("Saved new macro goals for user", user.id);
-                            updates.userProfile = true;
-                        }
-                        if (parsed.progress_log) {
-                            const p = parsed.progress_log;
-                            const today = new Date().toISOString().split("T")[0];
-                            await supabase.from("progress").insert({
-                                user_id: user.id, date: today,
-                                workout_name: p.workout_name || "Log",
-                                calories: p.calories || 0, protein: p.protein || 0,
-                                water: p.water || 0, carbs: p.carbs || 0, fats: p.fats || 0,
-                            });
-                            console.log("Saved new progress log for user", user.id);
-                            updates.progress = true;
-                        }
-                        if (parsed.workout_plan || parsed.diet_plan) {
-                            const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
-                            await supabase.from("daily_plans").insert({
-                                user_id: user.id, date: formattedDate,
-                                workout_plan: parsed.workout_plan || "",
-                                diet_plan: parsed.diet_plan || "", completed: 0,
-                            });
-                            console.log("Saved new plans for user", user.id);
-                            updates.plans = true;
-                        }
-                    }
-                    catch (e) {
-                        console.error("Failed to parse AI JSON for memory/progress:", e);
+                try {
+                    const { cleanedText, updates: parsedUpdates, newProfileContext } = await parseAndApplyAIData(aiContent, user.id, {
+                        profile_context: user.profile_context,
+                        weight_kg: undefined, // fetched inside parser if needed
+                    });
+                    // Apply cleaned text (JSON block stripped)
+                    aiContent = cleanedText;
+                    // Merge update flags
+                    Object.assign(updates, parsedUpdates);
+                    // Sync in-memory profile_context if memory was saved
+                    if (newProfileContext) {
+                        user.profile_context = newProfileContext;
                     }
                 }
+                catch (parseErr) {
+                    console.error("[Chat] aiDataParser error (non-fatal):", parseErr.message);
+                }
+            }
+            // ── Build user-friendly suffix messages ──────────────────────────────
+            const suffixes = [];
+            if (updates.progress)
+                suffixes.push("*(✅ Progress logged to your dashboard!)*");
+            if (updates.hydration)
+                suffixes.push("*(💧 Hydration updated!)*");
+            if (updates.weight)
+                suffixes.push("*(⚖️ Body weight logged!)*");
+            if (updates.activity)
+                suffixes.push("*(🏃 Activity recorded!)*");
+            if (updates.plans)
+                suffixes.push("*(📋 New plan attached to your Daily Protocol!)*");
+            if (updates.macros)
+                suffixes.push("*(🎯 Macro goals updated!)*");
+            if (suffixes.length > 0)
+                aiContent += "\n\n" + suffixes.join(" ");
+            // ── Real-time SSE push to all browser tabs of this user ──────────────
+            if (user && Object.values(updates).some(Boolean)) {
+                broadcastToUser(user.id, "dashboard-update", updates);
             }
             res.json({ text: aiContent, updates });
         }

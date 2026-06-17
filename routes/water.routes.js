@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { addWaterHandler, updateWaterHandler, deleteWaterHandler, getTodayWaterHandler, getWaterHistoryHandler, setWaterGoalHandler } from "../controllers/water.controller.js";
+const router = Router();
+router.post("/add", addWaterHandler);
+router.post("/update", updateWaterHandler);
+router.delete("/delete/:id", deleteWaterHandler);
+router.get("/today", getTodayWaterHandler);
+router.get("/history", getWaterHistoryHandler);
+router.post("/goal", setWaterGoalHandler);
+export default router;
