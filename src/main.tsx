@@ -46,9 +46,3 @@ createRoot(rootElement).render(
     <Root />
   </StrictMode>,
 );
-
-// Remove the native HTML splash screen once React has mounted
-const loader = document.getElementById('app-loader');
-if (loader) {
-  loader.remove();
-}
