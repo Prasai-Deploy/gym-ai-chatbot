@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function Login() {
   const [showQR, setShowQR] = useState(false);
@@ -17,8 +18,17 @@ export function Login() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleLogin = () => {
-    window.location.href = '/auth/google';
+  const handleLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        // Tell Supabase to send them to the dashboard after logging in
+        redirectTo: 'https://sweat.prasai.cloud/dashboard' 
+      }
+    });
+    if (error) {
+      console.error('Error logging in:', error.message);
+    }
   };
 
   const handleDemoLogin = async () => {
