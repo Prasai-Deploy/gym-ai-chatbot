@@ -28,18 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const rehydrate = useCallback(async () => {
     try {
-      // credentials: 'include' ensures the session cookie is sent cross-origin
-      const res = await fetch('/auth/me', {
+      const res = await fetch('/api/auth/me', {
         credentials: 'include',
         headers: { 'Cache-Control': 'no-cache' },
       });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.id) {
-          setUser(data);
-        } else {
-          setUser(null);
-        }
+        setUser(data && data.id ? data : null);
       } else {
         setUser(null);
       }
