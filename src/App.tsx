@@ -620,8 +620,14 @@ export default function App() {
         fetch('/api/progress/chart-data'),
         fetch('/api/progress/summary')
       ]);
-      if (chartRes.ok) setWeeklyChartData(await chartRes.json());
-      if (summaryRes.ok) setWeeklySummary(await summaryRes.json());
+      if (chartRes.ok) {
+        const data = await chartRes.json();
+        setWeeklyChartData(Array.isArray(data) ? data : []);
+      }
+      if (summaryRes.ok) {
+        const data = await summaryRes.json();
+        setWeeklySummary(data || {});
+      }
     } catch (e) {
       console.error(e);
     }
@@ -653,7 +659,7 @@ export default function App() {
       const res = await fetch('/api/activity/recent?limit=10');
       if (res.ok) {
         const data = await res.json();
-        setActivities(data);
+        setActivities(Array.isArray(data) ? data : []);
       }
     } catch (e) {
       console.error(e);
@@ -761,7 +767,7 @@ export default function App() {
       const historyRes = await fetch('/api/dashboard/history');
       if (historyRes.ok) {
         const history = await historyRes.json();
-        setPlanHistory(history);
+        setPlanHistory(Array.isArray(history) ? history : []);
       }
     } catch (e) {
       console.error(e);
@@ -1043,7 +1049,20 @@ export default function App() {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: '#09090b',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{
+          width: 40, height: 40, border: '3px solid #27272a',
+          borderTopColor: '#10b981', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+      </div>
+    );
+  }
 
   const today1 = format(new Date(), 'MMM dd');
   const today2 = new Date().toISOString().split('T')[0];

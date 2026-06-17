@@ -5,6 +5,7 @@ import { Login } from './components/Login.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { AuthCallback } from './pages/AuthCallback.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
 // Lazy load the main App (Dashboard)
@@ -18,22 +19,24 @@ const FullScreenSpinner = () => (
 
 function Root() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Suspense fallback={<FullScreenSpinner />}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <App />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Suspense fallback={<FullScreenSpinner />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <App />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
