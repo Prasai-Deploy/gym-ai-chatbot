@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function Login() {
   const [showQR, setShowQR] = useState(false);
@@ -19,9 +20,15 @@ export function Login() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Google login goes through the backend Passport OAuth flow
-  const handleLogin = () => {
-    window.location.href = '/auth/google';
+  // Google login via Supabase client-side OAuth
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://sweat.prasai.cloud/auth/callback',
+      },
+    });
+    if (error) console.error('[Login] Supabase OAuth Error:', error);
   };
 
   const handleDemoLogin = async () => {

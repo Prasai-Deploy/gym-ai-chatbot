@@ -5,6 +5,7 @@ import App from './App.tsx';
 import { Login } from './components/Login.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
+import { AuthCallback } from './pages/AuthCallback.tsx';
 import './index.css';
 
 // PWA / service worker intentionally disabled.
@@ -16,6 +17,7 @@ function Root() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <App />

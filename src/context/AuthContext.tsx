@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface User {
   id: number;
@@ -26,21 +27,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper to map Supabase User to our app's User interface
+  const mapSupabaseUser = (sbUser: any): User | null => {
+    if (!sbUser) return null;
+    return {
+      id: sbUser.id as any, // ID will be string from Supabase, but our interface expects number. Hacky cast for now.
+      email: sbUser.email || '',
+      name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
+      avatar: sbUser.user_metadata?.avatar_url || '',
+    };
+  };
+
   const rehydrate = useCallback(async (): Promise<User | null> => {
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/me', {
-        credentials: 'include',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      console.log('[AuthContext] /api/auth/me status:', res.status);
-      const data = await res.json();
-      console.log('[AuthContext] /api/auth/me response:', data);
-      const resolvedUser = data && data.id ? data : null;
-      setUser(resolvedUser);
-      return resolvedUser;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // If no Supabase session, fallback to checking demo login session via backend
+      if (!session) {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = await res.json();
+        if (data && data.id) {
+          setUser(data);
+          return data;
+        }
+        setUser(null);
+        return null;
+      }
+
+      const mappedUser = mapSupabaseUser(session.user);
+      setUser(mappedUser);
+      return mappedUser;
     } catch (error) {
-      console.error('[AuthContext] Failed to rehydrate user session:', error);
+      console.error('[AuthContext] Failed to load session:', error);
       setUser(null);
       return null;
     } finally {
@@ -50,11 +69,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     rehydrate();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser(mapSupabaseUser(session.user));
+      } else {
+        // Only clear user if it's not a demo login (demo has id=999)
+        setUser((prev) => (prev?.id === 999 ? prev : null));
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [rehydrate]);
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    window.location.href = '/auth/logout';
+    window.location.href = '/api/logout'; // Clear backend session too for demo users
   };
 
   return (

@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
 
-  console.log('[ProtectedRoute] loading:', loading, '| user:', user ? `id=${user.id}` : 'null');
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  if (loading) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (session === undefined) {
     return (
       <div className="h-screen flex items-center justify-center font-bold">
         Loading...
@@ -15,8 +26,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    console.warn('[ProtectedRoute] No user after loading — redirecting to /login');
+  // If no Supabase session, redirect to login
+  if (!session) {
     return <Navigate to="/login" replace />;
   }
 
