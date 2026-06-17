@@ -191,8 +191,8 @@ async function startServer() {
             res.status(500).json({ error: err.message });
         }
     });
-    // Google OAuth callback
-    app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/" }), async (req, res) => {
+    // Google OAuth callback — redirect to dashboard after login
+    app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), async (req, res) => {
         const state = req.query.state;
         const user = req.user;
         const renderResponse = () => {
@@ -200,7 +200,6 @@ async function startServer() {
                 try {
                     supabase.from("users").update({ chat_id: state }).eq("id", user.id)
                         .then(({ error }) => { if (error) console.error("Failed to link chat_id:", error); });
-                    console.log(`[BOT TICK] Triggering success message for Chat ID: ${state} - User: ${user.name}`);
                     authEvents.emit(`auth_success_${state}`, user);
                 }
                 catch (e) {
@@ -222,21 +221,8 @@ async function startServer() {
           `);
             }
             else {
-                res.send(`
-            <html>
-              <body>
-                <script>
-                  if (window.opener) {
-                    window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                    window.close();
-                  } else {
-                    window.location.href = '/';
-                  }
-                </script>
-                <p>Authentication successful. This window should close automatically.</p>
-              </body>
-            </html>
-          `);
+                // Regular browser login — redirect to dashboard
+                res.redirect("https://sweat.prasai.cloud/dashboard");
             }
         };
         if (req.session) {
@@ -249,12 +235,15 @@ async function startServer() {
             renderResponse();
         }
     });
-    app.get("/api/me", (req, res) => {
+    // Session check endpoints — both paths supported
+    const authMeHandler = (req, res) => {
         const user = req.user;
-        console.log("Checking /api/me, user found:", !!user);
+        console.log("[/api/auth/me] user found:", user ? `id=${user.id} email=${user.email}` : 'none');
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.json(user || null);
-    });
+    };
+    app.get("/api/me", authMeHandler);
+    app.get("/api/auth/me", authMeHandler);
     // Long-polling endpoint for Telegram bot auth flow
     app.get("/api/auth/status/:chat_id", (req, res) => {
         const chatId = req.params.chat_id;

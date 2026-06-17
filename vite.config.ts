@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       // VitePWA disabled — no service worker generated
     ],
+    base: '/',
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
