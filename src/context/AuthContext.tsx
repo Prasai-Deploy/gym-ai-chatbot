@@ -58,13 +58,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'INITIAL_SESSION') {
         // This fires on every page load. If there's a session, fetch the user.
         if (session) {
-          fetchBackendUser();
+          fetchBackendUser().then(() => {
+            // If we have an access_token in the URL hash (OAuth redirect callback),
+            // navigate to the dashboard once the user is loaded.
+            if (window.location.hash.includes('access_token')) {
+              window.location.replace('/dashboard');
+            }
+          });
         } else {
           // No session — stop loading and show login
           setUser(null);
           setLoading(false);
         }
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      } else if (event === 'SIGNED_IN') {
+        fetchBackendUser().then(() => {
+          // After sign-in, always navigate to dashboard
+          if (window.location.pathname !== '/dashboard') {
+            window.location.replace('/dashboard');
+          }
+        });
+      } else if (event === 'TOKEN_REFRESHED') {
         fetchBackendUser();
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
