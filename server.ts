@@ -132,6 +132,42 @@ async function startServer() {
   app.use(passport.session());
 
   // ───────────────────────────────────────────────────────────────────────────
+  // Supabase Bearer Token Middleware
+  // ───────────────────────────────────────────────────────────────────────────
+  app.use(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
+        if (sbUser && sbUser.email) {
+          let { data: dbUser } = await supabase.from('users').select('*').eq('email', sbUser.email).maybeSingle();
+          if (!dbUser) {
+            const now = new Date().toISOString();
+            const { data: newUser } = await supabase.from('users').insert({
+              email: sbUser.email,
+              name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+              avatar: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || null,
+              created_at: now,
+              last_login: now,
+            }).select().maybeSingle();
+            dbUser = newUser;
+          } else {
+            const now = new Date().toISOString();
+            await supabase.from('users').update({ last_login: now }).eq('id', dbUser.id);
+          }
+          if (dbUser) {
+             (req as any).user = dbUser;
+          }
+        }
+      } catch (err) {
+        console.error("Supabase JWT validation failed:", err);
+      }
+    }
+    next();
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
   // Passport – serialize / deserialize
   // ───────────────────────────────────────────────────────────────────────────
   passport.serializeUser((user: any, done) => {

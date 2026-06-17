@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface User {
   id: number;
@@ -26,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchBackendUser = async () => {
       try {
         const res = await fetch('/auth/me');
         if (res.ok) {
@@ -43,10 +44,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    fetchUser();
+    // Initial check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetchBackendUser();
+    });
+
+    // Listen for auth changes (like signing in via OAuth)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchBackendUser();
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     window.location.href = '/auth/logout';
   };
 
