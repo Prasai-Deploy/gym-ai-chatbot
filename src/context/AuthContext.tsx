@@ -47,10 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!session) {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         const data = await res.json();
+        
+        // RACE CONDITION FIX: While fetch was running, Supabase might have finished parsing the OAuth hash 
+        // and fired SIGNED_IN via onAuthStateChange. Let's double check the latest session.
+        const { data: { session: latestSession } } = await supabase.auth.getSession();
+        if (latestSession) {
+          const mappedUser = mapSupabaseUser(latestSession.user);
+          setUser(mappedUser);
+          return mappedUser;
+        }
+
         if (data && data.id) {
           setUser(data);
           return data;
         }
+        
         setUser(null);
         return null;
       }
