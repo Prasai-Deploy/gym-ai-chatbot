@@ -427,23 +427,10 @@ export default function App() {
 
   // ── SSE: real-time push from server after every chat-triggered DB write ──────
   useEffect(() => {
-    const checkAndBlock = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('role')
-        .eq('email', session.user.email)
-        .single();
-
-      if (adminData) {
-        // Admin should never see chatbot — hard redirect
-        window.location.replace('/admin');
-      }
-    };
-    checkAndBlock();
-
+    if (user && (user as any).is_admin) {
+      window.location.replace('/admin');
+      return;
+    }
     if (!user) return;
 
     const es = new EventSource('/api/stream');

@@ -51,90 +51,20 @@ export function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // PRIORITY 1: Stats row
-      const { count: totalMembers } = await supabase.from('users').select('*', { count: 'exact', head: true });
-      const { count: activeCount } = await supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active');
+      const res = await fetch('/api/admin/dashboard-data');
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      const data = await res.json();
       
-      const today = new Date().toISOString().split('T')[0];
-      const in7 = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+      setStats(data.stats);
+      setRenewals(data.renewals);
       
-      const { count: expiringCount } = await supabase.from('memberships').select('*', { count: 'exact', head: true })
-        .gte('expiry_date', today).lte('expiry_date', in7).neq('status', 'expired');
-
-      const { count: ptCount } = await supabase.from('memberships')
-        .select('*, membership_plans!inner(name)', { count: 'exact', head: true })
-        .ilike('membership_plans.name', '%personal%');
-
-      setStats({ totalMembers: totalMembers || 0, activeCount: activeCount || 0, expiringCount: expiringCount || 0, ptCount: ptCount || 0 });
-
-      // PRIORITY 2: Renewal Alerts
-      const { data: renewalsData } = await supabase
-        .from('memberships')
-        .select(`
-          id,
-          admission_date,
-          expiry_date,
-          status,
-          users (id, name, email),
-          membership_plans (name)
-        `)
-        .or(`expiry_date.lte.${in7},status.eq.expired`)
-        .order('expiry_date', { ascending: true });
-      
-      setRenewals(renewalsData || []);
-
-      // PRIORITY 3: Plan Assignments
-      const { data: workoutAssignments } = await supabase
-        .from('user_workout_assignments')
-        .select(`
-          id,
-          assigned_at,
-          active,
-          users (id, name),
-          template_workout_plans (name, tier),
-          assigned_by_user:admins!user_workout_assignments_assigned_by_fkey (name)
-        `)
-        .eq('active', true)
-        .order('assigned_at', { ascending: false })
-        .limit(5);
-
-      const { data: dietAssignments } = await supabase
-        .from('user_diet_assignments')
-        .select(`
-          id,
-          assigned_at,
-          active,
-          users (id, name),
-          template_diet_plans (name, tier),
-          assigned_by_user:admins!user_diet_assignments_assigned_by_fkey (name)
-        `)
-        .eq('active', true)
-        .order('assigned_at', { ascending: false })
-        .limit(5);
-
       const combinedAssignments = [
-        ...(workoutAssignments || []).map(a => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
-        ...(dietAssignments || []).map(a => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
+        ...(data.workoutAssignments || []).map((a: any) => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
+        ...(data.dietAssignments || []).map((a: any) => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
       ].sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime()).slice(0, 10);
-      
       setAssignments(combinedAssignments);
-
-      // PRIORITY 4: Members Table
-      const { data: membersData } = await supabase
-        .from('memberships')
-        .select(`
-          id,
-          admission_date,
-          expiry_date,
-          status,
-          users (id, name, email),
-          membership_plans (id, name),
-          user_workout_assignments (id, active),
-          user_diet_assignments (id, active)
-        `)
-        .order('admission_date', { ascending: false });
       
-      setMembers(membersData || []);
+      setMembers(data.members);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -163,43 +93,35 @@ export function AdminDashboard() {
   const openAssignModal = async () => {
     setAssignModal({ isOpen: true });
     // Step 1: Select member
-    const { data: usersData } = await supabase.from('users').select('id, name, email');
-    setUsersList(usersData || []);
+    const memRes = await fetch('/api/admin/members');
+    if (memRes.ok) {
+       const mems = await memRes.json();
+       setUsersList(mems || []);
+    }
     
     // Step 3: Fetch templates
-    const { data: wPlans } = await supabase.from('template_workout_plans').select('id, name, tier');
-    const { data: dPlans } = await supabase.from('template_diet_plans').select('id, name, tier');
-    setTemplates({ workoutPlans: wPlans || [], dietPlans: dPlans || [] });
+    const plansRes = await fetch('/api/admin/plans');
+    if (plansRes.ok) {
+       const pd = await plansRes.json();
+       setTemplates({ workoutPlans: pd.workoutPlans || [], dietPlans: pd.dietPlans || [] });
+    }
   };
 
   const handleAssignPlan = async () => {
     if (!selectedMemberId || !selectedPlanId) return;
     try {
-      const currentAdminId = user?.id; // Assuming user.id exists, otherwise we fetch from admins table
-      
-      let adminIdToUse = currentAdminId;
-      if (!adminIdToUse) {
-         // fallback
-         const { data: ad } = await supabase.from('admins').select('id').eq('email', user?.email).maybeSingle();
-         adminIdToUse = ad?.id;
-      }
-
-      if (selectedPlanType === 'workout') {
-        await supabase.from('user_workout_assignments').insert({
-          user_id: selectedMemberId,
-          plan_id: selectedPlanId, // user wrote workout_plan_id, but schema has plan_id
-          assigned_by: adminIdToUse,
-          assigned_at: new Date().toISOString(),
-          active: true
-        });
-      } else {
-        await supabase.from('user_diet_assignments').insert({
-          user_id: selectedMemberId,
-          plan_id: selectedPlanId, // user wrote diet_plan_id, but schema has plan_id
-          assigned_by: adminIdToUse,
-          assigned_at: new Date().toISOString(),
-          active: true
-        });
+      const res = await fetch('/api/admin/assign-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedMemberId,
+          planId: selectedPlanId,
+          planType: selectedPlanType
+        })
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Assignment failed');
       }
       setAssignModal({ isOpen: false });
       setSelectedMemberId('');

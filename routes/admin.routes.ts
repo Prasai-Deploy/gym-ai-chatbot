@@ -223,4 +223,95 @@ router.post('/assign-plan', async (req, res) => {
   }
 });
 
+// GET /api/admin/dashboard-data
+router.get('/dashboard-data', async (req, res) => {
+  try {
+    // Priority 1: Stats
+    const { count: totalMembers } = await supabaseAdmin.from('users').select('*', { count: 'exact', head: true });
+    const { count: activeCount } = await supabaseAdmin.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active');
+    
+    const today = new Date().toISOString().split('T')[0];
+    const in7 = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+    
+    const { count: expiringCount } = await supabaseAdmin.from('memberships')
+      .select('*', { count: 'exact', head: true })
+      .gte('expiry_date', today)
+      .lte('expiry_date', in7)
+      .neq('status', 'expired');
+
+    const { count: ptCount } = await supabaseAdmin.from('memberships')
+      .select('*, membership_plans!inner(name)', { count: 'exact', head: true })
+      .ilike('membership_plans.name', '%personal%');
+
+    // Priority 2: Renewals
+    const { data: renewals } = await supabaseAdmin.from('memberships')
+      .select(`
+        id,
+        admission_date,
+        expiry_date,
+        status,
+        users (id, name, email),
+        membership_plans (name)
+      `)
+      .or(`expiry_date.lte.${in7},status.eq.expired`)
+      .order('expiry_date', { ascending: true });
+
+    // Priority 3: Assignments
+    const { data: workoutAssignments } = await supabaseAdmin.from('user_workout_assignments')
+      .select(`
+        id,
+        assigned_at,
+        active,
+        users (id, name),
+        template_workout_plans (name, tier),
+        assigned_by_user:admins!user_workout_assignments_assigned_by_fkey (name)
+      `)
+      .eq('active', true)
+      .order('assigned_at', { ascending: false })
+      .limit(5);
+
+    const { data: dietAssignments } = await supabaseAdmin.from('user_diet_assignments')
+      .select(`
+        id,
+        assigned_at,
+        active,
+        users (id, name),
+        template_diet_plans (name, tier),
+        assigned_by_user:admins!user_diet_assignments_assigned_by_fkey (name)
+      `)
+      .eq('active', true)
+      .order('assigned_at', { ascending: false })
+      .limit(5);
+
+    // Priority 4: Members Table
+    const { data: members } = await supabaseAdmin.from('memberships')
+      .select(`
+        id,
+        admission_date,
+        expiry_date,
+        status,
+        users (id, name, email),
+        membership_plans (id, name),
+        user_workout_assignments (id, active),
+        user_diet_assignments (id, active)
+      `)
+      .order('admission_date', { ascending: false });
+
+    res.json({
+      stats: {
+        totalMembers: totalMembers || 0,
+        activeCount: activeCount || 0,
+        expiringCount: expiringCount || 0,
+        ptCount: ptCount || 0
+      },
+      renewals: renewals || [],
+      workoutAssignments: workoutAssignments || [],
+      dietAssignments: dietAssignments || [],
+      members: members || []
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
