@@ -276,3 +276,86 @@ CREATE OR REPLACE TRIGGER trg_fitness_profiles_updated_at
 CREATE OR REPLACE TRIGGER trg_user_stats_updated_at
   BEFORE UPDATE ON user_stats
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Gym Management System Tables
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS admins (
+  id               SERIAL         PRIMARY KEY,
+  email            VARCHAR(255)   UNIQUE NOT NULL,
+  name             VARCHAR(255),
+  role             VARCHAR(50)    NOT NULL CHECK (role IN ('super_admin', 'admin', 'trainer')),
+  added_at         TIMESTAMPTZ    DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS membership_plans (
+  id               SERIAL         PRIMARY KEY,
+  name             VARCHAR(255)   NOT NULL,
+  price            NUMERIC(10,2)  DEFAULT 0,
+  duration_days    INT            NOT NULL,
+  features         JSONB          DEFAULT '[]',
+  created_at       TIMESTAMPTZ    DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS memberships (
+  id               SERIAL         PRIMARY KEY,
+  user_id          INT            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id          INT            NOT NULL REFERENCES membership_plans(id) ON DELETE CASCADE,
+  admission_date   DATE           NOT NULL,
+  expiry_date      DATE           NOT NULL,
+  status           VARCHAR(50)    NOT NULL CHECK (status IN ('active', 'expired', 'due_soon')),
+  assigned_by      INT            DEFAULT NULL REFERENCES admins(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ    DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ    DEFAULT NOW()
+);
+
+CREATE OR REPLACE TRIGGER trg_memberships_updated_at
+  BEFORE UPDATE ON memberships
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TABLE IF NOT EXISTS template_workout_plans (
+  id               SERIAL         PRIMARY KEY,
+  name             VARCHAR(255)   NOT NULL,
+  description      TEXT           DEFAULT NULL,
+  created_by       INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  tier             VARCHAR(50)    NOT NULL CHECK (tier IN ('premium', 'pt_only')),
+  created_at       TIMESTAMPTZ    DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS template_diet_plans (
+  id               SERIAL         PRIMARY KEY,
+  name             VARCHAR(255)   NOT NULL,
+  description      TEXT           DEFAULT NULL,
+  created_by       INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  tier             VARCHAR(50)    NOT NULL CHECK (tier IN ('premium', 'pt_only')),
+  created_at       TIMESTAMPTZ    DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_workout_assignments (
+  id               SERIAL         PRIMARY KEY,
+  user_id          INT            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id          INT            NOT NULL REFERENCES template_workout_plans(id) ON DELETE CASCADE,
+  assigned_by      INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  assigned_at      TIMESTAMPTZ    DEFAULT NOW(),
+  active           BOOLEAN        DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS user_diet_assignments (
+  id               SERIAL         PRIMARY KEY,
+  user_id          INT            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id          INT            NOT NULL REFERENCES template_diet_plans(id) ON DELETE CASCADE,
+  assigned_by      INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  assigned_at      TIMESTAMPTZ    DEFAULT NOW(),
+  active           BOOLEAN        DEFAULT TRUE
+);
+
+-- Note: A trainer-client relationship for PT can be inferred from who assigned the membership/plans
+-- Or explicitly with a user_trainer_assignments table. Let's add an explicit one for clarity.
+CREATE TABLE IF NOT EXISTS pt_assignments (
+  id               SERIAL         PRIMARY KEY,
+  client_id        INT            UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  trainer_id       INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  assigned_by      INT            NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  assigned_at      TIMESTAMPTZ    DEFAULT NOW()
+);

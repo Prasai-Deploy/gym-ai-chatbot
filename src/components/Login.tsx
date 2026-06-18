@@ -9,7 +9,6 @@ import { supabase } from '../lib/supabase';
 export function Login() {
   const [showQR, setShowQR] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(false);
   const { user, loading, setUser, rehydrate } = useAuth();
   const navigate = useNavigate();
 
@@ -60,38 +59,6 @@ export function Login() {
     }
   };
 
-  const handleAdminLogin = async () => {
-    setAdminLoading(true);
-    try {
-      const res = await fetch('/api/auth/admin', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      console.log('[Login] /api/auth/admin status:', res.status);
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Admin login failed with status ${res.status}`);
-      }
-
-      const userData = await res.json();
-      console.log('[Login] /api/auth/admin response:', userData);
-      setUser(userData);
-
-      const restoredUser = await rehydrate();
-      if (!restoredUser) {
-        throw new Error('Session was not restored after admin login.');
-      }
-
-      navigate('/admin', { replace: true });
-    } catch (error: any) {
-      console.error('[Login] Admin login error:', error);
-      alert(error.message || 'Admin login failed. Please try again.');
-    } finally {
-      setAdminLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'var(--surface-primary)' }}>
       <motion.div
@@ -119,17 +86,10 @@ export function Login() {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleDemoLogin}
-              disabled={demoLoading || adminLoading}
+              disabled={demoLoading}
               className="w-full btn-primary py-3 rounded-xl font-semibold disabled:opacity-60"
             >
               {demoLoading ? 'Loading...' : 'Explore as Demo User'}
-            </button>
-            <button
-              onClick={handleAdminLogin}
-              disabled={demoLoading || adminLoading}
-              className="w-full bg-zinc-800 text-white hover:bg-zinc-700 py-3 rounded-xl font-semibold transition-colors disabled:opacity-60"
-            >
-              {adminLoading ? 'Loading...' : 'Admin Access'}
             </button>
           </div>
         </div>

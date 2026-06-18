@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import cron from "node-cron";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -310,7 +311,7 @@ async function startServer() {
     app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), async (req, res) => {
         const state = req.query.state;
         const user = req.user;
-        const renderResponse = () => {
+        const renderResponse = async () => {
             if (state && user) {
                 try {
                     supabase.from('users').update({ chat_id: state }).eq('id', user.id)
@@ -336,11 +337,25 @@ async function startServer() {
             </html>
           `);
             }
-            else {
-                const redirectUrl = process.env.NODE_ENV === "production"
-                  ? "https://sweat.prasai.cloud/dashboard"
-                  : (process.env.FRONTEND_URL || "http://localhost:5173") + "/dashboard";
+            else if (user) {
+                let isAdmin = false;
+                try {
+                    const { data: adminRecord } = await supabaseAdmin.from('admins').select('*').eq('email', user.email).maybeSingle();
+                    if (adminRecord) {
+                        isAdmin = true;
+                    }
+                }
+                catch (e) {
+                    console.error("Admin check failed", e);
+                }
+                const baseRedirect = process.env.NODE_ENV === "production"
+                    ? "https://sweat.prasai.cloud"
+                    : (process.env.FRONTEND_URL || "http://localhost:5173");
+                const redirectUrl = isAdmin ? `${baseRedirect}/admin/dashboard` : `${baseRedirect}/dashboard`;
                 res.redirect(redirectUrl);
+            }
+            else {
+                res.redirect("/login");
             }
         };
         // Explicitly save the session before responding to avoid race conditions
@@ -894,6 +909,43 @@ ${userContextStr}`;
             res.sendFile(path.join(__dirname, "dist", "index.html"));
         });
     }
+
+    // ───────────────────────────────────────────────────────────────────────────
+    // Daily Cron Job for Memberships
+    // ───────────────────────────────────────────────────────────────────────────
+    cron.schedule('0 0 * * *', async () => {
+        console.log('Running daily membership status update...');
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            // Mark as expired where expiry_date < today and status != expired
+            const { data: expired } = await supabaseAdmin
+                .from('memberships')
+                .update({ status: 'expired' })
+                .lt('expiry_date', today)
+                .neq('status', 'expired')
+                .select('user_id');
+            if (expired && expired.length > 0) {
+                console.log(`Marked ${expired.length} memberships as expired.`);
+                for (const m of expired) {
+                    await supabaseAdmin.from('user_workout_assignments').update({ active: false }).eq('user_id', m.user_id);
+                    await supabaseAdmin.from('user_diet_assignments').update({ active: false }).eq('user_id', m.user_id);
+                }
+            }
+            // Mark as due_soon where expiry_date <= in7Days and status == 'active'
+            await supabaseAdmin
+                .from('memberships')
+                .update({ status: 'due_soon' })
+                .lte('expiry_date', in7Days)
+                .eq('status', 'active');
+            console.log('Membership statuses updated successfully.');
+        }
+        catch (err) {
+            console.error('Failed to run daily membership cron:', err);
+        }
+    });
+
     app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on http://localhost:${PORT}`);
     });
