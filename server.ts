@@ -412,7 +412,7 @@ async function startServer() {
           const baseRedirect = process.env.NODE_ENV === "production"
             ? "https://sweat.prasai.cloud"
             : (process.env.FRONTEND_URL || "http://localhost:5173");
-          const redirectUrl = isAdmin ? `${baseRedirect}/admin/dashboard` : `${baseRedirect}/dashboard`;
+          const redirectUrl = isAdmin ? `${baseRedirect}/admin` : `${baseRedirect}/dashboard`;
           res.redirect(redirectUrl);
         } else {
           res.redirect("/login");

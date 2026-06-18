@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (adminData) {
-          window.location.replace('/admin/dashboard');  // admin -> dashboard only
+          window.location.replace('/admin');  // admin -> dashboard only
         } else {
           setUser(mapSupabaseUser(session.user));
           if (window.location.pathname.startsWith('/admin')) {

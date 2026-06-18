@@ -277,7 +277,7 @@ export function AdminDashboard() {
         <div className="py-4">
           
           <div className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Overview</div>
-          <Link to="/admin/dashboard" className="flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold">
+          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold">
             <LayoutDashboard size={16} />
             Dashboard
           </Link>

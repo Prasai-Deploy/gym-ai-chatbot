@@ -439,7 +439,7 @@ export default function App() {
 
       if (adminData) {
         // Admin should never see chatbot — hard redirect
-        window.location.replace('/admin/dashboard');
+        window.location.replace('/admin');
       }
     };
     checkAndBlock();
