@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Users, Bell, BadgeCheck as IdBadge, Dumbbell as Barbell, 
@@ -28,6 +28,15 @@ export function AdminDashboard() {
   const [selectedPlanType, setSelectedPlanType] = useState<'workout' | 'diet'>('workout');
   
   const [loading, setLoading] = useState(true);
+
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const getSidebarLinkClass = (path: string) => {
+    return currentPath === path 
+      ? "flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold justify-between"
+      : "flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 border-l-[3px] border-transparent justify-between";
+  };
 
   // Auth protection from prompt
   useEffect(() => {
@@ -199,15 +208,14 @@ export function AdminDashboard() {
         <div className="py-4">
           
           <div className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Overview</div>
-          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold">
-            <LayoutDashboard size={16} />
-            Dashboard
+          <Link to="/admin" className={getSidebarLinkClass('/admin')}>
+            <div className="flex items-center gap-2"><LayoutDashboard size={16} /> Dashboard</div>
           </Link>
-          <Link to="/admin/members" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 justify-between">
+          <Link to="/admin/members" className={getSidebarLinkClass('/admin/members')}>
             <div className="flex items-center gap-2"><Users size={16} /> All members</div>
             <span className="bg-gray-100 text-gray-500 text-[10px] px-1.5 rounded-full font-bold">{stats.totalMembers}</span>
           </Link>
-          <Link to="/admin/renewals" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 justify-between">
+          <Link to="/admin/renewals" className={getSidebarLinkClass('/admin/renewals')}>
             <div className="flex items-center gap-2"><Bell size={16} /> Renewals</div>
             {(dueSoonCount > 0 || expiredCount > 0) && (
               <span className="bg-[#FAEEDA] text-[#633806] text-[10px] px-1.5 rounded-full font-bold">{dueSoonCount + expiredCount}</span>
@@ -215,18 +223,18 @@ export function AdminDashboard() {
           </Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Plans</div>
-          <Link to="/admin/memberships" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><IdBadge size={16} /> Memberships</Link>
-          <Link to="/admin/workout-plans" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Barbell size={16} /> Workout plans</Link>
-          <Link to="/admin/diet-plans" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Apple size={16} /> Diet plans</Link>
-          <Link to="/admin/pt" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><UserCheck size={16} /> Personal training</Link>
+          <Link to="/admin/memberships" className={getSidebarLinkClass('/admin/memberships')}><div className="flex items-center gap-2"><IdBadge size={16} /> Memberships</div></Link>
+          <Link to="/admin/workout-plans" className={getSidebarLinkClass('/admin/workout-plans')}><div className="flex items-center gap-2"><Barbell size={16} /> Workout plans</div></Link>
+          <Link to="/admin/diet-plans" className={getSidebarLinkClass('/admin/diet-plans')}><div className="flex items-center gap-2"><Apple size={16} /> Diet plans</div></Link>
+          <Link to="/admin/pt" className={getSidebarLinkClass('/admin/pt')}><div className="flex items-center gap-2"><UserCheck size={16} /> Personal training</div></Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Staff</div>
-          <Link to="/admin/trainers" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Users size={16} /> Trainers</Link>
-          <Link to="/admin/reports" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><BarChart size={16} /> Reports</Link>
+          <Link to="/admin/trainers" className={getSidebarLinkClass('/admin/trainers')}><div className="flex items-center gap-2"><Users size={16} /> Trainers</div></Link>
+          <Link to="/admin/reports" className={getSidebarLinkClass('/admin/reports')}><div className="flex items-center gap-2"><BarChart size={16} /> Reports</div></Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">System</div>
-          <Link to="/admin/access" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><ShieldLock size={16} /> Admin access</Link>
-          <Link to="/admin/settings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Settings size={16} /> Settings</Link>
+          <Link to="/admin/access" className={getSidebarLinkClass('/admin/access')}><div className="flex items-center gap-2"><ShieldLock size={16} /> Admin access</div></Link>
+          <Link to="/admin/settings" className={getSidebarLinkClass('/admin/settings')}><div className="flex items-center gap-2"><Settings size={16} /> Settings</div></Link>
 
         </div>
 
@@ -245,6 +253,7 @@ export function AdminDashboard() {
       <main className="ml-[190px] mt-14 w-[calc(100%-190px)] h-[calc(100vh-56px)] overflow-y-auto p-6 bg-gray-50 space-y-6">
         
         {/* SECTION 1: Stats row */}
+        {currentPath === '/admin' && (
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total members</div>
@@ -267,9 +276,11 @@ export function AdminDashboard() {
             <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Premium tier</div>
           </div>
         </div>
+        )}
 
         {/* SECTION 2: Renewals & Assignments */}
-        <div className="grid grid-cols-2 gap-4">
+        {(currentPath === '/admin' || currentPath === '/admin/renewals') && (
+        <div className={`grid ${currentPath === '/admin/renewals' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
           {/* Left Card: Renewals */}
           <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-sm flex flex-col">
             <div className="p-4 border-b-[0.5px] border-gray-200 flex justify-between items-center">
@@ -319,6 +330,7 @@ export function AdminDashboard() {
           </div>
 
           {/* Right Card: Assignments */}
+          {currentPath === '/admin' && (
           <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-sm flex flex-col">
             <div className="p-4 border-b-[0.5px] border-gray-200 flex justify-between items-center">
               <div className="flex items-center gap-2 font-bold text-sm text-gray-900">
@@ -357,9 +369,12 @@ export function AdminDashboard() {
               ))}
             </div>
           </div>
+          )}
         </div>
+        )}
 
         {/* SECTION 3: Member Tracker Table */}
+        {(currentPath === '/admin' || currentPath === '/admin/members') && (
         <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="p-4 border-b-[0.5px] border-gray-200 flex justify-between items-center bg-gray-50/50">
             <div className="flex items-center gap-2 font-bold text-sm text-gray-900">
@@ -493,6 +508,16 @@ export function AdminDashboard() {
             </table>
           </div>
         </div>
+        )}
+
+        {/* PLACEHOLDER FOR OTHER ROUTES */}
+        {!['/admin', '/admin/members', '/admin/renewals'].includes(currentPath) && (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 pt-20">
+            <Settings size={48} className="mb-4 text-gray-300 opacity-50" />
+            <div className="text-lg font-bold text-gray-700">Under Construction</div>
+            <div className="text-xs mt-1">This section is currently being built.</div>
+          </div>
+        )}
       </main>
 
       {/* ASSIGN MODAL */}
