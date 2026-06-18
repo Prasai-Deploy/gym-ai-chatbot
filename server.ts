@@ -56,6 +56,7 @@ import { setHydrationGoal, addWaterIntake } from "./services/water.service.js";
 import activityRouter from "./routes/activity.routes.js";
 import { createActivity } from "./services/activity.service.js";
 import progressRouter from "./routes/progress.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 import { getDailyStats, buildProgressInsight } from "./services/progress.service.js";
 import { parseAndApplyAIData } from "./services/aiDataParser.service.js";
 
@@ -148,7 +149,11 @@ async function startServer() {
       try {
         const { data: { user: sbUser }, error } = await supabaseAdmin.auth.getUser(token);
         if (sbUser && sbUser.email) {
-          let { data: dbUser } = await supabase.from('users').select('*').eq('email', sbUser.email).maybeSingle();
+          const { data: allowed } = await supabaseAdmin.from('allowed_users').select('*').eq('email', sbUser.email).maybeSingle();
+          if (!allowed) {
+            return res.status(403).json({ message: "Access denied by administrator" });
+          }
+          let { data: dbUser } = await supabaseAdmin.from('users').select('*').eq('email', sbUser.email).maybeSingle();
           if (!dbUser) {
             const now = new Date().toISOString();
             const { data: newUser } = await supabase.from('users').insert({
@@ -222,6 +227,16 @@ async function startServer() {
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
+          const email = profile.emails?.[0]?.value ?? null;
+          if (email) {
+            const { data: allowed } = await supabaseAdmin.from('allowed_users').select('*').eq('email', email).maybeSingle();
+            if (!allowed) {
+               return done(null, false, { message: "Access denied by administrator" });
+            }
+          } else {
+             return done(null, false, { message: "Access denied by administrator" });
+          }
+
           const now = new Date().toISOString().slice(0, 19).replace("T", " ");
           let { data: user } = await supabase
             .from('users')
@@ -273,13 +288,18 @@ async function startServer() {
   // Demo login
   app.post("/api/auth/demo", async (req, res) => {
     try {
+      const { data: allowed } = await supabaseAdmin.from('allowed_users').select('*').eq('email', 'demo@sweatfix.com').maybeSingle();
+      if (!allowed) {
+        return res.status(403).json({ message: "Access denied by administrator" });
+      }
+
       let user;
       try {
-        const { data: existingUser } = await supabase.from('users').select('*').eq('email', 'demo@sweatfix.com').maybeSingle();
+        const { data: existingUser } = await supabaseAdmin.from('users').select('*').eq('email', 'demo@sweatfix.com').maybeSingle();
         user = existingUser;
 
         if (!user) {
-          const { data: newUser, error } = await supabase.from('users').insert({
+          const { data: newUser, error } = await supabaseAdmin.from('users').insert({
               email: "demo@sweatfix.com",
               name: "Demo User",
               avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
@@ -339,7 +359,17 @@ async function startServer() {
   // Google OAuth callback
   app.get(
     "/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/login" }),
+    (req, res, next) => {
+      passport.authenticate("google", (err: any, user: any, info: any) => {
+        if (err || !user) {
+          return res.status(403).json({ message: info?.message || "Access denied by administrator" });
+        }
+        (req as any).logIn(user, (loginErr: any) => {
+          if (loginErr) return res.status(500).json({ error: "Login failed" });
+          next();
+        });
+      })(req, res, next);
+    },
     async (req, res) => {
       const state = req.query.state as string;
       const user = (req as any).user;
@@ -599,6 +629,7 @@ async function startServer() {
   app.use("/api/water",    waterRouter);
   app.use("/api/activity", activityRouter);
   app.use("/api/progress", progressRouter);
+  app.use("/api/admin", adminRouter);
 
   // ───────────────────────────────────────────────────────────────────────────
   // SSE — Real-time push to dashboard

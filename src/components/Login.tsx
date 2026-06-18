@@ -39,7 +39,11 @@ export function Login() {
         credentials: 'include',
       });
       console.log('[Login] /api/auth/demo status:', res.status);
-      if (!res.ok) throw new Error(`Demo login failed with status ${res.status}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Demo login failed with status ${res.status}`);
+      }
 
       const userData = await res.json();
       console.log('[Login] /api/auth/demo response:', userData);
@@ -48,12 +52,14 @@ export function Login() {
       // Verify the session cookie was actually set by the server
       const restoredUser = await rehydrate();
       console.log('[Login] Session restore after demo login:', restoredUser);
-      if (!restoredUser) throw new Error('Session was not restored after demo login');
+      if (!restoredUser) {
+        throw new Error('Session was not restored after demo login. /api/auth/me returned null.');
+      }
 
       navigate('/dashboard', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Login] Demo login error:', error);
-      alert('Demo login failed. Please try again.');
+      alert(error.message || 'Demo login failed. Please try again.');
     } finally {
       setDemoLoading(false);
     }

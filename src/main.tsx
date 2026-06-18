@@ -5,6 +5,7 @@ import { Login } from './components/Login.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { AuthCallback } from './pages/AuthCallback.tsx';
+import { AdminDashboard } from './pages/AdminDashboard.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
@@ -23,6 +24,11 @@ function Root() {
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <App />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminDashboard />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

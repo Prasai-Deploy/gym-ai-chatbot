@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setUser(mapSupabaseUser(session.user));
       } else {
-        // Only clear user if it's not a demo login (demo has id=999)
-        setUser((prev) => (prev?.id === 999 ? prev : null));
+        // Only clear user if it's not a demo login
+        setUser((prev) => (prev?.email === 'demo@sweatfix.com' ? prev : null));
       }
     });
 

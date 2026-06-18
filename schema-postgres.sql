@@ -3,6 +3,20 @@
 -- Run this on your Supabase database to create all tables.
 -- ─────────────────────────────────────────────────────────────────────────────
 
+CREATE TABLE IF NOT EXISTS allowed_users (
+  id               SERIAL         PRIMARY KEY,
+  email            VARCHAR(255)   UNIQUE NOT NULL,
+  created_at       TIMESTAMPTZ    DEFAULT NOW()
+);
+
+INSERT INTO allowed_users (email)
+VALUES
+('user1@gmail.com'),
+('user2@gmail.com'),
+('user3@gmail.com'),
+('demo@sweatfix.com')
+ON CONFLICT (email) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS users (
   id               SERIAL         PRIMARY KEY,
   google_id        VARCHAR(255)   UNIQUE,
@@ -13,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
   chat_id          VARCHAR(255),
   password         VARCHAR(255),
   phone            VARCHAR(50)    UNIQUE,
+  is_admin         BOOLEAN        DEFAULT FALSE,
   water_goal       INT            DEFAULT 2000,
   calorie_goal     INT            DEFAULT 0,
   protein_goal     INT            DEFAULT 0,

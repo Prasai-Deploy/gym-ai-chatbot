@@ -1,31 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { useAuth } from '../context/AuthContext';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (session === undefined) {
-    // Render the children immediately to prevent showing a black loading screen.
-    // App.tsx handles null user gracefully with fallback UI.
-    return <>{children}</>;
+  if (loading) {
+    return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-4 border-zinc-800 border-t-emerald-500 rounded-full animate-spin"></div></div>;
   }
 
-  // If no Supabase session, redirect to login
-  if (!session) {
+  // If no user is authenticated, redirect to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

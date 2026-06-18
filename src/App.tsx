@@ -19,8 +19,10 @@ import {
   Bot,
   Mic,
   MicOff,
-  History
+  History,
+  Shield
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -1856,6 +1858,16 @@ export default function App() {
                   <span className="text-emerald-500 font-bold text-sm tracking-widest uppercase">Active</span>
                 </div>
               </div>
+
+              {(user as any)?.is_admin && (
+                <Link
+                  to="/admin"
+                  className="w-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 mb-3"
+                >
+                  <Shield size={20} />
+                  Admin Dashboard
+                </Link>
+              )}
 
               <button
                 onClick={handleLogout}
