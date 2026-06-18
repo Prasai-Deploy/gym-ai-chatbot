@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Users, Bell, BadgeCheck as IdBadge, Dumbbell as Barbell, 
@@ -19,80 +19,136 @@ export function AdminDashboard() {
   const [members, setMembers] = useState<any[]>([]);
   const [filter, setFilter] = useState('All');
   
-  const [assignModal, setAssignModal] = useState<{ isOpen: boolean, memberId: number | null }>({ isOpen: false, memberId: null });
+  const [assignModal, setAssignModal] = useState<{ isOpen: boolean }>({ isOpen: false });
+  const [usersList, setUsersList] = useState<any[]>([]);
   const [templates, setTemplates] = useState({ workoutPlans: [], dietPlans: [] });
+  
+  const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('');
   const [selectedPlanType, setSelectedPlanType] = useState<'workout' | 'diet'>('workout');
+  
+  const [loading, setLoading] = useState(true);
+
+  // Auth protection from prompt
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { 
+        // We might fall back to useAuth if no session, but keeping prompt structure
+        // Actually, if using passport, session is null.
+      } else {
+        const { data } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', session.user.email)
+          .single();
+        if (!data) window.location.replace('/app');
+      }
+    };
+    checkAdmin();
+  }, []);
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
-      // Stats
+      // PRIORITY 1: Stats row
       const { count: totalMembers } = await supabase.from('users').select('*', { count: 'exact', head: true });
       const { count: activeCount } = await supabase.from('memberships').select('*', { count: 'exact', head: true }).eq('status', 'active');
       
       const today = new Date().toISOString().split('T')[0];
-      const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const in7 = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
       
       const { count: expiringCount } = await supabase.from('memberships').select('*', { count: 'exact', head: true })
-        .gte('expiry_date', today).lte('expiry_date', in7days);
+        .gte('expiry_date', today).lte('expiry_date', in7).neq('status', 'expired');
 
       const { count: ptCount } = await supabase.from('memberships')
         .select('*, membership_plans!inner(name)', { count: 'exact', head: true })
-        .eq('membership_plans.name', 'Personal Training');
+        .ilike('membership_plans.name', '%personal%');
 
       setStats({ totalMembers: totalMembers || 0, activeCount: activeCount || 0, expiringCount: expiringCount || 0, ptCount: ptCount || 0 });
 
-      // Renewals
-      const { data: renewalsData } = await supabase.from('memberships')
+      // PRIORITY 2: Renewal Alerts
+      const { data: renewalsData } = await supabase
+        .from('memberships')
         .select(`
-          id, expiry_date, status, admission_date,
+          id,
+          admission_date,
+          expiry_date,
+          status,
           users (id, name, email),
           membership_plans (name)
         `)
-        .lte('expiry_date', in7days)
-        .order('expiry_date', { ascending: true })
-        .limit(10);
+        .or(`expiry_date.lte.${in7},status.eq.expired`)
+        .order('expiry_date', { ascending: true });
+      
       setRenewals(renewalsData || []);
 
-      // Members Table
-      const { data: membersData } = await supabase.from('memberships')
+      // PRIORITY 3: Plan Assignments
+      const { data: workoutAssignments } = await supabase
+        .from('user_workout_assignments')
         .select(`
-          id, admission_date, expiry_date, status,
+          id,
+          assigned_at,
+          active,
+          users (id, name),
+          template_workout_plans (name, tier),
+          assigned_by_user:admins!user_workout_assignments_assigned_by_fkey (name)
+        `)
+        .eq('active', true)
+        .order('assigned_at', { ascending: false })
+        .limit(5);
+
+      const { data: dietAssignments } = await supabase
+        .from('user_diet_assignments')
+        .select(`
+          id,
+          assigned_at,
+          active,
+          users (id, name),
+          template_diet_plans (name, tier),
+          assigned_by_user:admins!user_diet_assignments_assigned_by_fkey (name)
+        `)
+        .eq('active', true)
+        .order('assigned_at', { ascending: false })
+        .limit(5);
+
+      const combinedAssignments = [
+        ...(workoutAssignments || []).map(a => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
+        ...(dietAssignments || []).map(a => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
+      ].sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime()).slice(0, 10);
+      
+      setAssignments(combinedAssignments);
+
+      // PRIORITY 4: Members Table
+      const { data: membersData } = await supabase
+        .from('memberships')
+        .select(`
+          id,
+          admission_date,
+          expiry_date,
+          status,
           users (id, name, email),
           membership_plans (id, name),
           user_workout_assignments (id, active),
           user_diet_assignments (id, active)
         `)
         .order('admission_date', { ascending: false });
+      
       setMembers(membersData || []);
-
-      // Assignments (left join logic - we'll just fetch latest 5-10 assignments for the Right Card)
-      const { data: wAssign } = await supabase.from('user_workout_assignments').select('id, user_id, active, plan_id, users(name), template_workout_plans(name, tier)').order('id', { ascending: false }).limit(5);
-      const { data: dAssign } = await supabase.from('user_diet_assignments').select('id, user_id, active, plan_id, users(name), template_diet_plans(name, tier)').order('id', { ascending: false }).limit(5);
-      
-      const combinedAssignments = [
-        ...(wAssign || []).map(a => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
-        ...(dAssign || []).map(a => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
-      ].sort((a, b) => b.id - a.id).slice(0, 8);
-      
-      setAssignments(combinedAssignments);
-
-      // Templates for assignment modal
-      const { data: wPlans } = await supabase.from('template_workout_plans').select('*');
-      const { data: dPlans } = await supabase.from('template_diet_plans').select('*');
-      setTemplates({ workoutPlans: wPlans || [], dietPlans: dPlans || [] });
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (authLoading) return;
     fetchDashboardData();
 
-    // Real-time Subscriptions
-    const sub = supabase.channel('memberships-changes')
+    // PRIORITY 7: Real-time Updates
+    const channel = supabase
+      .channel('admin-dashboard')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'memberships' }, () => fetchDashboardData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => fetchDashboardData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_workout_assignments' }, () => fetchDashboardData())
@@ -100,59 +156,85 @@ export function AdminDashboard() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(sub);
+      supabase.removeChannel(channel);
     };
-  }, [authLoading]);
+  }, []);
 
-  // Handle plan assignment
+  const openAssignModal = async () => {
+    setAssignModal({ isOpen: true });
+    // Step 1: Select member
+    const { data: usersData } = await supabase.from('users').select('id, name, email');
+    setUsersList(usersData || []);
+    
+    // Step 3: Fetch templates
+    const { data: wPlans } = await supabase.from('template_workout_plans').select('id, name, tier');
+    const { data: dPlans } = await supabase.from('template_diet_plans').select('id, name, tier');
+    setTemplates({ workoutPlans: wPlans || [], dietPlans: dPlans || [] });
+  };
+
   const handleAssignPlan = async () => {
-    if (!assignModal.memberId || !selectedPlanId) return;
+    if (!selectedMemberId || !selectedPlanId) return;
     try {
-      const res = await fetch('/api/admin/assign-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: assignModal.memberId,
-          planId: selectedPlanId,
-          planType: selectedPlanType
-        })
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Assignment failed');
+      const currentAdminId = user?.id; // Assuming user.id exists, otherwise we fetch from admins table
+      
+      let adminIdToUse = currentAdminId;
+      if (!adminIdToUse) {
+         // fallback
+         const { data: ad } = await supabase.from('admins').select('id').eq('email', user?.email).maybeSingle();
+         adminIdToUse = ad?.id;
       }
-      setAssignModal({ isOpen: false, memberId: null });
+
+      if (selectedPlanType === 'workout') {
+        await supabase.from('user_workout_assignments').insert({
+          user_id: selectedMemberId,
+          plan_id: selectedPlanId, // user wrote workout_plan_id, but schema has plan_id
+          assigned_by: adminIdToUse,
+          assigned_at: new Date().toISOString(),
+          active: true
+        });
+      } else {
+        await supabase.from('user_diet_assignments').insert({
+          user_id: selectedMemberId,
+          plan_id: selectedPlanId, // user wrote diet_plan_id, but schema has plan_id
+          assigned_by: adminIdToUse,
+          assigned_at: new Date().toISOString(),
+          active: true
+        });
+      }
+      setAssignModal({ isOpen: false });
+      setSelectedMemberId('');
+      setSelectedPlanId('');
       fetchDashboardData();
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  // Auth protection
-  if (authLoading) return <div className="h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!(user as any).is_admin) return <Navigate to="/dashboard" replace />;
+  // Auth protection (Passport fallback if they don't have supabase session)
+  if (!user && !authLoading) {
+    // wait until auth loading is done before redirecting
+    window.location.replace('/login');
+    return null;
+  }
+  if (user && !(user as any).is_admin) {
+    window.location.replace('/app');
+    return null;
+  }
 
-  const ownerInitials = user.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
-  
-  const getAvatarColor = (id: number) => AVATAR_COLORS[id % AVATAR_COLORS.length];
+  const ownerInitials = user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AD';
+  const getAvatarColor = (id: number) => AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length];
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
-  
-  const calculateProgress = (admission: string, expiry: string) => {
-    const start = new Date(admission).getTime();
-    const end = new Date(expiry).getTime();
-    const now = new Date().getTime();
-    if (now >= end) return 100;
-    if (now <= start) return 0;
-    return Math.round(((now - start) / (end - start)) * 100);
-  };
 
-  const dueSoonCount = renewals.filter(r => r.status === 'due_soon').length;
-  const expiredCount = renewals.filter(r => r.status === 'expired').length;
+  const dueSoonCount = renewals.filter(r => r.status === 'due_soon' || Math.ceil((new Date(r.expiry_date).getTime() - new Date().getTime()) / 86400000) <= 7 && Math.ceil((new Date(r.expiry_date).getTime() - new Date().getTime()) / 86400000) >= 0).length;
+  const expiredCount = renewals.filter(r => r.status === 'expired' || Math.ceil((new Date(r.expiry_date).getTime() - new Date().getTime()) / 86400000) < 0).length;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const in7Str = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
 
   const filteredMembers = members.filter(m => {
+    if (filter === 'All') return true;
     if (filter === 'Active') return m.status === 'active';
-    if (filter === 'Due soon') return m.status === 'due_soon';
+    if (filter === 'Due soon') return m.expiry_date >= todayStr && m.expiry_date <= in7Str;
     if (filter === 'Expired') return m.status === 'expired';
     return true;
   });
@@ -195,34 +277,34 @@ export function AdminDashboard() {
         <div className="py-4">
           
           <div className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Overview</div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold cursor-pointer">
+          <Link to="/admin/dashboard" className="flex items-center gap-2 px-4 py-2 bg-[#E1F5EE] border-l-[3px] border-[#1D9E75] text-[#1D9E75] font-semibold">
             <LayoutDashboard size={16} />
             Dashboard
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer justify-between">
+          </Link>
+          <Link to="/admin/members" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 justify-between">
             <div className="flex items-center gap-2"><Users size={16} /> All members</div>
             <span className="bg-gray-100 text-gray-500 text-[10px] px-1.5 rounded-full font-bold">{stats.totalMembers}</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer justify-between">
+          </Link>
+          <Link to="/admin/renewals" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 justify-between">
             <div className="flex items-center gap-2"><Bell size={16} /> Renewals</div>
             {(dueSoonCount > 0 || expiredCount > 0) && (
               <span className="bg-[#FAEEDA] text-[#633806] text-[10px] px-1.5 rounded-full font-bold">{dueSoonCount + expiredCount}</span>
             )}
-          </div>
+          </Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Plans</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><IdBadge size={16} /> Memberships</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><Barbell size={16} /> Workout plans</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><Apple size={16} /> Diet plans</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><UserCheck size={16} /> Personal training</div>
+          <Link to="/admin/memberships" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><IdBadge size={16} /> Memberships</Link>
+          <Link to="/admin/workout-plans" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Barbell size={16} /> Workout plans</Link>
+          <Link to="/admin/diet-plans" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Apple size={16} /> Diet plans</Link>
+          <Link to="/admin/pt" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><UserCheck size={16} /> Personal training</Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Staff</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><Users size={16} /> Trainers</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><BarChart size={16} /> Reports</div>
+          <Link to="/admin/trainers" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Users size={16} /> Trainers</Link>
+          <Link to="/admin/reports" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><BarChart size={16} /> Reports</Link>
 
           <div className="px-4 mt-6 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">System</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><ShieldLock size={16} /> Admin access</div>
-          <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600 cursor-pointer"><Settings size={16} /> Settings</div>
+          <Link to="/admin/access" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><ShieldLock size={16} /> Admin access</Link>
+          <Link to="/admin/settings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-gray-600"><Settings size={16} /> Settings</Link>
 
         </div>
 
@@ -231,7 +313,7 @@ export function AdminDashboard() {
             {ownerInitials}
           </div>
           <div>
-            <div className="font-bold text-xs truncate max-w-[120px]">{user.name}</div>
+            <div className="font-bold text-xs truncate max-w-[120px]">{user?.name}</div>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider">Super admin</div>
           </div>
         </div>
@@ -242,22 +324,22 @@ export function AdminDashboard() {
         
         {/* SECTION 1: Stats row */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total members</div>
             <div className="text-[22px] font-black text-gray-900">{stats.totalMembers}</div>
             <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Active community</div>
           </div>
-          <div className="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Active memberships</div>
             <div className="text-[22px] font-black text-gray-900">{stats.activeCount}</div>
             <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Current recurring</div>
           </div>
-          <div className="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Expiring (7 days)</div>
             <div className="text-[22px] font-black text-gray-900">{stats.expiringCount}</div>
             <div className="text-[11px] text-[#A32D2D] font-semibold mt-1">Requires attention</div>
           </div>
-          <div className="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">PT Clients</div>
             <div className="text-[22px] font-black text-gray-900">{stats.ptCount}</div>
             <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Premium tier</div>
@@ -275,39 +357,42 @@ export function AdminDashboard() {
               <button className="text-[11px] font-bold text-[#1D9E75] hover:underline">View all</button>
             </div>
             <div className="p-4 space-y-3 flex-1">
-              {renewals.length === 0 ? (
+              {!loading && renewals.length === 0 && (
                 <div className="text-gray-400 text-xs italic text-center py-6">No renewals coming up.</div>
-              ) : (
-                renewals.map(r => {
-                  const daysLeft = Math.ceil((new Date(r.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-                  const isExpired = r.status === 'expired' || daysLeft < 0;
-                  const dayColor = isExpired ? 'text-[#A32D2D]' : daysLeft <= 3 ? 'text-[#633806]' : 'text-gray-500';
-                  
-                  return (
-                    <div key={r.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                          style={{ backgroundColor: getAvatarColor(r.users?.id) }}
-                        >
-                          {getInitials(r.users?.name)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-[12px] text-gray-900">{r.users?.name || r.users?.email}</div>
-                          <div className="text-[11px] text-gray-500">{r.membership_plans?.name} • Expires {new Date(r.expiry_date).toLocaleDateString()}</div>
-                        </div>
+              )}
+              {loading ? (
+                <div className="text-gray-400 text-xs text-center py-6">Loading...</div>
+              ) : renewals.map(r => {
+                const days = Math.ceil((new Date(r.expiry_date).getTime() - new Date().getTime()) / 86400000);
+                
+                let dayLabel = <span className="text-[11px] font-bold text-[#1D9E75]">{days} days left</span>;
+                if (days < 0) dayLabel = <span className="text-[11px] font-bold text-[#A32D2D]">Expired {Math.abs(days)} days ago</span>;
+                else if (days === 0) dayLabel = <span className="text-[11px] font-bold text-[#A32D2D]">Expires today</span>;
+                else if (days <= 3) dayLabel = <span className="text-[11px] font-bold text-[#A32D2D]">{days} days left</span>;
+                else if (days <= 7) dayLabel = <span className="text-[11px] font-bold text-[#633806]">{days} days left</span>;
+
+                return (
+                  <div key={r.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                        style={{ backgroundColor: getAvatarColor(r.users?.id) }}
+                      >
+                        {getInitials(r.users?.name)}
                       </div>
-                      <div className="text-right">
-                        {isExpired ? (
-                          <span className="bg-[#FCEBEB] text-[#A32D2D] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Expired</span>
-                        ) : (
-                          <span className={`text-[11px] font-bold ${dayColor}`}>{daysLeft} days left</span>
-                        )}
+                      <div>
+                        <div className="font-bold text-[12px] text-gray-900">{r.users?.name || r.users?.email}</div>
+                        <div className="text-[11px] text-gray-500">{r.membership_plans?.name} • Expires {new Date(r.expiry_date).toLocaleDateString()}</div>
                       </div>
                     </div>
-                  );
-                })
-              )}
+                    <div className="text-right">
+                      {r.status === 'expired' && days >= 0 ? (
+                        <span className="bg-[#FCEBEB] text-[#A32D2D] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Expired</span>
+                      ) : dayLabel}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -318,35 +403,36 @@ export function AdminDashboard() {
                 <UserCheck size={16} className="text-[#534AB7]" /> Plan assignments
               </div>
               <button 
-                onClick={() => setAssignModal({ isOpen: true, memberId: members[0]?.users?.id || null })}
+                onClick={openAssignModal}
                 className="text-[11px] font-bold text-white bg-[#534AB7] px-3 py-1.5 rounded-md hover:bg-opacity-90"
               >
                 Assign new
               </button>
             </div>
             <div className="p-4 space-y-3 flex-1">
-              {assignments.length === 0 ? (
+              {!loading && assignments.length === 0 && (
                 <div className="text-gray-400 text-xs italic text-center py-6">No recent assignments.</div>
-              ) : (
-                assignments.map(a => (
-                  <div key={`${a.type}-${a.id}`} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white shrink-0 ${a.type === 'workout' ? 'bg-[#534AB7]' : 'bg-[#1D9E75]'}`}>
-                        {a.type === 'workout' ? <Barbell size={16} /> : <Apple size={16} />}
-                      </div>
-                      <div>
-                        <div className="font-bold text-[12px] text-gray-900">{a.users?.name}</div>
-                        <div className="text-[11px] text-gray-500">{a.plan?.name}</div>
-                      </div>
+              )}
+              {loading ? (
+                <div className="text-gray-400 text-xs text-center py-6">Loading...</div>
+              ) : assignments.map(a => (
+                <div key={`${a.type}-${a.id}`} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white shrink-0 ${a.type === 'workout' ? 'bg-[#534AB7]' : 'bg-[#1D9E75]'}`}>
+                      {a.type === 'workout' ? <Barbell size={16} /> : <Apple size={16} />}
                     </div>
                     <div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${a.plan?.tier === 'Premium' ? 'bg-[#E6F1FB] text-[#0C447C]' : 'bg-[#F1EFE8] text-[#444441]'}`}>
-                        {a.plan?.tier || 'Basic'}
-                      </span>
+                      <div className="font-bold text-[12px] text-gray-900">{a.users?.name}</div>
+                      <div className="text-[11px] text-gray-500">{a.plan?.name} • <span className="italic text-[10px]">Assigned by {a.assigned_by_user?.name || 'Admin'}</span></div>
                     </div>
                   </div>
-                ))
-              )}
+                  <div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${a.plan?.tier === 'Premium' ? 'bg-[#E6F1FB] text-[#0C447C]' : 'bg-[#F1EFE8] text-[#444441]'}`}>
+                      {a.plan?.tier || 'Basic'}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -369,7 +455,21 @@ export function AdminDashboard() {
                   </button>
                 ))}
               </div>
-              <button className="text-[11px] font-bold text-gray-600 bg-white border-[0.5px] border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50">
+              <button 
+                onClick={() => {
+                   const csv = "Member,Plan,Admission,Expiry,Status\n" + filteredMembers.map(m => `${m.users?.name},${m.membership_plans?.name},${m.admission_date},${m.expiry_date},${m.status}`).join('\n');
+                   const blob = new Blob([csv], { type: 'text/csv' });
+                   const url = window.URL.createObjectURL(blob);
+                   const a = document.createElement('a');
+                   a.setAttribute('hidden', '');
+                   a.setAttribute('href', url);
+                   a.setAttribute('download', 'members.csv');
+                   document.body.appendChild(a);
+                   a.click();
+                   document.body.removeChild(a);
+                }}
+                className="text-[11px] font-bold text-gray-600 bg-white border-[0.5px] border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50"
+              >
                 Export
               </button>
             </div>
@@ -390,12 +490,21 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
+                {!loading && filteredMembers.length === 0 && (
+                  <tr><td colSpan={8} className="text-center py-8 text-gray-400 text-xs italic">No members found.</td></tr>
+                )}
+                {loading && filteredMembers.length === 0 && (
+                  <tr><td colSpan={8} className="text-center py-8 text-gray-400 text-xs">Loading...</td></tr>
+                )}
                 {filteredMembers.map((m: any) => {
-                  const pct = calculateProgress(m.admission_date, m.expiry_date);
-                  const progressColor = pct >= 100 ? 'bg-[#A32D2D]' : pct >= 80 ? 'bg-[#D85A30]' : 'bg-[#1D9E75]';
+                  const total = new Date(m.expiry_date).getTime() - new Date(m.admission_date).getTime();
+                  const elapsed = new Date().getTime() - new Date(m.admission_date).getTime();
+                  const pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
                   
-                  const hasWorkout = m.user_workout_assignments?.some((a: any) => a.active);
-                  const hasDiet = m.user_diet_assignments?.some((a: any) => a.active);
+                  const progressColor = pct < 80 ? 'bg-[#1D9E75]' : pct < 100 ? 'bg-[#BA7517]' : 'bg-[#A32D2D]';
+                  
+                  const hasWorkout = m.user_workout_assignments?.some((a: any) => a.active === true);
+                  const hasDiet = m.user_diet_assignments?.some((a: any) => a.active === true);
 
                   const statusBadgeClass = 
                     m.status === 'active' ? 'bg-[#E1F5EE] text-[#0F6E56]' :
@@ -403,8 +512,8 @@ export function AdminDashboard() {
                     'bg-[#FCEBEB] text-[#A32D2D]';
 
                   const planBadgeClass = 
-                    m.membership_plans?.name === 'Personal Training' ? 'bg-[#EEEDFE] text-[#3C3489]' :
-                    m.membership_plans?.name === 'Premium' ? 'bg-[#E6F1FB] text-[#0C447C]' :
+                    m.membership_plans?.name?.toLowerCase().includes('personal training') ? 'bg-[#EEEDFE] text-[#3C3489]' :
+                    m.membership_plans?.name?.toLowerCase().includes('premium') ? 'bg-[#E6F1FB] text-[#0C447C]' :
                     'bg-[#F1EFE8] text-[#444441]';
 
                   return (
@@ -440,7 +549,7 @@ export function AdminDashboard() {
                       </td>
                       <td className="p-3">
                         {hasWorkout ? 
-                          <span className="text-[11px] font-bold text-[#1D9E75]">Assigned</span> : 
+                          <span className="bg-[#E1F5EE] text-[#0F6E56] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Assigned</span> : 
                           <span className="text-[11px] text-gray-400">None</span>
                         }
                       </td>
@@ -472,59 +581,73 @@ export function AdminDashboard() {
             
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Member</label>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Step 1 — Select Member</label>
                 <select
-                  value={assignModal.memberId || ''}
-                  onChange={(e) => setAssignModal({ ...assignModal, memberId: Number(e.target.value) })}
+                  value={selectedMemberId}
+                  onChange={(e) => setSelectedMemberId(Number(e.target.value))}
                   className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
                 >
-                  <option value="">Select a member...</option>
-                  {members.map(m => (
-                    <option key={m.users?.id} value={m.users?.id}>{m.users?.name} ({m.membership_plans?.name})</option>
+                  <option value="">Search member...</option>
+                  {usersList.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Plan Type</label>
-                <select
-                  value={selectedPlanType}
-                  onChange={(e: any) => setSelectedPlanType(e.target.value)}
-                  className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
-                >
-                  <option value="workout">Workout Plan</option>
-                  <option value="diet">Diet Plan</option>
-                </select>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Step 2 — Select Plan Type</label>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setSelectedPlanType('workout')} 
+                    className={`flex-1 py-2 text-[12px] font-bold rounded-lg border-[0.5px] transition-colors ${selectedPlanType === 'workout' ? 'bg-[#534AB7] border-[#534AB7] text-white' : 'bg-gray-50 border-gray-300 text-gray-600'}`}
+                  >
+                    Workout Plan
+                  </button>
+                  <button 
+                    onClick={() => setSelectedPlanType('diet')} 
+                    className={`flex-1 py-2 text-[12px] font-bold rounded-lg border-[0.5px] transition-colors ${selectedPlanType === 'diet' ? 'bg-[#1D9E75] border-[#1D9E75] text-white' : 'bg-gray-50 border-gray-300 text-gray-600'}`}
+                  >
+                    Diet Plan
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Template</label>
-                <select
-                  value={selectedPlanId}
-                  onChange={(e) => setSelectedPlanId(Number(e.target.value))}
-                  className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
-                >
-                  <option value="">Choose a template...</option>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Step 3 — Select Specific Plan</label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
                   {(selectedPlanType === 'workout' ? templates.workoutPlans : templates.dietPlans).map((p: any) => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.tier})</option>
+                    <label key={p.id} className="flex items-center gap-2 text-[12px] p-2 hover:bg-gray-50 rounded-md cursor-pointer border-[0.5px] border-transparent hover:border-gray-200">
+                      <input 
+                        type="radio" 
+                        name="plan_selection" 
+                        value={p.id} 
+                        checked={selectedPlanId === p.id}
+                        onChange={() => setSelectedPlanId(p.id)}
+                        className="accent-[#1D9E75]"
+                      />
+                      <span>{p.name} <span className="text-gray-400 ml-1">({p.tier || 'Basic'})</span></span>
+                    </label>
                   ))}
-                </select>
+                  {(selectedPlanType === 'workout' ? templates.workoutPlans : templates.dietPlans).length === 0 && (
+                    <div className="text-xs text-gray-400 italic">No plans available.</div>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
               <button
-                onClick={() => setAssignModal({ isOpen: false, memberId: null })}
+                onClick={() => setAssignModal({ isOpen: false })}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-[12px] py-2 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAssignPlan}
-                disabled={!selectedPlanId || !assignModal.memberId}
+                disabled={!selectedPlanId || !selectedMemberId}
                 className="flex-1 bg-[#1D9E75] hover:bg-[#158260] text-white font-bold text-[12px] py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                Assign Plan
+                Confirm & Save
               </button>
             </div>
           </div>

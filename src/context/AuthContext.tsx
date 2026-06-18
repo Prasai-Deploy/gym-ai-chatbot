@@ -81,10 +81,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     rehydrate();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUser(mapSupabaseUser(session.user));
-      } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', session.user.email)
+          .single();
+
+        if (adminData) {
+          window.location.replace('/admin/dashboard');  // admin -> dashboard only
+        } else {
+          setUser(mapSupabaseUser(session.user));
+          if (window.location.pathname.startsWith('/admin')) {
+             window.location.replace('/dashboard');    // normal user
+          }
+        }
+      } else if (!session) {
         // Only clear user if it's not a demo login
         setUser((prev) => (prev?.email === 'demo@sweatfix.com' ? prev : null));
       }
