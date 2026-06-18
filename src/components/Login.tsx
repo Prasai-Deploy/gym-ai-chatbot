@@ -20,15 +20,9 @@ export function Login() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Google login via Supabase client-side OAuth
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://sweat.prasai.cloud/auth/callback',
-      },
-    });
-    if (error) console.error('[Login] Supabase OAuth Error:', error);
+  // Google login via Express backend
+  const handleLogin = () => {
+    window.location.href = '/auth/google';
   };
 
   const handleDemoLogin = async () => {
