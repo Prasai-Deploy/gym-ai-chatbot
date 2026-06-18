@@ -219,6 +219,7 @@ async function startServer() {
                 }
                 else {
                     // Refresh demo user state
+                    await supabaseAdmin.from('users').update({ is_admin: false }).eq('id', user.id);
                     await supabase.from('progress').delete().eq('user_id', user.id);
                     await supabase.from('daily_plans').delete().eq('user_id', user.id);
                     await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
@@ -266,6 +267,45 @@ async function startServer() {
             res.status(500).json({ error: err.message });
         }
     });
+    // Admin Mock login
+    app.post("/api/auth/admin", async (req, res) => {
+        try {
+            const email = 'admin@sweatfix.com';
+            let user;
+            const { data: existingUser } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle();
+            user = existingUser;
+            if (!user) {
+                const { data: newUser, error } = await supabaseAdmin.from('users').insert({
+                    email,
+                    name: "Admin User",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
+                    profile_context: "",
+                    water_goal: 2000,
+                    is_admin: true
+                }).select().maybeSingle();
+                if (error || !newUser)
+                    throw new Error("DB insertion failed, fallback to mock");
+                user = newUser;
+            }
+            else {
+                // Ensure is_admin is true
+                await supabaseAdmin.from('users').update({ is_admin: true }).eq('id', user.id);
+            }
+            req.login(user, (err) => {
+                if (err)
+                    return res.status(500).json({ error: "Login failed" });
+                req.session.save((err) => {
+                    if (err)
+                        return res.status(500).json({ error: "Session save failed" });
+                    res.json(user);
+                });
+            });
+        }
+        catch (err) {
+            console.error("Admin login error:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
     // Google OAuth callback
     app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), async (req, res) => {
         const state = req.query.state;
@@ -297,8 +337,10 @@ async function startServer() {
           `);
             }
             else {
-                // Always redirect to the production dashboard after Google login
-                res.redirect("https://sweat.prasai.cloud/dashboard");
+                const redirectUrl = process.env.NODE_ENV === "production"
+                  ? "https://sweat.prasai.cloud/dashboard"
+                  : (process.env.FRONTEND_URL || "http://localhost:5173") + "/dashboard";
+                res.redirect(redirectUrl);
             }
         };
         // Explicitly save the session before responding to avoid race conditions

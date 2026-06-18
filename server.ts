@@ -310,6 +310,7 @@ async function startServer() {
           user = newUser;
         } else {
             // Refresh demo user state
+            await supabaseAdmin.from('users').update({ is_admin: false }).eq('id', user.id);
             await supabase.from('progress').delete().eq('user_id', user.id);
             await supabase.from('daily_plans').delete().eq('user_id', user.id);
             await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
@@ -356,6 +357,44 @@ async function startServer() {
     }
   });
 
+  // Admin Mock login
+  app.post("/api/auth/admin", async (req, res) => {
+    try {
+      const email = 'admin@sweatfix.com';
+      let user;
+      
+      const { data: existingUser } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle();
+      user = existingUser;
+
+      if (!user) {
+        const { data: newUser, error } = await supabaseAdmin.from('users').insert({
+            email,
+            name: "Admin User",
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
+            profile_context: "",
+            water_goal: 2000,
+            is_admin: true
+        }).select().maybeSingle();
+        if (error || !newUser) throw new Error("DB insertion failed, fallback to mock");
+        user = newUser;
+      } else {
+         // Ensure is_admin is true
+         await supabaseAdmin.from('users').update({ is_admin: true }).eq('id', user.id);
+      }
+
+      (req as any).login(user, (err: any) => {
+        if (err) return res.status(500).json({ error: "Login failed" });
+        (req as any).session.save((err: any) => {
+          if (err) return res.status(500).json({ error: "Session save failed" });
+          res.json(user);
+        });
+      });
+    } catch (err: any) {
+      console.error("Admin login error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Google OAuth callback
   app.get(
     "/auth/google/callback",
@@ -398,8 +437,10 @@ async function startServer() {
             </html>
           `);
         } else {
-          // Always redirect to the production dashboard after Google login
-          res.redirect("https://sweat.prasai.cloud/dashboard");
+          const redirectUrl = process.env.NODE_ENV === "production"
+            ? "https://sweat.prasai.cloud/dashboard"
+            : (process.env.FRONTEND_URL || "http://localhost:5173") + "/dashboard";
+          res.redirect(redirectUrl);
         }
       };
 
