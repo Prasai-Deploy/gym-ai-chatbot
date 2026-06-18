@@ -245,11 +245,31 @@ async function startServer() {
             .eq('google_id', profile.id)
             .maybeSingle();
 
+          if (!user && email) {
+            // Check if user was manually added by admin via email
+            const { data: existingUser } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', email)
+              .maybeSingle();
+              
+            if (existingUser) {
+              // Link google_id
+              const { data: linkedUser, error } = await supabase.from('users').update({
+                google_id: profile.id,
+                last_login: now,
+                avatar: profile.photos?.[0]?.value ?? existingUser.avatar
+              }).eq('id', existingUser.id).select().maybeSingle();
+              if (error) console.error("Update linked user error", error);
+              user = linkedUser;
+            }
+          }
+
           if (!user) {
             const { data: newUser, error } = await supabase.from('users').insert({
               google_id: profile.id,
               name: profile.displayName,
-              email: profile.emails?.[0]?.value ?? null,
+              email: email,
               avatar: profile.photos?.[0]?.value ?? null,
               created_at: now,
               last_login: now,
@@ -257,7 +277,7 @@ async function startServer() {
             
             if (error) console.error("Insert error", error);
             user = newUser;
-          } else {
+          } else if (user && user.google_id === profile.id) {
             const { data: updatedUser, error } = await supabase.from('users').update({
               last_login: now,
             }).eq('id', user.id).select().maybeSingle();

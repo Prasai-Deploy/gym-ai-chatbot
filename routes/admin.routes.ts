@@ -169,6 +169,76 @@ router.get('/plans', async (req, res) => {
   }
 });
 
+// GET /api/admin/membership-plans
+router.get('/membership-plans', async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin.from('membership_plans').select('*').order('price', { ascending: true });
+    if (error) throw error;
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/members
+router.post('/members', async (req, res) => {
+  try {
+    const { name, email, phone, planId } = req.body;
+    if (!name || !email || !planId) {
+      return res.status(400).json({ error: 'Name, email, and plan are required' });
+    }
+
+    // 1. Fetch the selected plan
+    const { data: plan, error: planError } = await supabaseAdmin.from('membership_plans').select('*').eq('id', planId).single();
+    if (planError || !plan) {
+      return res.status(400).json({ error: 'Invalid plan selected' });
+    }
+
+    const now = new Date().toISOString();
+
+    // 2. Insert or find user
+    let user;
+    const { data: existingUser } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle();
+    
+    if (existingUser) {
+      user = existingUser;
+    } else {
+      const { data: newUser, error: userError } = await supabaseAdmin.from('users').insert({
+        name,
+        email,
+        phone,
+        created_at: now,
+        last_login: now
+      }).select().single();
+      
+      if (userError) throw userError;
+      user = newUser;
+    }
+
+    // 3. Create membership record
+    // Calculate expiry date
+    const admissionDate = new Date();
+    const expiryDate = new Date(admissionDate.getTime() + (plan.duration_days * 86400000));
+
+    const { data: membership, error: membershipError } = await supabaseAdmin.from('memberships').insert({
+      user_id: user.id,
+      plan_id: plan.id,
+      admission_date: admissionDate.toISOString().split('T')[0],
+      expiry_date: expiryDate.toISOString().split('T')[0],
+      status: 'active'
+    }).select().single();
+
+    if (membershipError) throw membershipError;
+
+    // Optional: Whitelist the user so they can log in via Google
+    await supabaseAdmin.from('allowed_users').insert({ email }).select().maybeSingle();
+
+    res.json({ success: true, user, membership });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/admin/assign-plan
 router.post('/assign-plan', async (req, res) => {
   try {

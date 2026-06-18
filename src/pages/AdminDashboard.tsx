@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Users, Bell, BadgeCheck as IdBadge, Dumbbell as Barbell, 
   Apple, UserCheck, BarChart, ShieldAlert as ShieldLock, Settings, 
-  AlertTriangle 
+  AlertTriangle, Menu, X
 } from 'lucide-react';
 
 const AVATAR_COLORS = ['#1D9E75', '#534AB7', '#D85A30', '#378ADD', '#E24B4A', '#BA7517'];
@@ -20,14 +20,17 @@ export function AdminDashboard() {
   const [filter, setFilter] = useState('All');
   
   const [assignModal, setAssignModal] = useState<{ isOpen: boolean }>({ isOpen: false });
+  const [addMemberModal, setAddMemberModal] = useState<{ isOpen: boolean }>({ isOpen: false });
+  const [newMember, setNewMember] = useState({ name: '', email: '', phone: '', planId: '' });
   const [usersList, setUsersList] = useState<any[]>([]);
-  const [templates, setTemplates] = useState({ workoutPlans: [], dietPlans: [] });
+  const [templates, setTemplates] = useState({ workoutPlans: [], dietPlans: [], membershipPlans: [] });
   
   const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('');
   const [selectedPlanType, setSelectedPlanType] = useState<'workout' | 'diet'>('workout');
   
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const location = useLocation();
   const currentPath = location.pathname;
@@ -112,7 +115,17 @@ export function AdminDashboard() {
     const plansRes = await fetch('/api/admin/plans');
     if (plansRes.ok) {
        const pd = await plansRes.json();
-       setTemplates({ workoutPlans: pd.workoutPlans || [], dietPlans: pd.dietPlans || [] });
+       setTemplates(prev => ({ ...prev, workoutPlans: pd.workoutPlans || [], dietPlans: pd.dietPlans || [] }));
+    }
+  };
+
+  const openAddMemberModal = async () => {
+    setAddMemberModal({ isOpen: true });
+    // Fetch membership plans
+    const mPlansRes = await fetch('/api/admin/membership-plans');
+    if (mPlansRes.ok) {
+       const mpd = await mPlansRes.json();
+       setTemplates(prev => ({ ...prev, membershipPlans: mpd || [] }));
     }
   };
 
@@ -135,6 +148,29 @@ export function AdminDashboard() {
       setAssignModal({ isOpen: false });
       setSelectedMemberId('');
       setSelectedPlanId('');
+      fetchDashboardData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!newMember.name || !newMember.email || !newMember.planId) {
+      alert('Please fill out all required fields');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMember)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add member');
+      }
+      setAddMemberModal({ isOpen: false });
+      setNewMember({ name: '', email: '', phone: '', planId: '' });
       fetchDashboardData();
     } catch (err: any) {
       alert(err.message);
@@ -174,27 +210,35 @@ export function AdminDashboard() {
     <div className="flex h-screen bg-gray-50 font-sans text-[13px] text-gray-900 overflow-hidden">
       
       {/* TOP NAVBAR */}
-      <nav className="fixed top-0 left-0 w-full h-14 bg-white border-b-[0.5px] border-gray-200 z-50 flex items-center justify-between px-6">
+      <nav className="fixed top-0 left-0 w-full h-14 bg-white border-b-[0.5px] border-gray-200 z-50 flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
+          <button 
+            className="md:hidden p-1 text-gray-600 hover:bg-gray-100 rounded-md"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
           <div className="font-bold text-base flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#1D9E75]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#1D9E75] hidden sm:block"></span>
             Sweatfix AI
           </div>
-          <span className="bg-[#E1F5EE] text-[#0F6E56] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+          <span className="bg-[#E1F5EE] text-[#0F6E56] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider hidden sm:block">
             Gym owner
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {dueSoonCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-[#FAEEDA] text-[#633806] px-3 py-1.5 rounded-full text-[11px] font-semibold border border-[#FAEEDA]">
+            <div className="flex items-center gap-1.5 bg-[#FAEEDA] text-[#633806] px-2 md:px-3 py-1.5 rounded-full text-[10px] md:text-[11px] font-semibold border border-[#FAEEDA]">
               <Bell size={14} />
-              {dueSoonCount} renewals due
+              <span className="hidden sm:inline">{dueSoonCount} renewals due</span>
+              <span className="sm:hidden">{dueSoonCount}</span>
             </div>
           )}
           {expiredCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-[#FCEBEB] text-[#A32D2D] px-3 py-1.5 rounded-full text-[11px] font-semibold border border-[#FCEBEB]">
+            <div className="flex items-center gap-1.5 bg-[#FCEBEB] text-[#A32D2D] px-2 md:px-3 py-1.5 rounded-full text-[10px] md:text-[11px] font-semibold border border-[#FCEBEB]">
               <AlertTriangle size={14} />
-              {expiredCount} expired
+              <span className="hidden sm:inline">{expiredCount} expired</span>
+              <span className="sm:hidden">{expiredCount}</span>
             </div>
           )}
           <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
@@ -203,9 +247,14 @@ export function AdminDashboard() {
         </div>
       </nav>
 
+      {/* MOBILE MENU OVERLAY */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
       {/* LEFT SIDEBAR */}
-      <aside className="fixed top-14 left-0 w-[190px] h-[calc(100vh-56px)] bg-white border-r-[0.5px] border-gray-200 overflow-y-auto flex flex-col justify-between pb-4 z-40">
-        <div className="py-4">
+      <aside className={`fixed top-14 left-0 w-[220px] md:w-[190px] h-[calc(100vh-56px)] bg-white border-r-[0.5px] border-gray-200 overflow-y-auto flex flex-col justify-between pb-4 z-40 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        <div className="py-4" onClick={() => setIsMobileMenuOpen(false)}>
           
           <div className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Overview</div>
           <Link to="/admin" className={getSidebarLinkClass('/admin')}>
@@ -250,11 +299,11 @@ export function AdminDashboard() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="ml-[190px] mt-14 w-[calc(100%-190px)] h-[calc(100vh-56px)] overflow-y-auto p-6 bg-gray-50 space-y-6">
+      <main className="md:ml-[190px] mt-14 w-full md:w-[calc(100%-190px)] h-[calc(100vh-56px)] overflow-y-auto p-4 md:p-6 bg-gray-50 space-y-6">
         
         {/* SECTION 1: Stats row */}
         {currentPath === '/admin' && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total members</div>
             <div className="text-[22px] font-black text-gray-900">{stats.totalMembers}</div>
@@ -280,7 +329,7 @@ export function AdminDashboard() {
 
         {/* SECTION 2: Renewals & Assignments */}
         {(currentPath === '/admin' || currentPath === '/admin/renewals') && (
-        <div className={`grid ${currentPath === '/admin/renewals' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+        <div className={`grid ${currentPath === '/admin/renewals' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-4`}>
           {/* Left Card: Renewals */}
           <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-sm flex flex-col">
             <div className="p-4 border-b-[0.5px] border-gray-200 flex justify-between items-center">
@@ -376,22 +425,28 @@ export function AdminDashboard() {
         {/* SECTION 3: Member Tracker Table */}
         {(currentPath === '/admin' || currentPath === '/admin/members') && (
         <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="p-4 border-b-[0.5px] border-gray-200 flex justify-between items-center bg-gray-50/50">
+          <div className="p-3 md:p-4 border-b-[0.5px] border-gray-200 flex flex-col md:flex-row md:items-center justify-between bg-gray-50/50 gap-3">
             <div className="flex items-center gap-2 font-bold text-sm text-gray-900">
               <IdBadge size={16} className="text-[#1D9E75]" /> Member membership tracker
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border-[0.5px] border-gray-200">
+            <div className="flex items-center justify-between md:justify-end gap-2 md:gap-4 w-full md:w-auto">
+              <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border-[0.5px] border-gray-200 overflow-x-auto w-full md:w-auto no-scrollbar">
                 {['All', 'Active', 'Due soon', 'Expired'].map(f => (
                   <button 
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-3 py-1 text-[11px] font-bold rounded-md transition-colors ${filter === f ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                    className={`px-2 md:px-3 py-1 text-[10px] md:text-[11px] font-bold rounded-md transition-colors whitespace-nowrap ${filter === f ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
                   >
                     {f}
                   </button>
                 ))}
               </div>
+              <button 
+                onClick={openAddMemberModal}
+                className="text-[11px] font-bold text-white bg-[#1D9E75] px-3 py-1.5 rounded-md hover:bg-[#158260]"
+              >
+                + Add Member
+              </button>
               <button 
                 onClick={() => {
                    const csv = "Member,Plan,Admission,Expiry,Status\n" + filteredMembers.map(m => `${m.users?.name},${m.membership_plans?.name},${m.admission_date},${m.expiry_date},${m.status}`).join('\n');
@@ -595,6 +650,88 @@ export function AdminDashboard() {
                 className="flex-1 bg-[#1D9E75] hover:bg-[#158260] text-white font-bold text-[12px] py-2 rounded-lg transition-colors disabled:opacity-50"
               >
                 Confirm & Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD MEMBER MODAL */}
+      {addMemberModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white border-[0.5px] border-gray-200 rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <h3 className="font-bold text-lg mb-4 text-gray-900">Add New Member</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Full Name *</label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Email Address *</label>
+                <input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={newMember.email}
+                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                  className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={newMember.phone}
+                  onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                  className="w-full border-[0.5px] border-gray-300 rounded-lg px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-[#1D9E75]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1 block">Membership Plan *</label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {templates.membershipPlans.map((p: any) => (
+                    <label key={p.id} className="flex items-center gap-2 text-[12px] p-2 hover:bg-gray-50 rounded-md cursor-pointer border-[0.5px] border-transparent hover:border-gray-200">
+                      <input 
+                        type="radio" 
+                        name="membership_plan" 
+                        value={p.id} 
+                        checked={newMember.planId === String(p.id)}
+                        onChange={() => setNewMember({ ...newMember, planId: String(p.id) })}
+                        className="accent-[#1D9E75]"
+                      />
+                      <span>{p.name} <span className="text-gray-400 ml-1">(${p.price} / {p.duration_days} days)</span></span>
+                    </label>
+                  ))}
+                  {templates.membershipPlans.length === 0 && (
+                    <div className="text-xs text-gray-400 italic">No plans available.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setAddMemberModal({ isOpen: false })}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-[12px] py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMember}
+                disabled={!newMember.name || !newMember.email || !newMember.planId}
+                className="flex-1 bg-[#1D9E75] hover:bg-[#158260] text-white font-bold text-[12px] py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Add Member
               </button>
             </div>
           </div>
