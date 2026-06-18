@@ -358,45 +358,7 @@ async function startServer() {
     }
   });
 
-  // Admin Mock login
-  app.post("/api/auth/admin", async (req, res) => {
-    try {
-      const email = 'admin@sweatfix.com';
-      let user;
-      
-      const { data: existingUser } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle();
-      user = existingUser;
 
-      if (!user) {
-        const { data: newUser, error } = await supabaseAdmin.from('users').insert({
-            email,
-            name: "Admin User",
-            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
-            profile_context: "",
-            water_goal: 2000,
-            is_admin: true
-        }).select().maybeSingle();
-        if (error || !newUser) throw new Error("DB insertion failed, fallback to mock");
-        user = newUser;
-      } else {
-         // Ensure is_admin is true
-         await supabaseAdmin.from('users').update({ is_admin: true }).eq('id', user.id);
-      }
-
-      (req as any).login(user, (err: any) => {
-        if (err) return res.status(500).json({ error: "Login failed" });
-        (req as any).session.save((err: any) => {
-          if (err) return res.status(500).json({ error: "Session save failed" });
-          res.json(user);
-        });
-      });
-    } catch (err: any) {
-      console.error("Admin login error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // Google OAuth callback
   app.get(
     "/auth/google/callback",
     (req, res, next) => {
@@ -469,8 +431,21 @@ async function startServer() {
     }
   );
 
-  const authMeHandler = (req: any, res: any) => {
+  const authMeHandler = async (req: any, res: any) => {
     const user = req.user;
+    if (user && user.email) {
+      try {
+        const { data: adminRecord } = await supabaseAdmin.from('admins').select('*').eq('email', user.email).maybeSingle();
+        if (adminRecord) {
+          user.is_admin = true;
+          user.role = adminRecord.role;
+        } else {
+          user.is_admin = false;
+        }
+      } catch (err) {
+        console.error("Error checking admin status in /auth/me:", err);
+      }
+    }
     console.log("[/auth/me] user found:", user ? `id=${user.id} email=${user.email}` : 'none');
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.json(user || null);
