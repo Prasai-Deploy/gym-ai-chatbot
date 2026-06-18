@@ -26,7 +26,7 @@ function Root() {
                   <App />
                 </ProtectedRoute>
               } />
-              <Route path="/admin" element={
+              <Route path="/admin/*" element={
                 <ProtectedRoute>
                   <AdminDashboard />
                 </ProtectedRoute>
