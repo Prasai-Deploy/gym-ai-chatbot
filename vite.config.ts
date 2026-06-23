@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
+      target: 'es2022',
       chunkSizeWarningLimit: 1500,
     },
   };
