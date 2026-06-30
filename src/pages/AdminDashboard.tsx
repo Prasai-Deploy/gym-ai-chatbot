@@ -5,13 +5,13 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Users, Bell, BadgeCheck as IdBadge, Dumbbell as Barbell, 
   Apple, UserCheck, BarChart, ShieldAlert as ShieldLock, Settings, 
-  AlertTriangle, Menu, X
+  AlertTriangle, Menu, X, LogOut
 } from 'lucide-react';
 
 const AVATAR_COLORS = ['#1D9E75', '#534AB7', '#D85A30', '#378ADD', '#E24B4A', '#BA7517'];
 
 export function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   
   const [stats, setStats] = useState({ totalMembers: 0, activeCount: 0, expiringCount: 0, ptCount: 0 });
   const [renewals, setRenewals] = useState<any[]>([]);
@@ -287,14 +287,23 @@ export function AdminDashboard() {
 
         </div>
 
-        <div className="px-4 pt-4 border-t-[0.5px] border-gray-200 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
-            {ownerInitials}
+        <div className="px-4 pt-4 border-t-[0.5px] border-gray-200 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+              {ownerInitials}
+            </div>
+            <div>
+              <div className="font-bold text-xs truncate max-w-[90px]">{user?.name}</div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider">Super admin</div>
+            </div>
           </div>
-          <div>
-            <div className="font-bold text-xs truncate max-w-[120px]">{user?.name}</div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Super admin</div>
-          </div>
+          <button 
+            onClick={logout} 
+            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-50 transition-colors"
+            title="Sign Out"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
 
