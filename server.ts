@@ -202,7 +202,7 @@ async function startServer() {
           protein_goal: 180,
           carb_goal: 250,
           fat_goal: 70
-        });
+        } as any);
       }
       const { data: user } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
       done(null, user);
