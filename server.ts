@@ -948,7 +948,7 @@ Detailed rules for the JSON block — read carefully:
    - Cardio done → set cardio_type (running/cycling/swimming/walking/hiit etc.), cardio_duration_min, cardio_distance_km, calories_burned
    - Individual exercises → populate the exercises array with name, sets, reps, weight_kg
 5. "memory": Include a concise one-sentence summary of any NEW permanent fact about the user (injuries, equipment, preferences). Do NOT repeat already-known facts.
-6. IMPORTANT: Do NOT include the JSON block in your visible response text — it is stripped automatically. Only the human-readable message is shown to the user.
+6. IMPORTANT: The JSON block is strictly for internal data parsing and is completely invisible to the user. Do NOT mention or refer to "JSON block", "JSON", "schema", "database updates", or any internal data processing mechanics in your conversational reply. Do NOT append parenthetical notes, reminders, or warnings about updating their profile or progress log (e.g., do NOT write "(Remember, I'll update the JSON block...)"). Only output clean, natural, and encouraging coaching responses.
 ${userContextStr}`;
 
       let aiContent: string;

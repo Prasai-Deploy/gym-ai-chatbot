@@ -2,7 +2,7 @@
 -- Nutrition logs and meal plans tables
 
 CREATE TABLE IF NOT EXISTS nutrition_logs (
-  id           INT          NOT NULL AUTO_INCREMENT,
+  id           SERIAL       PRIMARY KEY,
   user_id      INT          NOT NULL,
   date         DATE         NOT NULL,
   food_item    VARCHAR(255) NOT NULL,
@@ -10,19 +10,17 @@ CREATE TABLE IF NOT EXISTS nutrition_logs (
   protein      INT          DEFAULT 0,
   carbs        INT          DEFAULT 0,
   fats         INT          DEFAULT 0,
-  logged_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
+  logged_at    TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+);
 
 CREATE TABLE IF NOT EXISTS meal_plans (
-  id              INT          NOT NULL AUTO_INCREMENT,
+  id              SERIAL       PRIMARY KEY,
   user_id         INT          NOT NULL,
   date            DATE         NOT NULL,
   calories_target INT          NOT NULL,
-  meals           JSON         NOT NULL,
-  created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_mp_user_date (user_id, date),
+  meals           JSONB        NOT NULL,
+  created_at      TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT uq_mp_user_date UNIQUE (user_id, date),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+);

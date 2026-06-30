@@ -1,0 +1,284 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ========================================
+   RESTRAINED DESIGN SYSTEM (OKLCH)
+   ======================================== */
+:root {
+  /* Restrained Strategy: Tinted neutrals + ONE accent (emerald/green) */
+  --accent-primary: oklch(0.7 0.15 160); /* Emerald */
+  --accent-primary-hover: oklch(0.65 0.16 160);
+  
+  /* Dark Mode Surfaces */
+  --surface-primary: oklch(0.18 0.005 160);
+  --surface-card: oklch(0.22 0.005 160);
+  --surface-elevated: oklch(0.26 0.005 160);
+  --surface-input: oklch(0.22 0.005 160);
+  
+  /* Borders */
+  --border-subtle: oklch(0.3 0.005 160);
+  --border-focus: var(--accent-primary);
+  
+  /* Typography */
+  --text-primary: oklch(0.95 0.005 160);
+  --text-secondary: oklch(0.75 0.005 160);
+  --text-muted: oklch(0.55 0.005 160);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  
+  /* Specific Roles for Data */
+  --color-calories: oklch(0.65 0.15 30); /* Orange */
+  --color-protein: oklch(0.7 0.12 260); /* Blue */
+  --color-carbs: oklch(0.75 0.15 80); /* Yellow */
+  --color-fats: oklch(0.7 0.12 300); /* Purple */
+  --color-water: oklch(0.75 0.1 220); /* Cyan */
+}
+
+.light {
+  --accent-primary: oklch(0.55 0.15 160);
+  --accent-primary-hover: oklch(0.5 0.16 160);
+
+  --surface-primary: oklch(0.98 0.005 160);
+  --surface-card: oklch(1 0 0);
+  --surface-elevated: oklch(0.95 0.005 160);
+  --surface-input: oklch(0.95 0.005 160);
+
+  --border-subtle: oklch(0.9 0.005 160);
+  
+  --text-primary: oklch(0.2 0.005 160);
+  --text-secondary: oklch(0.4 0.005 160);
+  --text-muted: oklch(0.6 0.005 160);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+body {
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  @apply antialiased;
+  transition: background-color 0.3s ease-out, color 0.3s ease-out;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+::selection {
+  background: var(--accent-primary);
+  color: oklch(0.18 0.005 160);
+}
+
+/* ========================================
+   UTILITIES
+   ======================================== */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: oklch(0.18 0.005 160);
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 12px 24px;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-input);
+}
+
+/* ========================================
+   BOTTOM NAV
+   ======================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--surface-primary);
+  border-top: 1px solid var(--border-subtle);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 0;
+  flex: 1;
+  cursor: pointer;
+  transition: color 0.2s ease-out;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bottom-nav-item.active {
+  color: var(--accent-primary);
+}
+
+/* ========================================
+   PROGRESS RINGS
+   ======================================== */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.calories-ring-track {
+  stroke: var(--surface-elevated);
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Chat Overrides */
+.chat-prose { color: inherit !important; }
+.chat-prose * { color: inherit !important; }
+
+/* ========================================
+   PWA: INSTALL BANNER
+   ======================================== */
+.install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0));
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========================================
+   PWA: UPDATE TOAST
+   ======================================== */
+.update-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 16px;
+  right: 16px;
+  max-width: 420px;
+  margin: 0 auto;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================
+   PWA: OFFLINE / ONLINE BANNER
+   ======================================== */
+.offline-banner,
+.online-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+}
+
+.offline-banner {
+  background: oklch(0.45 0.12 30);
+  color: #fff;
+}
+
+.online-banner {
+  background: oklch(0.55 0.15 160);
+  color: #121212;
+}
+
+/* ========================================
+   PWA: STANDALONE MODE OVERRIDES
+   ======================================== */
+@media (display-mode: standalone) {
+  /* Extra top padding for notch / status bar */
+  body {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Extend bottom nav for home bar */
+  .bottom-nav {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* ========================================
+   BOTTOM NAV: FAB BUTTON
+   ======================================== */
+.bottom-nav-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: #121212;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+  margin-top: -12px;
+}
+
+.bottom-nav-fab:active {
+  transform: scale(0.92);
+}

@@ -29,8 +29,7 @@ import {
   callWorkoutAI,
   ExerciseHistory,
 } from "../services/workoutAI.service.js";
-import pool from "../db.js";
-import { ResultSetHeader } from "mysql2/promise";
+import supabase from "../db.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared auth guard
@@ -57,29 +56,36 @@ async function ensureWorkoutPlanRow(
   const today = new Date().toISOString().split("T")[0];
 
   // 1. Check if a workout_plans row already exists for today
-  const [existingRows] = await pool.execute(
-    "SELECT id FROM workout_plans WHERE user_id = ? AND date = ?",
-    [userId, today]
-  );
-  const existing = (existingRows as any[])[0];
+  const { data: existing } = await supabase
+    .from("workout_plans")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("date", today)
+    .maybeSingle();
+
   if (existing) return existing.id;
 
   // 2. No row — create one from the chatbot_generated_workouts data
   const exercises = activePlan.workout_exercises || [];
-  const [result] = await pool.execute(
-    `INSERT INTO workout_plans (user_id, date, focus, duration, exercises, calories_estimate, difficulty)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      userId,
-      today,
-      activePlan.workout_title || "Today's Workout",
-      activePlan.duration || "45 min",
-      JSON.stringify(exercises),
-      activePlan.calories_estimate || 0,
-      activePlan.difficulty || "Moderate",
-    ]
-  );
-  return (result as ResultSetHeader).insertId;
+  const { data: newRow, error } = await supabase
+    .from("workout_plans")
+    .insert({
+      user_id: userId,
+      date: today,
+      focus: activePlan.workout_title || "Today's Workout",
+      duration: activePlan.duration || "45 min",
+      exercises: typeof exercises === "string" ? JSON.parse(exercises) : exercises,
+      calories_estimate: activePlan.calories_estimate || 0,
+      difficulty: activePlan.difficulty || "Moderate",
+    })
+    .select("id")
+    .single();
+
+  if (error || !newRow) {
+    throw new Error(error?.message || "Failed to create workout plan row");
+  }
+
+  return newRow.id;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -361,12 +367,14 @@ export async function startWorkoutHandler(req: Request, res: Response): Promise<
 
   try {
     // Verify the plan_id belongs to this user and exists in workout_plans
-    const [planRows] = await pool.execute(
-      "SELECT id FROM workout_plans WHERE id = ? AND user_id = ?",
-      [plan_id, user.id]
-    );
+    const { data: planRow } = await supabase
+      .from("workout_plans")
+      .select("id")
+      .eq("id", plan_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if ((planRows as any[]).length === 0) {
+    if (!planRow) {
       // plan_id not found in workout_plans — try to find today's plan and use that instead
       const today = new Date().toISOString().split("T")[0];
       const todayPlan = await getPlanByDate(user.id, today);
@@ -377,10 +385,11 @@ export async function startWorkoutHandler(req: Request, res: Response): Promise<
       }
 
       // Cancel any previously active session for this user
-      await pool.execute(
-        "UPDATE workout_sessions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'",
-        [user.id]
-      );
+      await supabase
+        .from("workout_sessions")
+        .update({ status: "cancelled" })
+        .eq("user_id", user.id)
+        .eq("status", "active");
 
       const session = await startSession(user.id, todayPlan.id);
       res.json({ success: true, session });
@@ -388,10 +397,11 @@ export async function startWorkoutHandler(req: Request, res: Response): Promise<
     }
 
     // Cancel any previously active session for this user before starting a new one
-    await pool.execute(
-      "UPDATE workout_sessions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'",
-      [user.id]
-    );
+    await supabase
+      .from("workout_sessions")
+      .update({ status: "cancelled" })
+      .eq("user_id", user.id)
+      .eq("status", "active");
 
     const session = await startSession(user.id, plan_id);
     res.json({ success: true, session });
