@@ -32,7 +32,10 @@ if ($status) {
 
 # Create a backup branch
 Write-Host "Creating backup branch 'pre-cleanup-backup'..."
-git branch -D pre-cleanup-backup 2>$null
+$branchExists = git branch --list pre-cleanup-backup
+if ($branchExists) {
+    git branch -D pre-cleanup-backup
+}
 git branch pre-cleanup-backup
 Write-Host "✓ Backup branch 'pre-cleanup-backup' created successfully." -ForegroundColor Green
 
