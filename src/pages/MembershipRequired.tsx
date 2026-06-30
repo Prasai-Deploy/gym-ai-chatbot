@@ -151,10 +151,16 @@ export function MembershipRequired() {
                 </button>
               </div>
 
-              {/* Disclaimer */}
-              <div className="flex items-center gap-1.5 text-zinc-500 text-xs mt-3">
-                <ShieldCheck size={14} className="text-purple-500/70" />
-                <span>Secure. Private. Only for Members.</span>
+              {/* Disclaimer & Branding */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-3">
+                <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
+                  <ShieldCheck size={14} className="text-purple-500/70" />
+                  <span>Secure. Private. Only for Members.</span>
+                </div>
+                <div className="flex items-center gap-2 opacity-50 hover:opacity-80 transition-opacity">
+                  <span className="text-[9px] uppercase tracking-widest font-bold text-zinc-600">Powered by</span>
+                  <img src="/prasai_cloud_logo.png" alt="PrasAI Cloud" className="h-5 object-contain" />
+                </div>
               </div>
             </div>
           </div>

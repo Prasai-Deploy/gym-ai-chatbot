@@ -5,7 +5,7 @@
  * Queues write operations when offline and replays them on reconnect.
  */
 
-const DB_NAME = 'sweatfix-offline';
+const DB_NAME = 'striva-offline';
 const DB_VERSION = 1;
 
 // Store names

@@ -67,7 +67,7 @@ export function InstallPrompt() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                Install Sweat Fix
+                Install STRIVA
               </p>
               <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                 Add to home screen for the best experience

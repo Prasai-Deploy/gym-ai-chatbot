@@ -220,7 +220,7 @@ export function AdminDashboard() {
           </button>
           <div className="font-bold text-base flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#1D9E75] hidden sm:block"></span>
-            Sweatfix AI
+            STRIVA
           </div>
           <span className="bg-[#E1F5EE] text-[#0F6E56] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider hidden sm:block">
             Gym owner

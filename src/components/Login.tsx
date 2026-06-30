@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell, QrCode } from 'lucide-react';
+import { Dumbbell } from 'lucide-react';
 import { motion } from 'motion/react';
-import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LOGIN_BACKGROUND_VIDEO } from '../config/loginBackground';
 
 export function Login() {
-  const [showQR, setShowQR] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { user, loading, setUser, rehydrate } = useAuth();
@@ -113,7 +111,7 @@ export function Login() {
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
           <Dumbbell className="text-white w-10 h-10" />
         </div>
-        <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>SWEAT FIX GYM</h1>
+        <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>STRIVA</h1>
         <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
 
         <button
@@ -138,24 +136,12 @@ export function Login() {
           </div>
         </div>
 
-        <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="flex items-center gap-2 mx-auto text-sm uppercase tracking-widest font-bold hover:opacity-80 transition-opacity"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <QrCode size={16} />
-            Scan to Access
-          </button>
-          {showQR && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-6 p-4 bg-white rounded-2xl inline-block"
-            >
-              <QRCodeSVG value="https://sweat.prasai.cloud" size={150} />
-            </motion.div>
-          )}
+
+
+        {/* PrasAI Cloud Branding Footer */}
+        <div className="mt-12 flex flex-col items-center justify-center gap-2 opacity-50 hover:opacity-80 transition-opacity duration-300">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-600">Powered by</p>
+          <img src="/prasai_cloud_logo.png" alt="PrasAI Cloud Logo" className="h-10 object-contain" />
         </div>
       </motion.div>
     </div>
