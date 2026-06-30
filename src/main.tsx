@@ -1,3 +1,4 @@
+import './lib/httpInterceptor.ts'; // Initialize global HTTP interceptors
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -6,6 +7,7 @@ import { AuthProvider } from './context/AuthContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { AuthCallback } from './pages/AuthCallback.tsx';
 import { AdminDashboard } from './pages/AdminDashboard.tsx';
+import { MembershipRequired } from './pages/MembershipRequired.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
@@ -21,6 +23,7 @@ function Root() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/membership-required" element={<MembershipRequired />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <App />
