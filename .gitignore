@@ -8,8 +8,5 @@ coverage/
 .env*
 !.env.example
 *.db
-build/
-dist/
 *.js
-node_modules/
-.env
+!server.js
