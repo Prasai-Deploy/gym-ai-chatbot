@@ -384,7 +384,10 @@ async function startServer() {
     (req, res, next) => {
       passport.authenticate("google", (err: any, user: any, info: any) => {
         if (err || !user) {
-          return res.status(403).json({ message: info?.message || "Access denied by administrator" });
+          const baseRedirect = process.env.NODE_ENV === "production"
+            ? "https://sweat.prasai.cloud"
+            : (process.env.FRONTEND_URL || "http://localhost:5173");
+          return res.redirect(`${baseRedirect}/membership-required`);
         }
         (req as any).logIn(user, (loginErr: any) => {
           if (loginErr) return res.status(500).json({ error: "Login failed" });
