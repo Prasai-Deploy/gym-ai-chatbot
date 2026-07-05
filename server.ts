@@ -45,12 +45,12 @@ import {
   buildChatInsight,
 } from "./services/dashboard.service.js";
 import { callAIWithRouting } from "./services/ai.service.js";
-import { 
-  saveAIWorkout, 
-  saveAIDiet, 
-  linkActivePlans, 
-  logMeal, 
-  updateDailyProgress 
+import {
+  saveAIWorkout,
+  saveAIDiet,
+  linkActivePlans,
+  logMeal,
+  updateDailyProgress
 } from "./services/plan.service.js";
 import waterRouter from "./routes/water.routes.js";
 import { setHydrationGoal, addWaterIntake } from "./services/water.service.js";
@@ -170,7 +170,7 @@ async function startServer() {
             await supabase.from('users').update({ last_login: now }).eq('id', dbUser.id);
           }
           if (dbUser) {
-             (req as any).user = dbUser;
+            (req as any).user = dbUser;
           }
         }
       } catch (err) {
@@ -216,7 +216,9 @@ async function startServer() {
   // ───────────────────────────────────────────────────────────────────────────
   const callbackURL =
     process.env.NODE_ENV === "production"
-      ? "https://sweat.prasai.cloud/auth/google/callback"
+      ? (process.env.APP_URL
+        ? `${process.env.APP_URL.replace(/\/$/, "")}/auth/google/callback`
+        : "https://stirva.space/auth/google/callback")
       : "http://localhost:5000/auth/google/callback";
 
   passport.use(
@@ -232,10 +234,10 @@ async function startServer() {
           if (email) {
             const { data: allowed } = await supabaseAdmin.from('allowed_users').select('*').eq('email', email).maybeSingle();
             if (!allowed) {
-               return done(null, false, { message: "Access denied by administrator" });
+              return done(null, false, { message: "Access denied by administrator" });
             }
           } else {
-             return done(null, false, { message: "Access denied by administrator" });
+            return done(null, false, { message: "Access denied by administrator" });
           }
 
           const now = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -252,7 +254,7 @@ async function startServer() {
               .select('*')
               .eq('email', email)
               .maybeSingle();
-              
+
             if (existingUser) {
               // Link google_id
               const { data: linkedUser, error } = await supabase.from('users').update({
@@ -274,14 +276,14 @@ async function startServer() {
               created_at: now,
               last_login: now,
             }).select().maybeSingle();
-            
+
             if (error) console.error("Insert error", error);
             user = newUser;
           } else if (user && user.google_id === profile.id) {
             const { data: updatedUser, error } = await supabase.from('users').update({
               last_login: now,
             }).eq('id', user.id).select().maybeSingle();
-            
+
             if (error) console.error("Update error", error);
             user = updatedUser;
           }
@@ -321,34 +323,34 @@ async function startServer() {
 
         if (!user) {
           const { data: newUser, error } = await supabaseAdmin.from('users').insert({
-              email: "demo@sweatfix.com",
-              name: "Demo User",
-              avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
-              profile_context: "",
-              water_goal: 2000,
+            email: "demo@sweatfix.com",
+            name: "Demo User",
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo",
+            profile_context: "",
+            water_goal: 2000,
           }).select().maybeSingle();
           if (error || !newUser) throw new Error("DB insertion failed, fallback to mock");
           user = newUser;
         } else {
-            // Refresh demo user state
-            await supabaseAdmin.from('users').update({ is_admin: false }).eq('id', user.id);
-            await supabase.from('progress').delete().eq('user_id', user.id);
-            await supabase.from('daily_plans').delete().eq('user_id', user.id);
-            await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
-            await supabase.from('workout_plans').delete().eq('user_id', user.id);
-            await supabase.from('workout_sessions').delete().eq('user_id', user.id);
-            await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
-            await supabase.from('workout_logs').delete().eq('user_id', user.id);
-            await supabase.from('progress_logs').delete().eq('user_id', user.id);
-            
-            // Cleanup new tables
-            await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
-            await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
-            await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
-            await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
-            await supabase.from('user_progress').delete().eq('user_id', user.id);
-            await supabase.from('users').update({ profile_context: '', name: 'Demo User' }).eq('id', user.id);
-          }
+          // Refresh demo user state
+          await supabaseAdmin.from('users').update({ is_admin: false }).eq('id', user.id);
+          await supabase.from('progress').delete().eq('user_id', user.id);
+          await supabase.from('daily_plans').delete().eq('user_id', user.id);
+          await supabase.from('fitness_profiles').delete().eq('user_id', user.id);
+          await supabase.from('workout_plans').delete().eq('user_id', user.id);
+          await supabase.from('workout_sessions').delete().eq('user_id', user.id);
+          await supabase.from('chatbot_generated_plans').delete().eq('user_id', user.id);
+          await supabase.from('workout_logs').delete().eq('user_id', user.id);
+          await supabase.from('progress_logs').delete().eq('user_id', user.id);
+
+          // Cleanup new tables
+          await supabase.from('chatbot_generated_workouts').delete().eq('user_id', user.id);
+          await supabase.from('chatbot_generated_diets').delete().eq('user_id', user.id);
+          await supabase.from('user_fitness_plans').delete().eq('user_id', user.id);
+          await supabase.from('user_meal_tracking').delete().eq('user_id', user.id);
+          await supabase.from('user_progress').delete().eq('user_id', user.id);
+          await supabase.from('users').update({ profile_context: '', name: 'Demo User' }).eq('id', user.id);
+        }
       } catch (dbErr: any) {
         console.warn("[DB] Demo login fallback to MOCK user due to DB error:", dbErr.message);
         user = {
@@ -385,7 +387,7 @@ async function startServer() {
       passport.authenticate("google", (err: any, user: any, info: any) => {
         if (err || !user) {
           const baseRedirect = process.env.NODE_ENV === "production"
-            ? "https://sweat.prasai.cloud"
+            ? (process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, "") : "https://sweat.prasai.cloud")
             : (process.env.FRONTEND_URL || "http://localhost:5173");
           return res.redirect(`${baseRedirect}/membership-required`);
         }
@@ -433,7 +435,7 @@ async function startServer() {
             console.error("Admin check failed", e);
           }
           const baseRedirect = process.env.NODE_ENV === "production"
-            ? "https://sweat.prasai.cloud"
+            ? (process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, "") : "https://sweat.prasai.cloud")
             : (process.env.FRONTEND_URL || "http://localhost:5173");
           const redirectUrl = isAdmin ? `${baseRedirect}/admin` : `${baseRedirect}/dashboard`;
           res.redirect(redirectUrl);
@@ -578,14 +580,14 @@ async function startServer() {
 
     try {
       const { error } = await supabase.from('progress').insert({
-          user_id: userId,
-          date,
-          workout_name,
-          calories,
-          protein,
-          water,
-          carbs: carbs ?? 0,
-          fats: fats ?? 0,
+        user_id: userId,
+        date,
+        workout_name,
+        calories,
+        protein,
+        water,
+        carbs: carbs ?? 0,
+        fats: fats ?? 0,
       });
       if (error) throw error;
       res.json({ success: true });
@@ -677,8 +679,8 @@ async function startServer() {
   // ───────────────────────────────────────────────────────────────────────────
   // Dashboard routes (modular) — GET /api/dashboard/:userId, POST /api/progress/metrics
   // ───────────────────────────────────────────────────────────────────────────
-  app.use("/api",          dashboardRouter);
-  app.use("/api/water",    waterRouter);
+  app.use("/api", dashboardRouter);
+  app.use("/api/water", waterRouter);
   app.use("/api/activity", activityRouter);
   app.use("/api/progress", progressRouter);
   app.use("/api/admin", adminRouter);
@@ -691,9 +693,9 @@ async function startServer() {
     const user = (req as any).user;
     if (!user) { res.status(401).end(); return; }
 
-    res.setHeader("Content-Type",  "text/event-stream");
+    res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection",    "keep-alive");
+    res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no"); // Nginx / Hostinger pass-through
     res.flushHeaders();
 
@@ -731,7 +733,7 @@ async function startServer() {
   // ── Nutrition chat trigger regex ───────────────────────────────────────────
   const NUTRITION_GEN_RE =
     /(generate|create|make|give me|show me|what(?:'s| is) my).*(meal\s+plan|diet\s+plan|today.?s?\s+meal|what\s+should\s+i\s+eat)/i;
-  
+
   const NUTRITION_LOG_RE =
     /(track|log|record|i\s+ate|i\s+had|just\s+ate).*(calories|meal|food|lunch|dinner|breakfast|snack)/i;
 
@@ -743,7 +745,7 @@ async function startServer() {
       // ── Progress trigger: show dashboard insights ─────────────────────────
       if (user && message && PROGRESS_TRIGGER_RE.test(message) && !WORKOUT_TRIGGER_RE.test(message)) {
         try {
-          const data    = await buildDashboardSummary(user.id);
+          const data = await buildDashboardSummary(user.id);
           const insight = buildChatInsight(data);
           return res.json({ text: insight });
         } catch (dashErr: any) {
@@ -763,8 +765,8 @@ async function startServer() {
             });
           }
 
-          const today         = new Date().toISOString().split("T")[0];
-          const existingPlan  = await getPlanByDate(user.id, today);
+          const today = new Date().toISOString().split("T")[0];
+          const existingPlan = await getPlanByDate(user.id, today);
 
           if (existingPlan) {
             const exercises =
@@ -778,9 +780,9 @@ async function startServer() {
 
           // Build history map for progressive overload
           const recentFocuses = await getRecentFocuses(user.id, 4);
-          const todayFocus    = decideSplit(profile.workout_days ?? 3, recentFocuses);
-          const lastPlan      = await getLatestPlan(user.id);
-          const historyMap    = new Map<string, any>();
+          const todayFocus = decideSplit(profile.workout_days ?? 3, recentFocuses);
+          const lastPlan = await getLatestPlan(user.id);
+          const historyMap = new Map<string, any>();
 
           if (lastPlan) {
             const lastExercises: any[] =
@@ -796,13 +798,13 @@ async function startServer() {
             );
           }
 
-          const prompt       = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
+          const prompt = buildWorkoutPrompt(profile, todayFocus, recentFocuses, historyMap);
           const generatedPlan = await callWorkoutAI(prompt);
           await savePlan(user.id, today, generatedPlan, prompt);
           await saveToChatbotLog(user.id, generatedPlan);
 
           const formatted = formatWorkoutForChat(generatedPlan);
-          
+
           broadcastToUser(user.id, "dashboard-update", { plans: true });
           return res.json({ text: formatted, updates: { plans: true } });
         } catch (workoutErr: any) {
@@ -823,12 +825,12 @@ async function startServer() {
 
           const { generateMealPlan } = await import("./services/nutrition.service.js");
           const plan = await generateMealPlan(user.id);
-          
+
           let responseText = `🍳 **Your Personalized Meal Plan** (Target: ${plan.calories_target} kcal)\n\n`;
           plan.meals.forEach((m: any) => {
             responseText += `**${m.type}** (${m.calories} kcal)\n- ${m.items.join("\n- ")}\n\n`;
           });
-          
+
           broadcastToUser(user.id, "dashboard-update", { plans: true });
           return res.json({ text: responseText, updates: { plans: true } });
         } catch (nutriErr: any) {
@@ -841,9 +843,9 @@ async function startServer() {
         try {
           const { logFoodIntake } = await import("./services/nutrition.service.js");
           const log = await logFoodIntake(user.id, message);
-          
+
           broadcastToUser(user.id, "dashboard-update", { progress: true });
-          return res.json({ 
+          return res.json({
             text: `✅ Logged: **${log.food_item}**\n🔥 Calories: ${log.calories} kcal\n💪 Protein: ${log.protein}g | 🍞 Carbs: ${log.carbs}g | 🥑 Fats: ${log.fats}g`,
             updates: { progress: true }
           });
@@ -965,7 +967,7 @@ ${userContextStr}`;
         console.error("=== [SERVER ERROR] Chat API Failure ===");
         console.error(`Message: ${apiError.message}`);
         if (apiError.stack) console.error(`Stack: ${apiError.stack}`);
-        
+
         return res.json({
           text: `⚠️ **Connection Error**: I'm currently unable to reach my training servers. Please try again in a moment.`,
         });
@@ -974,12 +976,12 @@ ${userContextStr}`;
       // ── Centralized AI data extraction (aiDataParser.service.ts) ────────────
       let updates = {
         userProfile: false,
-        progress:    false,
-        plans:       false,
-        hydration:   false,
-        weight:      false,
-        activity:    false,
-        macros:      false,
+        progress: false,
+        plans: false,
+        hydration: false,
+        weight: false,
+        activity: false,
+        macros: false,
       };
 
       if (user) {
@@ -1007,12 +1009,12 @@ ${userContextStr}`;
 
       // ── Build user-friendly suffix messages ──────────────────────────────
       const suffixes: string[] = [];
-      if (updates.progress)  suffixes.push("*(✅ Progress logged to your dashboard!)*");
+      if (updates.progress) suffixes.push("*(✅ Progress logged to your dashboard!)*");
       if (updates.hydration) suffixes.push("*(💧 Hydration updated!)*");
-      if (updates.weight)    suffixes.push("*(⚖️ Body weight logged!)*");
-      if (updates.activity)  suffixes.push("*(🏃 Activity recorded!)*");
-      if (updates.plans)     suffixes.push("*(📋 New plan attached to your Daily Protocol!)*");
-      if (updates.macros)    suffixes.push("*(🎯 Macro goals updated!)*");
+      if (updates.weight) suffixes.push("*(⚖️ Body weight logged!)*");
+      if (updates.activity) suffixes.push("*(🏃 Activity recorded!)*");
+      if (updates.plans) suffixes.push("*(📋 New plan attached to your Daily Protocol!)*");
+      if (updates.macros) suffixes.push("*(🎯 Macro goals updated!)*");
       if (suffixes.length > 0) aiContent += "\n\n" + suffixes.join(" ");
 
       // ── Real-time SSE push to all browser tabs of this user ──────────────

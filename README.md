@@ -6,7 +6,7 @@ A production-ready AI coaching platform developed for **Sweat Fix Gym**. This sy
 ---
 
 ## 🚀 Live Demo & Deployment
-* **Access:** https://sweat.prasai.cloud/
+* **Access:** https://stirva.space/
 * **Infrastructure:** Hosted & Managed by **Prasai Cloud**
 
 ---

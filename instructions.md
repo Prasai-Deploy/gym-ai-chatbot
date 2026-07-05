@@ -1,7 +1,7 @@
 1. Project Identity & Logic Retention
 Agency: Prasai.
 
-Domain: sweat.prasai.cloud.
+Domain: stirva.space.
 
 Existing Logic: Do NOT delete or rewrite the existing Supabase database connections or NextAuth Google login flows. Only refactor the UI/UX layer.
 
