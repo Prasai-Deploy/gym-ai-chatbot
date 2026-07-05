@@ -1,6 +1,8 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
+import pg from "pg";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import cron from "node-cron";
@@ -123,8 +125,37 @@ async function startServer() {
   app.set("trust proxy", 1);
   app.use(express.json());
 
+  const PgSessionStore = pgSession(session);
+  const pgPool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+  });
+
+  // Ensure session table exists
+  pgPool.query(`
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid" varchar NOT NULL COLLATE "default",
+      "sess" json NOT NULL,
+      "expire" timestamp(6) NOT NULL
+    ) WITH (OIDS=FALSE);
+    
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey') THEN
+            ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+        END IF;
+    END $$;
+    
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+  `).catch(err => {
+    console.error('[Session] Table creation error (can be ignored if table exists):', err.message);
+  });
+
   app.use(
     session({
+      store: new PgSessionStore({
+        pool: pgPool,
+        tableName: 'session'
+      }),
       secret: process.env.SESSION_SECRET || "sweat-fix-secret",
       resave: false,
       saveUninitialized: false,
