@@ -128,6 +128,11 @@ async function startServer() {
   const PgSessionStore = pgSession(session);
   const pgPool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
+    // Supabase requires SSL for external connections. 
+    // Without this, the connection may be refused or fall back incorrectly.
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   // Ensure session table exists
