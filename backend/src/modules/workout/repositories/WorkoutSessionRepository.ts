@@ -6,7 +6,7 @@ import { WorkoutSession, WorkoutState, CompleteSetDTO } from '../domain/WorkoutS
 
 export class WorkoutSessionRepository extends BaseRepository<WorkoutSession> {
   constructor(supabase: SupabaseClient) {
-    super(supabase, 'workout_sessions');
+    super(supabase, 'v2_workout_sessions');
   }
 
   // State Machine transition that automatically appends to the event log
@@ -21,7 +21,7 @@ export class WorkoutSessionRepository extends BaseRepository<WorkoutSession> {
       // In production, this would call an RPC function.
       
       const { data: session, error: updateError } = await this.supabase
-        .from('workout_sessions')
+        .from('v2_workout_sessions')
         .update({ 
           state: newState,
           ...(newState === 'started' ? { started_at: new Date().toISOString() } : {}),
