@@ -27,19 +27,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   
+  <!-- SEO & Open Graph Meta Tags -->
+  <meta property="og:title" content="STRIVA | Premium AI Fitness Coach" />
+  <meta property="og:description" content="Your premium AI-powered fitness companion for tracking workouts, macros, and reaching peak performance." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://striva.ai/" />
+  <meta property="og:image" content="https://striva.ai/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="STRIVA | Premium AI Fitness Coach" />
+  <meta name="twitter:description" content="Your premium AI-powered fitness companion for tracking workouts, macros, and reaching peak performance." />
+  
   <title>STRIVA</title>
-
-  <!-- Unregister any previously installed service worker immediately -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (var registration of registrations) {
-          registration.unregister();
-          console.log('[SW] Unregistered stale service worker:', registration.scope);
-        }
-      });
-    }
-  </script>
 </head>
 
 <body style="margin:0;background:#121212;">

@@ -1,0 +1,15 @@
+export const zIndex = {
+  hide: -1,
+  auto: 'auto',
+  base: 0,
+  docked: 10,
+  dropdown: 20,
+  sticky: 30,
+  banner: 40,
+  overlay: 50,
+  modal: 60,
+  popover: 70,
+  skipLink: 80,
+  toast: 90,
+  tooltip: 100,
+} as const;

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { authApi } from '../api/authApi';
 
 interface User {
   id: number;
@@ -43,25 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // If no Supabase session, fallback to checking demo login session via backend
+      // If no Supabase session, the user is not authenticated.
+      // (Demo logins now natively generate a Supabase session).
       if (!session) {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        const data = await res.json();
-        
-        // RACE CONDITION FIX: While fetch was running, Supabase might have finished parsing the OAuth hash 
-        // and fired SIGNED_IN via onAuthStateChange. Let's double check the latest session.
-        const { data: { session: latestSession } } = await supabase.auth.getSession();
-        if (latestSession) {
-          const mappedUser = mapSupabaseUser(latestSession.user);
-          setUser(mappedUser);
-          return mappedUser;
-        }
-
-        if (data && data.id) {
-          setUser(data);
-          return data;
-        }
-        
         setUser(null);
         return null;
       }

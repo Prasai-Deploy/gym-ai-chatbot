@@ -1,51 +1,24 @@
-import './lib/httpInterceptor.ts'; // Initialize global HTTP interceptors
-import { StrictMode, Suspense, lazy } from 'react';
+import './lib/httpInterceptor';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Login } from './components/Login.tsx';
-import { AuthProvider } from './context/AuthContext.tsx';
-import { ProtectedRoute } from './components/ProtectedRoute.tsx';
-import { AuthCallback } from './pages/AuthCallback.tsx';
-import { AdminDashboard } from './pages/AdminDashboard.tsx';
-import { MembershipRequired } from './pages/MembershipRequired.tsx';
-import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import App from './App';
 import './index.css';
 
-// Lazy load the main App (Dashboard)
-const App = lazy(() => import('./App.tsx'));
-
-function Root() {
-  return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <Suspense fallback={null}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/membership-required" element={<MembershipRequired />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <App />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/*" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Suspense>
-        </AuthProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const rootElement = document.getElementById('root')!;
 createRoot(rootElement).render(
   <StrictMode>
-    <Root />
-  </StrictMode>,
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </StrictMode>
 );

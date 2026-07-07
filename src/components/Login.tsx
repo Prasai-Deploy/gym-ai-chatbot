@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Dumbbell } from 'lucide-react';
+import { Button, LoadingButton, Card } from '../shared';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -46,26 +47,30 @@ export function Login() {
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     try {
-      const res = await fetch('/api/auth/demo', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      console.log('[Login] /api/auth/demo status:', res.status);
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Demo login failed with status ${res.status}`);
+      // 1. Authenticate natively with Supabase using env password
+      const password = import.meta.env.VITE_DEMO_PASSWORD;
+      if (!password) {
+        throw new Error('VITE_DEMO_PASSWORD is not configured in the environment.');
       }
 
-      const userData = await res.json();
-      console.log('[Login] /api/auth/demo response:', userData);
-      setUser(userData);
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: 'demo@sweatfix.com',
+        password: password,
+      });
 
-      // Verify the session cookie was actually set by the server
+      if (authError || !authData.session) {
+        throw new Error(authError?.message || 'Failed to authenticate demo user');
+      }
+
+      // 2. Clear backend data via the new v2 endpoint
+      // Note: Because we have a Supabase session, httpClient automatically attaches the Bearer token!
+      const { authApi } = await import('../api/authApi');
+      await authApi.resetDemoUser();
+
+      // 3. Rehydrate session context
       const restoredUser = await rehydrate();
-      console.log('[Login] Session restore after demo login:', restoredUser);
       if (!restoredUser) {
-        throw new Error('Session was not restored after demo login. /api/auth/me returned null.');
+        throw new Error('Failed to load demo profile.');
       }
 
       navigate('/dashboard', { replace: true });
@@ -114,27 +119,28 @@ export function Login() {
         <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>STRIVA</h1>
         <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
 
-        <button
+        <Button
           onClick={handleLogin}
-          className="w-full bg-white text-black font-semibold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all active:scale-95 shadow-xl mb-4"
+          className="w-full bg-white text-black hover:bg-zinc-200 gap-3 mb-4 py-4 h-auto shadow-xl"
         >
           <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
           Continue with Google
-        </button>
+        </Button>
 
-        <div className="card rounded-2xl p-6 shadow-xl w-full">
-          <h3 className="text-xl font-bold mb-2 text-center" style={{ color: 'var(--text-primary)' }}>Test Access</h3>
-          <p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>Experience the platform without creating an account.</p>
+        <Card className="shadow-xl w-full text-center">
+          <h3 className="text-xl font-bold mb-2 text-text-primary">Test Access</h3>
+          <p className="text-sm text-text-muted mb-6">Experience the platform without creating an account.</p>
           <div className="flex flex-col gap-3">
-            <button
+            <LoadingButton
               onClick={handleDemoLogin}
-              disabled={demoLoading}
-              className="w-full btn-primary py-3 rounded-xl font-semibold disabled:opacity-60"
+              loading={demoLoading}
+              loadingText="Loading..."
+              className="w-full py-3 h-auto"
             >
-              {demoLoading ? 'Loading...' : 'Explore as Demo User'}
-            </button>
+              Explore as Demo User
+            </LoadingButton>
           </div>
-        </div>
+        </Card>
 
 
 

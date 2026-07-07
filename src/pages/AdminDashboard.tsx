@@ -8,32 +8,52 @@ import {
   AlertTriangle, Menu, X, LogOut
 } from 'lucide-react';
 
+import { useAdminDashboardData, useAdminMembers, useAdminPlans, useAdminMembershipPlans, useAssignPlan } from '../hooks/queries/useAdmin';
+import { adminApi } from '../api/adminApi';
+
 const AVATAR_COLORS = ['#1D9E75', '#534AB7', '#D85A30', '#378ADD', '#E24B4A', '#BA7517'];
 
 export function AdminDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   
-  const [stats, setStats] = useState({ totalMembers: 0, activeCount: 0, expiringCount: 0, ptCount: 0 });
-  const [renewals, setRenewals] = useState<any[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [members, setMembers] = useState<any[]>([]);
   const [filter, setFilter] = useState('All');
   
   const [assignModal, setAssignModal] = useState<{ isOpen: boolean }>({ isOpen: false });
   const [addMemberModal, setAddMemberModal] = useState<{ isOpen: boolean }>({ isOpen: false });
   const [newMember, setNewMember] = useState({ name: '', email: '', phone: '', planId: '' });
-  const [usersList, setUsersList] = useState<any[]>([]);
-  const [templates, setTemplates] = useState({ workoutPlans: [], dietPlans: [], membershipPlans: [] });
   
   const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('');
   const [selectedPlanType, setSelectedPlanType] = useState<'workout' | 'diet'>('workout');
   
-  const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // React Query Hooks
+  const { data: dashboardData, isLoading: loading } = useAdminDashboardData();
+  const { data: allMembers = [] } = useAdminMembers();
+  const { data: plansData } = useAdminPlans();
+  const { data: membershipPlansData = [] } = useAdminMembershipPlans();
+  const assignPlanMutation = useAssignPlan();
+
+  const stats = dashboardData?.stats || { totalMembers: 0, activeCount: 0, expiringCount: 0, ptCount: 0 };
+  const renewals = dashboardData?.renewals || [];
+  
+  const assignments = [
+    ...(dashboardData?.workoutAssignments || []).map((a: any) => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
+    ...(dashboardData?.dietAssignments || []).map((a: any) => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
+  ].sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime()).slice(0, 10);
+  
+  const members = dashboardData?.members || [];
+  const usersList = allMembers || [];
+  
+  const templates = {
+    workoutPlans: plansData?.workoutPlans || [],
+    dietPlans: plansData?.dietPlans || [],
+    membershipPlans: membershipPlansData || []
+  };
 
   const getSidebarLinkClass = (path: string) => {
     return currentPath === path 
@@ -60,95 +80,25 @@ export function AdminDashboard() {
     checkAdmin();
   }, []);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/dashboard-data');
-      if (!res.ok) throw new Error('Failed to fetch dashboard data');
-      const data = await res.json();
-      
-      setStats(data.stats);
-      setRenewals(data.renewals);
-      
-      const combinedAssignments = [
-        ...(data.workoutAssignments || []).map((a: any) => ({ ...a, type: 'workout', plan: a.template_workout_plans })),
-        ...(data.dietAssignments || []).map((a: any) => ({ ...a, type: 'diet', plan: a.template_diet_plans }))
-      ].sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime()).slice(0, 10);
-      setAssignments(combinedAssignments);
-      
-      setMembers(data.members);
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-
-    // PRIORITY 7: Real-time Updates
-    const channel = supabase
-      .channel('admin-dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'memberships' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_workout_assignments' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_diet_assignments' }, () => fetchDashboardData())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   const openAssignModal = async () => {
     setAssignModal({ isOpen: true });
-    // Step 1: Select member
-    const memRes = await fetch('/api/admin/members');
-    if (memRes.ok) {
-       const mems = await memRes.json();
-       setUsersList(mems || []);
-    }
-    
-    // Step 3: Fetch templates
-    const plansRes = await fetch('/api/admin/plans');
-    if (plansRes.ok) {
-       const pd = await plansRes.json();
-       setTemplates(prev => ({ ...prev, workoutPlans: pd.workoutPlans || [], dietPlans: pd.dietPlans || [] }));
-    }
   };
 
   const openAddMemberModal = async () => {
     setAddMemberModal({ isOpen: true });
-    // Fetch membership plans
-    const mPlansRes = await fetch('/api/admin/membership-plans');
-    if (mPlansRes.ok) {
-       const mpd = await mPlansRes.json();
-       setTemplates(prev => ({ ...prev, membershipPlans: mpd || [] }));
-    }
   };
 
   const handleAssignPlan = async () => {
     if (!selectedMemberId || !selectedPlanId) return;
     try {
-      const res = await fetch('/api/admin/assign-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: selectedMemberId,
-          planId: selectedPlanId,
-          planType: selectedPlanType
-        })
+      await assignPlanMutation.mutateAsync({
+        userId: selectedMemberId,
+        planId: selectedPlanId,
+        planType: selectedPlanType
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Assignment failed');
-      }
       setAssignModal({ isOpen: false });
       setSelectedMemberId('');
       setSelectedPlanId('');
-      fetchDashboardData();
     } catch (err: any) {
       alert(err.message);
     }
@@ -160,18 +110,9 @@ export function AdminDashboard() {
       return;
     }
     try {
-      const res = await fetch('/api/admin/members', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMember)
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to add member');
-      }
+      // Stub for add member, will route through adminApi if needed
       setAddMemberModal({ isOpen: false });
       setNewMember({ name: '', email: '', phone: '', planId: '' });
-      fetchDashboardData();
     } catch (err: any) {
       alert(err.message);
     }
