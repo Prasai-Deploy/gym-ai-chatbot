@@ -1,14 +1,23 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+// VitePWA intentionally disabled — re-enable once auth/cache issues are resolved
+// import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      // VitePWA disabled — no service worker generated
+    ],
+    base: '/',
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
+      'process.env.SUPABASE_KEY': JSON.stringify(env.SUPABASE_KEY),
     },
     resolve: {
       alias: {
@@ -16,9 +25,23 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      proxy: {
+        '/api/v1': 'http://localhost:5000',
+        '/api': 'http://localhost:5000',
+      },
       hmr: process.env.DISABLE_HMR !== 'true',
+    },
+    build: {
+      target: 'es2022',
+      chunkSizeWarningLimit: 1500,
+    },
+    esbuild: {
+      target: 'es2022',
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2022',
+      },
     },
   };
 });

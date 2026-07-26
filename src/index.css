@@ -1,23 +1,83 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Outfit", "Inter", sans-serif;
+}
+
+:root {
+  --bg-base: #090B10;
+  --bg-surface: #131722;
+  --bg-surface-elevated: #1A2030;
+  
+  --accent-primary: #F97316;
+  --accent-ai: #6366F1;
+  --accent-success: #10B981;
+  --accent-warning: #F59E0B;
+  --accent-danger: #EF4444;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(249, 115, 22, 0.5);
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-500;
+  background-color: #090B10;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  @apply antialiased;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
+
+/* ========================================
+   STRIVA v3 PRIMITIVE STYLES
+   ======================================== */
+.v3-card {
+  background: #131722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.v3-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.v3-card-elevated {
+  background: #1A2030;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+}
+
+.v3-glow-orange {
+  box-shadow: 0 0 35px rgba(249, 115, 22, 0.2);
+}
+
+.v3-glow-indigo {
+  box-shadow: 0 0 35px rgba(99, 102, 241, 0.2);
+}
+
+/* Custom Scrollbars */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  @apply bg-zinc-950;
+  background: #090B10;
 }
-
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+  background: #1A2030;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F97316;
 }
