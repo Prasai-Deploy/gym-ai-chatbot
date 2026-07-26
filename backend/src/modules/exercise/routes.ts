@@ -18,6 +18,7 @@ const controller = new ExerciseController(service);
 const adminController = new AdminExerciseController(service);
 
 // Public/Member Endpoints
+router.get('/', requireAuth, controller.searchExercises);
 router.get('/search', requireAuth, controller.searchExercises);
 router.get('/categories', requireAuth, controller.getCategories);
 router.get('/muscles', requireAuth, controller.getMuscleGroups);
@@ -26,7 +27,7 @@ router.get('/:id', requireAuth, controller.getExercise);
 
 // Admin Endpoints
 adminRouter.post('/', requireAdmin, adminController.createExercise);
-adminRouter.patch('/:id', requireAdmin, adminController.updateExercise);
+adminRouter.put('/:id', requireAdmin, adminController.updateExercise);
 adminRouter.delete('/:id', requireAdmin, adminController.deleteExercise);
 
 export const exerciseRouter = router;

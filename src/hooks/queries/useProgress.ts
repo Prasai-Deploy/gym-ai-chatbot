@@ -5,8 +5,10 @@ export const useProgressSummary = () => {
   return useQuery({
     queryKey: ['progress', 'summary'],
     queryFn: async () => {
-      const res = await progressApi.getSummary();
-      return res.data; // Assuming backend wraps in { data: ... }
+      // httpClient interceptor already unwraps response.data once.
+      // The result is the full API envelope: { success, data: ProgressStatistics }
+      const res = await progressApi.getSummary() as any;
+      return res?.data ?? res;
     }
   });
 };
@@ -15,8 +17,8 @@ export const useProgressChartData = () => {
   return useQuery({
     queryKey: ['progress', 'chart'],
     queryFn: async () => {
-      const res = await progressApi.getChartData();
-      return res.data;
+      const res = await progressApi.getChartData() as any;
+      return res?.data ?? res;
     }
   });
 };

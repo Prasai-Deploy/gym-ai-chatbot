@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/auth': 'http://localhost:5000',
+        '/api/v1': 'http://localhost:5000',
         '/api': 'http://localhost:5000',
       },
       hmr: process.env.DISABLE_HMR !== 'true',

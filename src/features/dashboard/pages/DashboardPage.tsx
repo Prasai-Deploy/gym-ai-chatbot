@@ -1,4 +1,5 @@
 import React from 'react';
+import { httpClient } from '../../../api/httpClient';
 import { useDashboard } from '../hooks/useDashboard';
 import { useDashboardCharts } from '../hooks/useDashboardCharts';
 import { useWorkoutSummary } from '../hooks/useWorkoutSummary';
@@ -14,12 +15,13 @@ import { BottomNavigation } from '../components/BottomNavigation';
 import { FloatingChatButton } from '../components/FloatingChatButton';
 import { DashboardDialogs } from '../components/DashboardDialogs';
 
-import { ThemeToggle } from '../../../components/ThemeToggle';
 import { useTheme } from '../../../hooks/useTheme';
 import { MacroTracker } from '../../../components/MacroTracker';
 import { CaloriesRing } from '../../../components/CaloriesRing';
 import { InstallPrompt } from '../../../components/InstallPrompt';
 import { OfflineBanner } from '../../../components/OfflineBanner';
+import { Dumbbell, Utensils, Droplets, Bot, Sparkles } from 'lucide-react';
+
 export default function DashboardPage() {
   useTheme(); // Initialize theme from localStorage on load
 
@@ -55,14 +57,17 @@ export default function DashboardPage() {
     ));
 
     try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      await httpClient.post('/intelligence/nutrition/log', {
+        calories: payload.calories,
+        protein_g: payload.protein,
+        carbs_g: payload.carbs,
+        fat_g: payload.fats,
+        water_ml: payload.water * 1000,
+        notes: payload.workout_name || undefined,
       });
       dashboard.fetchWeeklyProgress();
     } catch {
-      await queueRequest('/api/progress', 'POST', payload);
+      await queueRequest('/api/v1/intelligence/nutrition/log', 'POST', payload);
     }
     dashboard.setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
     dashboard.setShowForm(false);
@@ -85,14 +90,9 @@ export default function DashboardPage() {
   const handleSaveProfile = async () => {
     if (!dashboard.editName.trim()) return;
     try {
-      const res = await fetch('/api/user', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: dashboard.editName })
-      });
-      if (res.ok) {
-        const updatedUser = await res.json();
-        dashboard.setUser(updatedUser);
+      const res = await httpClient.patch('/identity/profile', { full_name: dashboard.editName }) as any;
+      if (res?.data) {
+        dashboard.setUser((prev) => prev ? { ...prev, name: dashboard.editName } : prev);
       }
     } catch (e) {
       console.error(e);
@@ -101,10 +101,12 @@ export default function DashboardPage() {
     }
   };
 
-
-
   return (
-    <div className="min-h-screen font-sans pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans pb-32 relative overflow-hidden">
+      {/* Glow Backdrops */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
       <DashboardHeader 
         user={dashboard.user} 
         onShowProfile={() => dashboard.setShowProfile(true)} 
@@ -116,12 +118,43 @@ export default function DashboardPage() {
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative z-10">
         <DashboardHome user={dashboard.user} />
-        
-        <CaloriesRing burned={totalCalories} goal={dashboard.user?.calorie_goal || 2000} />
-        <MacroTracker 
-          protein={totalProtein} carbs={totalCarbs} fats={totalFats}
-          proteinGoal={dashboard.user?.protein_goal} carbsGoal={dashboard.user?.carb_goal} fatsGoal={dashboard.user?.fat_goal}
-        />
+
+        {/* Quick Action Pill Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <button 
+            onClick={() => dashboard.setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-orange-500/50 text-slate-200 text-xs font-bold transition-all shrink-0 hover:scale-105"
+          >
+            <Dumbbell className="w-4 h-4 text-orange-400" /> Log Workout
+          </button>
+          <button 
+            onClick={() => dashboard.setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 text-slate-200 text-xs font-bold transition-all shrink-0 hover:scale-105"
+          >
+            <Utensils className="w-4 h-4 text-amber-400" /> Log Nutrition
+          </button>
+          <button 
+            onClick={() => handleAddWater(250)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs font-bold transition-all shrink-0 hover:scale-105"
+          >
+            <Droplets className="w-4 h-4 text-cyan-400" /> +250ml Water
+          </button>
+          <button 
+            onClick={() => dashboard.setChatOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-bold transition-all shrink-0 hover:scale-105"
+          >
+            <Sparkles className="w-4 h-4 text-indigo-400" /> AI Coach
+          </button>
+        </div>
+
+        {/* Primary Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CaloriesRing burned={totalCalories} goal={dashboard.user?.calorie_goal || 2000} />
+          <MacroTracker 
+            protein={totalProtein} carbs={totalCarbs} fats={totalFats}
+            proteinGoal={dashboard.user?.protein_goal} carbsGoal={dashboard.user?.carb_goal} fatsGoal={dashboard.user?.fat_goal}
+          />
+        </div>
 
         <WorkoutSection onLogActivity={() => dashboard.setShowForm(true)} />
         

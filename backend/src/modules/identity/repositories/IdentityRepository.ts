@@ -19,7 +19,7 @@ export class IdentityRepository extends BaseRepository<Profile> implements IIden
   public async findFitnessProfile(userId: string): Promise<Result<FitnessProfile | null, AppError>> {
     try {
       const { data, error } = await this.supabase
-        .from('fitness_profiles')
+        .from('v2_fitness_profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -38,7 +38,7 @@ export class IdentityRepository extends BaseRepository<Profile> implements IIden
   public async updateFitnessProfile(userId: string, data: Partial<FitnessProfile>): Promise<Result<FitnessProfile, AppError>> {
     try {
       const { data: updated, error } = await this.supabase
-        .from('fitness_profiles')
+        .from('v2_fitness_profiles')
         .update(data)
         .eq('id', userId)
         .select()
@@ -97,7 +97,7 @@ export class IdentityRepository extends BaseRepository<Profile> implements IIden
       await Promise.all([
         this.supabase.from('progress').delete().eq('user_id', userId),
         this.supabase.from('daily_plans').delete().eq('user_id', userId),
-        this.supabase.from('fitness_profiles').delete().eq('id', userId), // Identity uses 'id' instead of 'user_id'
+        this.supabase.from('v2_fitness_profiles').delete().eq('id', userId), // Identity uses 'id' instead of 'user_id'
         this.supabase.from('user_preferences').delete().eq('id', userId),
         this.supabase.from('workout_plans').delete().eq('user_id', userId),
         this.supabase.from('workout_sessions').delete().eq('user_id', userId),

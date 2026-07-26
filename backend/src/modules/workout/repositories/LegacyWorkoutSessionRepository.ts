@@ -3,8 +3,9 @@ import { BaseRepository } from '@shared/database/repositories/BaseRepository';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { WorkoutSession, WorkoutState, CompleteSetDTO } from '../domain/WorkoutSchemas';
+import { IWorkoutSessionRepository } from './IWorkoutSessionRepository';
 
-export class WorkoutSessionRepository extends BaseRepository<WorkoutSession> {
+export class LegacyWorkoutSessionRepository extends BaseRepository<WorkoutSession> implements IWorkoutSessionRepository {
   constructor(supabase: SupabaseClient) {
     super(supabase, 'workout_sessions');
   }

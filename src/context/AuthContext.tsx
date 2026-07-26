@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { authApi } from '../api/authApi';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   avatar: string;
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const mapSupabaseUser = (sbUser: any): User | null => {
     if (!sbUser) return null;
     return {
-      id: sbUser.id as any, // ID will be string from Supabase, but our interface expects number. Hacky cast for now.
+      id: sbUser.id as string,
       email: sbUser.email || '',
       name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
       avatar: sbUser.user_metadata?.avatar_url || '',

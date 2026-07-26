@@ -6,7 +6,7 @@ import { LogNutritionDTO } from '../domain/IntelligenceSchemas';
 
 export class NutritionRepository extends BaseRepository<any> {
   constructor(supabase: SupabaseClient) {
-    super(supabase, 'nutrition_logs');
+    super(supabase, 'v2_nutrition_logs');
   }
 
   public async logNutrition(userId: string, dto: LogNutritionDTO): Promise<Result<any, AppError>> {
