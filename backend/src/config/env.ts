@@ -12,6 +12,9 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   GROQ_API_KEY: z.string().optional(),
+  RAZORPAY_KEY_ID: z.string().default('rzp_test_striva2026'),
+  RAZORPAY_KEY_SECRET: z.string().default('rzp_secret_striva2026'),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default('rzp_whsec_striva2026'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

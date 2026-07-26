@@ -92,9 +92,8 @@ export function AdminDashboard() {
     if (!selectedMemberId || !selectedPlanId) return;
     try {
       await assignPlanMutation.mutateAsync({
-        userId: selectedMemberId,
-        planId: selectedPlanId,
-        planType: selectedPlanType
+        user_id: String(selectedMemberId),
+        plan_id: String(selectedPlanId),
       });
       setAssignModal({ isOpen: false });
       setSelectedMemberId('');
@@ -253,28 +252,30 @@ export function AdminDashboard() {
         
         {/* SECTION 1: Stats row */}
         {currentPath === '/admin' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total members</div>
-            <div className="text-[22px] font-black text-gray-900">{stats.totalMembers}</div>
-            <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Active community</div>
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total members</div>
+              <div className="text-[22px] font-black text-gray-900">{stats.totalMembers}</div>
+              <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Active community</div>
+            </div>
+            <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Active memberships</div>
+              <div className="text-[22px] font-black text-gray-900">{stats.activeCount}</div>
+              <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Current recurring</div>
+            </div>
+            <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Est. Monthly Revenue (MRR)</div>
+              <div className="text-[22px] font-black text-gray-900">${(stats.activeCount * 29).toLocaleString()}</div>
+              <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">SaaS Recurring MRR</div>
+            </div>
+            <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">PT Clients</div>
+              <div className="text-[22px] font-black text-gray-900">{stats.ptCount}</div>
+              <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Elite tier</div>
+            </div>
           </div>
-          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Active memberships</div>
-            <div className="text-[22px] font-black text-gray-900">{stats.activeCount}</div>
-            <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Current recurring</div>
-          </div>
-          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Expiring (7 days)</div>
-            <div className="text-[22px] font-black text-gray-900">{stats.expiringCount}</div>
-            <div className="text-[11px] text-[#A32D2D] font-semibold mt-1">Requires attention</div>
-          </div>
-          <div className="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-4 shadow-sm">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">PT Clients</div>
-            <div className="text-[22px] font-black text-gray-900">{stats.ptCount}</div>
-            <div className="text-[11px] text-[#1D9E75] font-semibold mt-1">Premium tier</div>
-          </div>
-        </div>
+        </>
         )}
 
         {/* SECTION 2: Renewals & Assignments */}

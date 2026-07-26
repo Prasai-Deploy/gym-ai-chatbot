@@ -6,6 +6,7 @@ import { useDashboardRealtime } from './useDashboardRealtime';
 import { useActivity } from './useActivity';
 import { format } from 'date-fns';
 import { cacheUser, getCachedUser, cacheProgress, getCachedProgress, cachePlans, getCachedPlans, queueRequest, replayQueue } from '../../../services/offlineStorage';
+import { authApi } from '../../../api/authApi';
 
 export function useDashboard() {
   const { user, setUser, logout } = useAuth();
@@ -60,11 +61,19 @@ export function useDashboard() {
   // Fetchers
   const fetchUser = useCallback(async () => {
     try {
-      const res = await fetch('/auth/me');
-      const data = await res.json();
-      setUser(data);
-      if (data) {
-        await cacheUser(data);
+      const res = await authApi.getMe() as any;
+      // v2 /identity/me returns { success, data: { profile, fitness, preferences } }
+      const profile = res?.data?.profile ?? res?.data ?? res;
+      if (profile) {
+        const mappedUser = {
+          ...profile,
+          id: profile.id ?? profile.auth_id,
+          name: profile.full_name ?? profile.name ?? 'User',
+          email: profile.email ?? '',
+          avatar: profile.avatar_url ?? '',
+        };
+        setUser(mappedUser);
+        await cacheUser(mappedUser);
         fetchProgress();
         fetchPlans();
       }

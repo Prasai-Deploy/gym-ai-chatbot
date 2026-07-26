@@ -3,7 +3,7 @@ import { WorkoutController } from './controllers/WorkoutController';
 import { AdminWorkoutController } from './controllers/AdminWorkoutController';
 import { WorkoutExecutionService } from './services/WorkoutExecutionService';
 import { WorkoutProgramService } from './services/WorkoutProgramService';
-import { WorkoutSessionRepository } from './repositories/WorkoutSessionRepository';
+import { LegacyWorkoutSessionRepository } from './repositories/LegacyWorkoutSessionRepository';
 import { WorkoutProgramRepository } from './repositories/WorkoutProgramRepository';
 import { supabase } from '@database/supabase';
 import { requireAuth } from '@middleware/auth';
@@ -14,7 +14,7 @@ const router = Router();
 const adminRouter = Router();
 
 // DI wiring
-const sessionRepository = new WorkoutSessionRepository(supabase);
+const sessionRepository = new LegacyWorkoutSessionRepository(supabase);
 const programRepository = new WorkoutProgramRepository(supabase);
 
 const executionService = new WorkoutExecutionService(sessionRepository);

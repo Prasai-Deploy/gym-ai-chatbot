@@ -20,7 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
 // Logging Middleware
-app.use(pinoHttp({ logger }));
+if (process.env.NODE_ENV !== 'test') {
+  app.use(pinoHttp({ logger }));
+}
 
 // Infrastructure Routes
 app.use('/', healthRouter);
@@ -31,8 +33,10 @@ import { workoutRouter, adminWorkoutRouter } from '../modules/workout/routes';
 import { progressRouter } from '../modules/progress/routes';
 import { intelligenceRouter } from '../modules/intelligence/routes';
 import { aiRouter } from '../modules/ai/routes';
+import { adminRouter } from '../modules/admin/routes';
+import { billingRouter } from '../modules/billing/routes';
 
-// Domain Routes will be mounted here in future sprints
+// Domain Routes
 app.use('/api/v1/identity', identityRouter);
 app.use('/api/v1/exercises', exerciseRouter);
 app.use('/api/v1/admin/exercises', adminExerciseRouter);
@@ -41,10 +45,12 @@ app.use('/api/v1/admin/workouts', adminWorkoutRouter);
 app.use('/api/v1/progress', progressRouter);
 app.use('/api/v1/intelligence', intelligenceRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/billing', billingRouter);
+app.use('/api/v1/admin', adminRouter);
 
 // Catch-all 404
-app.use('*', () => {
-  throw new NotFoundError();
+app.use('*', (_req, _res, next) => {
+  next(new NotFoundError());
 });
 
 // Global Error Handler

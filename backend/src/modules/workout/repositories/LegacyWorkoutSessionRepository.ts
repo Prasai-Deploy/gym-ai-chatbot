@@ -3,10 +3,11 @@ import { BaseRepository } from '@shared/database/repositories/BaseRepository';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { WorkoutSession, WorkoutState, CompleteSetDTO } from '../domain/WorkoutSchemas';
+import { IWorkoutSessionRepository } from './IWorkoutSessionRepository';
 
-export class WorkoutSessionRepository extends BaseRepository<WorkoutSession> {
+export class LegacyWorkoutSessionRepository extends BaseRepository<WorkoutSession> implements IWorkoutSessionRepository {
   constructor(supabase: SupabaseClient) {
-    super(supabase, 'v2_workout_sessions');
+    super(supabase, 'workout_sessions');
   }
 
   // State Machine transition that automatically appends to the event log
@@ -21,7 +22,7 @@ export class WorkoutSessionRepository extends BaseRepository<WorkoutSession> {
       // In production, this would call an RPC function.
       
       const { data: session, error: updateError } = await this.supabase
-        .from('v2_workout_sessions')
+        .from('workout_sessions')
         .update({ 
           state: newState,
           ...(newState === 'started' ? { started_at: new Date().toISOString() } : {}),

@@ -1,11 +1,11 @@
-import { WorkoutSessionRepository } from '../repositories/WorkoutSessionRepository';
+import { IWorkoutSessionRepository } from '../repositories/IWorkoutSessionRepository';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError, ValidationError } from '@errors/AppError';
 import { StateTransitionDTO, CompleteSetDTO, WorkoutSession } from '../domain/WorkoutSchemas';
 import { eventBus } from '@shared/core/EventBus';
 
 export class WorkoutExecutionService {
-  constructor(private readonly repository: WorkoutSessionRepository) {}
+  constructor(private readonly repository: IWorkoutSessionRepository) {}
 
   public async getSession(sessionId: string): Promise<Result<WorkoutSession | null, AppError>> {
     return this.repository.findById(sessionId);
