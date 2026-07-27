@@ -6,7 +6,7 @@
   "workspaces": [
     "backend"
   ],
-  "main": "build/server.js",
+  "main": "backend/dist/server.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
