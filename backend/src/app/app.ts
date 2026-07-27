@@ -52,7 +52,16 @@ app.use('/api/v1/admin', adminRouter);
 
 // Production Frontend Static Serving & SPA Fallback
 const clientDistPath = path.resolve(process.cwd(), 'dist');
-if (process.env.NODE_ENV === 'production' || fs.existsSync(clientDistPath)) {
+const distExists = fs.existsSync(clientDistPath);
+const indexExists = fs.existsSync(path.join(clientDistPath, 'index.html'));
+
+logger.info(`[Startup Diagnostic] process.cwd(): ${process.cwd()}`);
+logger.info(`[Startup Diagnostic] clientDistPath: ${clientDistPath}`);
+logger.info(`[Startup Diagnostic] fs.existsSync(clientDistPath): ${distExists}`);
+logger.info(`[Startup Diagnostic] fs.existsSync(index.html): ${indexExists}`);
+
+if (process.env.NODE_ENV === 'production' || distExists) {
+  logger.info(`Serving frontend from: ${clientDistPath}`);
   app.use(express.static(clientDistPath));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
