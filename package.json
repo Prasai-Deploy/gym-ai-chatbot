@@ -52,7 +52,7 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.17.0",
+    "react-router-dom": "^7.18.1",
     "recharts": "^3.8.1",
     "stripe": "^22.3.2",
     "tailwind-merge": "^3.5.0",
@@ -87,8 +87,13 @@
     "esbuild": "^0.28.1",
     "js-yaml": "^4.2.0",
     "qs": "^6.15.2",
-    "brace-expansion": "^5.0.6",
-    "postcss": "^8.5.10",
-    "@babel/core": "^7.29.6"
+    "brace-expansion": "^5.0.8",
+    "postcss": "^8.5.18",
+    "@babel/core": "^7.29.6",
+    "vitest": "^3.2.6",
+    "vite": "^6.4.3",
+    "fast-uri": "^4.1.1",
+    "shell-quote": "^1.10.0",
+    "react-router": "^7.18.1"
   }
 }
