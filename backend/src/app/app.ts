@@ -1,3 +1,5 @@
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -47,6 +49,18 @@ app.use('/api/v1/intelligence', intelligenceRouter);
 app.use('/api/v1/ai', aiRouter);
 app.use('/api/v1/billing', billingRouter);
 app.use('/api/v1/admin', adminRouter);
+
+// Production Frontend Static Serving & SPA Fallback
+const clientDistPath = path.resolve(process.cwd(), 'dist');
+if (process.env.NODE_ENV === 'production' || fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Catch-all 404
 app.use('*', (_req, _res, next) => {
