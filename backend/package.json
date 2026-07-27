@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -39,6 +39,7 @@
     "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
     "supertest": "^7.0.0",
+    "tsc-alias": "^1.8.10",
     "tsx": "^4.9.3",
     "typescript": "^6.0.3",
     "vitest": "^3.2.6"
