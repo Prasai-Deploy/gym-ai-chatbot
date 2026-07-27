@@ -10,8 +10,8 @@
     "dev:backend": "cd backend && npm run dev",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "vite build",
-    "build:backend": "tsc -p tsconfig.server.json",
-    "start": "node build/server.js",
+    "build:backend": "cd backend && npm run build",
+    "start": "node backend/dist/server.js",
     "deploy": "npm run build && npm run start"
   },
   "dependencies": {
