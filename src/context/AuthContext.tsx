@@ -66,29 +66,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     rehydrate();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const { data: adminData } = await supabase
-          .from('admins')
-          .select('role')
-          .eq('email', session.user.email)
-          .single();
+    try {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          try {
+            const { data: adminData } = await supabase
+              .from('admins')
+              .select('role')
+              .eq('email', session.user.email)
+              .single();
 
-        if (adminData) {
-          window.location.replace('/admin');  // admin -> dashboard only
-        } else {
-          setUser(mapSupabaseUser(session.user));
-          if (window.location.pathname.startsWith('/admin')) {
-             window.location.replace('/dashboard');    // normal user
+            if (adminData) {
+              window.location.replace('/admin');
+            } else {
+              setUser(mapSupabaseUser(session.user));
+              if (window.location.pathname.startsWith('/admin')) {
+                window.location.replace('/dashboard');
+              }
+            }
+          } catch (err) {
+            console.error('Error checking admin status:', err);
           }
+        } else if (!session) {
+          setUser((prev) => (prev?.email === 'demo@sweatfix.com' ? prev : null));
         }
-      } else if (!session) {
-        // Only clear user if it's not a demo login
-        setUser((prev) => (prev?.email === 'demo@sweatfix.com' ? prev : null));
-      }
-    });
+      });
 
-    return () => subscription.unsubscribe();
+      return () => {
+        data?.subscription?.unsubscribe();
+      };
+    } catch (err) {
+      console.error('Error in onAuthStateChange:', err);
+    }
   }, [rehydrate]);
 
   const logout = async () => {

@@ -66,22 +66,38 @@
   </div>
   <div id="root"></div>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const observer = new MutationObserver(() => {
+    (function() {
+      function hideLoader() {
+        const loader = document.getElementById('app-loader');
+        if (loader) {
+          loader.style.transition = 'opacity 0.3s ease';
+          loader.style.opacity = '0';
+          setTimeout(() => loader.remove(), 300);
+        }
+      }
+      
+      function checkAndHide() {
         const root = document.getElementById('root');
         if (root && root.children.length > 0) {
-          const loader = document.getElementById('app-loader');
-          if (loader) {
-            loader.style.transition = 'opacity 0.3s ease';
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 300);
-          }
-          observer.disconnect();
+          hideLoader();
+          return true;
         }
-      });
-      observer.observe(document.getElementById('root'), 
-        { childList: true });
-    });
+        return false;
+      }
+
+      if (!checkAndHide()) {
+        const root = document.getElementById('root');
+        if (root) {
+          const observer = new MutationObserver(() => {
+            if (checkAndHide()) {
+              observer.disconnect();
+            }
+          });
+          observer.observe(root, { childList: true, subtree: true });
+        }
+        setTimeout(hideLoader, 1500);
+      }
+    })();
   </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
