@@ -21,6 +21,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
+// Sprint 3E — Enterprise Security Middleware
+import { correlationIdMiddleware, rateLimitMiddleware, securityHeadersMiddleware } from '@middleware/security.middleware';
+app.use(correlationIdMiddleware);
+app.use(securityHeadersMiddleware);
+app.use(rateLimitMiddleware);
+
 // Logging Middleware
 if (process.env.NODE_ENV !== 'test') {
   app.use(pinoHttp({ logger }));
@@ -37,6 +43,9 @@ import { intelligenceRouter } from '../modules/intelligence/routes';
 import { aiRouter } from '../modules/ai/routes';
 import { adminRouter } from '../modules/admin/routes';
 import { billingRouter } from '../modules/billing/routes';
+import { organizationRouter } from '../modules/organization';
+import { integrationRouter } from '../modules/integrations';
+import { analyticsRouter } from '../modules/analytics';
 
 // Domain Routes
 app.use('/api/v1/identity', identityRouter);
@@ -49,6 +58,9 @@ app.use('/api/v1/intelligence', intelligenceRouter);
 app.use('/api/v1/ai', aiRouter);
 app.use('/api/v1/billing', billingRouter);
 app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/organizations', organizationRouter);
+app.use('/api/v1/integrations', integrationRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 
 // Production Frontend Static Serving & SPA Fallback
 const clientDistPath = path.resolve(process.cwd(), 'dist');

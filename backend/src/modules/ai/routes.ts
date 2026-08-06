@@ -71,4 +71,57 @@ const controller = new AIController(
 // -- ROUTES --
 router.post('/chat', requireAuth, controller.chat);
 
+// Sprint 4A — Multi-Agent Ecosystem Route
+import { AgentRunner } from './agents/AgentRunner';
+
+const agentRunner = new AgentRunner(provider);
+
+router.post('/agent', requireAuth, async (req, res, next) => {
+  try {
+    const { message, conversationId } = req.body;
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role || 'Member';
+    const orgId = req.headers['x-organization-id'] as string || '00000000-0000-0000-0000-000000000001';
+    const correlationId = req.headers['x-correlation-id'] as string;
+
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    const historyRes = await convManager.getHistory(conversationId || '');
+    const history = historyRes.isSuccess() ? historyRes.value : [];
+
+    const response = await agentRunner.run(
+      message,
+      { userId, organizationId: orgId, conversationId: conversationId || '', userRole },
+      history
+    );
+
+    res.json({
+      success: true,
+      data: {
+        agentId: response.agentId,
+        message: response.message.content,
+        toolsCalled: response.toolsCalled,
+        durationMs: response.durationMs,
+        model: response.model,
+        correlationId,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/agents', requireAuth, (_req, res) => {
+  const { AgentOrchestrator } = require('./agents/AgentOrchestrator');
+  const orchestrator = new AgentOrchestrator();
+  res.json({ success: true, data: { agents: orchestrator.listAgents().map((a: any) => ({ id: a.id, name: a.name, description: a.description, tools: a.tools.map((t: any) => t.name) })) } });
+});
+
+router.get('/agent/analytics', requireAuth, (_req, res) => {
+  res.json({ success: true, data: { analytics: agentRunner.getAnalytics() } });
+});
+
 export const aiRouter = router;
+
