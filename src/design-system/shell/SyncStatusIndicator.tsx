@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Badge } from '../components/Badge';
 import { RefreshCw, CheckCircle2 } from '../icons';
 import { offlineSyncEngine } from '../../services/offline/OfflineSyncEngine';
 import { cn } from '../tokens';
@@ -15,8 +14,13 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = React.mem
 
   useEffect(() => {
     const checkPending = async () => {
-      const count = await offlineSyncEngine.getPendingCount();
-      setPendingCount(count);
+      try {
+        const count = await offlineSyncEngine.getPendingCount();
+        setPendingCount(count);
+      } catch {
+        // Fallback gracefully if offline engine not initialized in dev mode
+        setPendingCount(0);
+      }
     };
 
     checkPending();
@@ -26,18 +30,17 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = React.mem
 
   if (pendingCount === 0) {
     return (
-      <div className={cn('flex items-center gap-1 text-[11px] text-emerald-400 select-none', className)}>
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        <span className="font-semibold">All Synced</span>
+      <div className={cn('flex items-center gap-1 text-[10px] text-slate-400 select-none font-bold uppercase tracking-wider', className)}>
+        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+        <span>SYNCED</span>
       </div>
     );
   }
 
   return (
-    <div className={cn('flex items-center gap-1 select-none', className)}>
-      <Badge variant="warning" size="sm" icon={<RefreshCw className="w-3 h-3 animate-spin" />}>
-        Syncing {pendingCount} Pending
-      </Badge>
+    <div className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[10px] font-bold uppercase tracking-wider select-none', className)}>
+      <RefreshCw className="w-3 h-3 animate-spin" />
+      <span>{pendingCount} PENDING</span>
     </div>
   );
 });

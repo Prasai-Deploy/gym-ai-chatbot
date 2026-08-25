@@ -15,6 +15,7 @@ export const V3NutritionPage: React.FC = () => {
   return (
     <AppShell
       currentPath="/v3/nutrition"
+      showRightSidebar={false}
       onNavigate={(path) => navigate(path)}
       onLogout={() => logout?.()}
       user={{
@@ -24,14 +25,15 @@ export const V3NutritionPage: React.FC = () => {
       }}
     >
       {isLoading ? (
-        <div className="p-8 space-y-4">
-          <LoadingSkeleton height="140px" variant="card" />
-          <LoadingSkeleton height="300px" variant="card" />
+        <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+          <LoadingSkeleton height="40px" width="180px" />
+          <LoadingSkeleton height="260px" variant="card" />
+          <LoadingSkeleton height="200px" variant="card" />
         </div>
       ) : (
         <NutritionLayout
           userName={userName}
-          onNavigateCoach={() => {
+          onNavigateCoach={(prompt) => {
             navigate('/v3/coach');
           }}
         />

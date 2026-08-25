@@ -28,8 +28,8 @@ export const Tabs: React.FC<TabsProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 p-1 select-none overflow-x-auto no-scrollbar',
-        variant === 'pill' ? 'bg-slate-900/80 border border-white/10 rounded-2xl' : 'border-b border-white/10',
+        'flex items-center gap-1 p-1 select-none overflow-x-auto no-scrollbar',
+        variant === 'pill' ? 'bg-[#11141D] border border-white/[0.07] rounded-xl' : 'border-b border-white/[0.08]',
         className
       )}
       role="tablist"
@@ -45,25 +45,25 @@ export const Tabs: React.FC<TabsProps> = ({
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onChange(tab.id)}
             className={cn(
-              'relative flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+              'relative flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
               isActive
-                ? 'text-white'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5',
-              tab.disabled && 'opacity-50 cursor-not-allowed'
+                ? 'text-white font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]',
+              tab.disabled && 'opacity-40 cursor-not-allowed'
             )}
           >
             {isActive && variant === 'pill' && (
               <motion.div
                 layoutId="activeTabPill"
-                className="absolute inset-0 bg-orange-500 rounded-xl shadow-md shadow-orange-500/20"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="absolute inset-0 bg-orange-500 rounded-lg shadow-sm shadow-orange-500/20"
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               />
             )}
 
             {tab.icon && <span className="relative z-10">{tab.icon}</span>}
             <span className="relative z-10">{tab.label}</span>
             {tab.badge !== undefined && (
-              <span className="relative z-10 px-1.5 py-0.5 text-[10px] rounded-full bg-white/20 text-white">
+              <span className="relative z-10 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-white/20 text-white">
                 {tab.badge}
               </span>
             )}
@@ -72,7 +72,7 @@ export const Tabs: React.FC<TabsProps> = ({
               <motion.div
                 layoutId="activeTabUnderline"
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 rounded-full"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               />
             )}
           </button>

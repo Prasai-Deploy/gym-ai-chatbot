@@ -17,7 +17,13 @@ app.use(helmet());
 app.use(cors());
 
 // Parsing & Compression
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 

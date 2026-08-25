@@ -1,4 +1,5 @@
 import { AgentDefinition, AgentTool, AgentContext } from './agent.types';
+import { revenueAnalytics, memberAnalytics, attendanceAnalytics } from '../../analytics/AnalyticsEngines';
 
 // ─────────────────────────────────────────────────────────────
 // Shared tool factory helpers
@@ -33,9 +34,24 @@ const getBusinessKpiTool: AgentTool = {
   name: 'get_business_kpi',
   description: 'Retrieves gym KPIs: MRR, active members, attendance, and churn rate.',
   parameters: {},
-  execute: async (_args, _ctx: AgentContext) => ({
-    mrr: 48250, activeMembers: 1240, todayAttendance: 680, churnRiskCount: 14,
-  }),
+  execute: async (_args, ctx: AgentContext) => {
+    const orgId = ctx.organizationId;
+    const period = {
+      from: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+      to: new Date().toISOString().split('T')[0],
+    };
+    const [rev, mem, att] = await Promise.all([
+      revenueAnalytics.compute(orgId, period),
+      memberAnalytics.compute(orgId, period),
+      attendanceAnalytics.compute(orgId, period),
+    ]);
+    return {
+      mrr: rev.mrr,
+      activeMembers: mem.activeMembers,
+      todayAttendance: att.totalVisits,
+      churnRiskCount: mem.highRiskCount,
+    };
+  },
 };
 
 const getClientRosterTool: AgentTool = {

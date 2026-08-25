@@ -126,14 +126,53 @@ ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_branding ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_staff ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_invitations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 11. Organization RLS Security Policies
-CREATE POLICY "Tenant staff can view own organization data"
-    ON public.organizations FOR SELECT
-    USING (id = COALESCE(NULLIF(current_setting('app.current_organization_id', true), '')::UUID, '00000000-0000-0000-0000-000000000001'));
+-- 11. Organization RLS Security Policies (Fail-Closed: NO ORGANIZATION CONTEXT = NO TENANT DATA ACCESS)
+CREATE POLICY "Tenant organization access policy"
+    ON public.organizations FOR ALL
+    USING (id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
 
 CREATE POLICY "Tenant locations access policy"
     ON public.organization_locations FOR ALL
-    USING (organization_id = COALESCE(NULLIF(current_setting('app.current_organization_id', true), '')::UUID, '00000000-0000-0000-0000-000000000001'));
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant branding access policy"
+    ON public.organization_branding FOR ALL
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant settings access policy"
+    ON public.organization_settings FOR ALL
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant roles access policy"
+    ON public.organization_roles FOR ALL
+    USING (organization_id IS NULL OR organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant permissions access policy"
+    ON public.organization_permissions FOR SELECT
+    USING (true);
+
+CREATE POLICY "Tenant staff access policy"
+    ON public.organization_staff FOR ALL
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant invitations access policy"
+    ON public.organization_invitations FOR ALL
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+
+CREATE POLICY "Tenant audit logs access policy"
+    ON public.organization_audit_logs FOR ALL
+    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);

@@ -15,6 +15,7 @@ export function AdminDashboard() {
   return (
     <AppShell
       currentPath="/admin"
+      showRightSidebar={false}
       onNavigate={(path) => navigate(path)}
       onLogout={() => logout?.()}
       user={{
@@ -24,12 +25,20 @@ export function AdminDashboard() {
       }}
     >
       {isLoading ? (
-        <div className="p-8 space-y-4">
-          <LoadingSkeleton height="140px" variant="card" />
-          <LoadingSkeleton height="320px" variant="card" />
+        <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+          <LoadingSkeleton height="40px" width="220px" />
+          <LoadingSkeleton height="240px" variant="card" />
+          <LoadingSkeleton height="200px" variant="card" />
         </div>
       ) : (
-        <GymDashboardLayout facilityName="STRIVA Metro Flagship" />
+        <GymDashboardLayout
+          facilityName="STRIVA Metro Flagship"
+          onNavigateMembers={() => navigate('/v3/members')}
+          onNavigateTrainers={() => navigate('/v3/trainer')}
+          onNavigateAttendance={() => navigate('/v3/attendance')}
+          onNavigateBilling={() => navigate('/v3/billing')}
+          onNavigateCoach={() => navigate('/v3/coach')}
+        />
       )}
     </AppShell>
   );

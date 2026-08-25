@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -8,27 +8,61 @@
 }
 
 :root {
+  /* Dark-First Foundation Hierarchy */
+  --bg-void: #050608;
   --bg-base: #090B10;
-  --bg-surface: #131722;
-  --bg-surface-elevated: #1A2030;
+  --bg-surface: #11141D;
+  --bg-surface-elevated: #181C28;
+  --bg-surface-focus: #1F2433;
   
+  /* Brand Accents */
   --accent-primary: #F97316;
   --accent-ai: #6366F1;
   --accent-success: #10B981;
   --accent-warning: #F59E0B;
   --accent-danger: #EF4444;
+  --accent-telemetry: #06B6D4;
   
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(249, 115, 22, 0.5);
+  /* Subtle Borders (6-12% opacity) */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-focus: rgba(249, 115, 22, 0.45);
   
+  /* Text */
   --text-primary: #FFFFFF;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
+  --text-technical: #CBD5E1;
+
+  /* Restrained Glows */
+  --glow-primary: 0 0 24px rgba(249, 115, 22, 0.18);
+  --glow-ai: 0 0 24px rgba(99, 102, 241, 0.18);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.18);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.18);
+}
+
+.light {
+  --bg-void: #F1F5F9;
+  --bg-base: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F1F5F9;
+  --bg-surface-focus: #E2E8F0;
+  
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-medium: rgba(15, 23, 42, 0.14);
+  --border-strong: rgba(15, 23, 42, 0.22);
+  --border-focus: rgba(249, 115, 22, 0.50);
+  
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --text-technical: #334155;
 }
 
 body {
-  background-color: #090B10;
-  color: #FFFFFF;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-sans);
   @apply antialiased;
   overscroll-behavior-y: none;
@@ -36,31 +70,75 @@ body {
 }
 
 /* ========================================
-   STRIVA v3 PRIMITIVE STYLES
+   STRIVA v4 PRIMITIVE SURFACE UTILITIES
    ======================================== */
-.v3-card {
-  background: #131722;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.striva-void {
+  background-color: var(--bg-void);
+}
+
+.striva-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.striva-panel:hover {
+  border-color: var(--border-medium);
+}
+
+.striva-elevated {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
   border-radius: 20px;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.striva-focus {
+  background-color: var(--bg-surface-focus);
+  border: 1px solid var(--border-focus);
+}
+
+/* Technical Upper Labels */
+.technical-label {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* Display Metric Typography */
+.display-metric {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* Legacy support aliases */
+.v3-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .v3-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--border-medium);
 }
 
 .v3-card-elevated {
-  background: #1A2030;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 20px;
 }
 
 .v3-glow-orange {
-  box-shadow: 0 0 35px rgba(249, 115, 22, 0.2);
+  box-shadow: var(--glow-primary);
 }
 
 .v3-glow-indigo {
-  box-shadow: 0 0 35px rgba(99, 102, 241, 0.2);
+  box-shadow: var(--glow-ai);
 }
 
 /* Custom Scrollbars */
@@ -68,16 +146,16 @@ body {
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #090B10;
+  background: var(--bg-void);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1A2030;
+  background: var(--bg-surface-elevated);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #F97316;
+  background: var(--accent-primary);
 }

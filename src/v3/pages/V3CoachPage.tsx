@@ -9,7 +9,7 @@ import { ChatMessage } from '../../design-system/coach/MessageBubble';
 
 export const V3CoachPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const userName = user?.name || user?.email?.split('@')[0] || 'Athlete';
   const { messages, sendMessage, isTyping } = useAIChat();
   const { isSending } = useCoachData();
@@ -19,10 +19,6 @@ export const V3CoachPage: React.FC = () => {
     sender: m.role === 'user' ? 'user' : 'assistant',
     content: m.text || m.content || '',
     timestamp: 'Just now',
-    workoutData: m.workoutData,
-    mealData: m.mealData,
-    recoveryData: m.recoveryData,
-    progressData: m.progressData,
   }));
 
   const handleSend = (text: string) => {
@@ -32,8 +28,9 @@ export const V3CoachPage: React.FC = () => {
   return (
     <AppShell
       currentPath="/v3/coach"
+      showRightSidebar={false}
       onNavigate={(path) => navigate(path)}
-      onLogout={() => signOut?.()}
+      onLogout={() => logout?.()}
       user={{
         name: userName,
         email: user?.email || 'athlete@striva.app',

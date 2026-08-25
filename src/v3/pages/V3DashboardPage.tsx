@@ -15,6 +15,7 @@ export const V3DashboardPage: React.FC = () => {
   return (
     <AppShell
       currentPath="/v3/dashboard"
+      showRightSidebar={false}
       onNavigate={(path) => navigate(path)}
       onLogout={() => logout?.()}
       user={{
@@ -24,11 +25,13 @@ export const V3DashboardPage: React.FC = () => {
       }}
     >
       {isLoading ? (
-        <div className="p-8 space-y-4">
-          <LoadingSkeleton height="120px" variant="card" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <LoadingSkeleton height="240px" variant="card" />
-            <LoadingSkeleton height="240px" variant="card" />
+        <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+          <LoadingSkeleton height="40px" width="200px" />
+          <LoadingSkeleton height="260px" variant="card" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <LoadingSkeleton height="140px" variant="card" />
+            <LoadingSkeleton height="140px" variant="card" />
+            <LoadingSkeleton height="140px" variant="card" />
           </div>
         </div>
       ) : (

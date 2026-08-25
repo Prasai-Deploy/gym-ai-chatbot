@@ -2,6 +2,9 @@
  * STRIVA v4 Design System - Barrel Export
  */
 
+// Visual Identity System (Sprint 5B.1)
+export * from './visual';
+
 // Tokens & Utilities
 export * from './colors';
 export * from './typography';
@@ -64,6 +67,9 @@ export * from './nutrition';
 
 // Progress & Analytics Experience
 export * from './progress';
+
+// Profile Experience
+export * from './profile';
 
 // Gym Owner SaaS Operating System
 export * from './owner';

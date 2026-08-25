@@ -2,6 +2,11 @@
  * STRIVA v4 Design System - Gym Owner SaaS Barrel Export
  */
 
+export * from './MinimalOwnerHero';
+export * from './OwnerTrendChart';
+export * from './OwnerActionHighlights';
+export * from './OwnerTrinityAdvisor';
+export * from './SecondaryBusinessDetails';
 export * from './BusinessHero';
 export * from './BusinessHealth';
 export * from './RevenueCard';

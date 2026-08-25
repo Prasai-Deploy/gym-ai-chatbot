@@ -39,6 +39,7 @@ export {
   Menu,
   MoreVertical,
   Plus,
+  Minus,
   Trash2,
   Edit3,
   Filter,
@@ -60,4 +61,7 @@ export {
   History,
   Mic,
   Clock,
+  Utensils,
+  Droplets,
+  Target,
 } from 'lucide-react';

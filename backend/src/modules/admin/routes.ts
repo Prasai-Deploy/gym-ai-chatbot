@@ -3,15 +3,14 @@ import { AdminController } from './controllers/AdminController';
 import { AdminService } from './services/AdminService';
 import { AdminRepository } from './repositories/AdminRepository';
 import { supabaseAdmin } from '@database/supabase';
-import { requireAuth } from '@middleware/auth';
+import { requireAuth, requireAdmin } from '@middleware/auth.middleware';
 
 const router = Router();
 
 /**
- * Admin routes use supabaseAdmin (service role) to bypass RLS.
- * Auth is still required — requireAuth validates the JWT and attaches req.user.
- * TODO: Replace requireAuth with a proper requireAdmin middleware that checks
- * an admin role claim in the JWT or an admins table.
+ * Admin routes use supabaseAdmin (service role) for administrative data access.
+ * Authentication (requireAuth) and Administrative RBAC Authorization (requireAdmin)
+ * are enforced before any controller method executes.
  */
 
 // DI Wiring
@@ -20,11 +19,12 @@ const service = new AdminService(repository);
 const controller = new AdminController(service);
 
 // -- ADMIN ROUTES --
-// These match the endpoints called by src/api/adminApi.ts
-router.get('/dashboard-data', requireAuth, controller.getDashboardData);
-router.get('/members', requireAuth, controller.getMembers);
-router.get('/plans', requireAuth, controller.getPlans);
-router.get('/membership-plans', requireAuth, controller.getMembershipPlans);
-router.post('/assign-plan', requireAuth, controller.assignPlan);
+// Enforce Authentication -> Tenant Context -> Admin Authorization -> Controller Execution
+router.get('/dashboard-data', requireAuth, requireAdmin, controller.getDashboardData);
+router.get('/members', requireAuth, requireAdmin, controller.getMembers);
+router.get('/plans', requireAuth, requireAdmin, controller.getPlans);
+router.get('/membership-plans', requireAuth, requireAdmin, controller.getMembershipPlans);
+router.post('/assign-plan', requireAuth, requireAdmin, controller.assignPlan);
 
 export const adminRouter = router;
+

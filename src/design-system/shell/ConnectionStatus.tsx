@@ -26,14 +26,11 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = React.memo(({
   }, []);
 
   return (
-    <div className={cn('flex items-center gap-2 select-none', className)}>
-      <Badge
-        variant={isOnline ? 'success' : 'danger'}
-        size="sm"
-        icon={<Activity className="w-3 h-3" />}
-      >
-        {isOnline ? 'WebSocket Live' : 'Offline Mode'}
-      </Badge>
+    <div className={cn('flex items-center gap-1.5 select-none', className)}>
+      <span className={cn('w-1.5 h-1.5 rounded-full', isOnline ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]')} />
+      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        {isOnline ? 'LIVE' : 'OFFLINE'}
+      </span>
     </div>
   );
 });

@@ -1,15 +1,10 @@
 import React from 'react';
-import { NutritionHero } from './NutritionHero';
-import { MacroRings } from './MacroRings';
-import { MealTimeline } from './MealTimeline';
-import { MealRecommendation } from './MealRecommendation';
-import { ShoppingList } from './ShoppingList';
-import { HydrationCard } from './HydrationCard';
-import { RecoveryCard } from './RecoveryCard';
-import { NutritionInsights } from './NutritionInsights';
-import { CoachNutritionCard } from './CoachNutritionCard';
-import { NutritionSummary } from './NutritionSummary';
-import { PageContainer } from '../shell/PageContainer';
+import { MinimalNutritionHero } from './MinimalNutritionHero';
+import { ChronologicalMealList } from './ChronologicalMealList';
+import { MinimalHydrationSection } from './MinimalHydrationSection';
+import { NutritionTrinityCard } from './NutritionTrinityCard';
+import { SecondaryMacroDetails } from './SecondaryMacroDetails';
+import { useNutritionData } from '../../hooks/useStrivaApi';
 import { cn } from '../tokens';
 
 export interface NutritionLayoutProps {
@@ -19,40 +14,75 @@ export interface NutritionLayoutProps {
 }
 
 export const NutritionLayout: React.FC<NutritionLayoutProps> = React.memo(({
-  userName = 'Alex',
-  onNavigateCoach = (prompt) => console.log('Navigate coach with prompt:', prompt),
+  userName = 'Athlete',
+  onNavigateCoach = () => console.log('Open Coach'),
   className,
 }) => {
+  const { data: nutritionData, logWater } = useNutritionData();
+
+  const caloriesLogged = nutritionData?.consumedCalories || 2240;
+  const caloriesTarget = nutritionData?.targetCalories || 2650;
+  const proteinLogged = nutritionData?.proteinG || 148;
+  const carbsLogged = nutritionData?.carbsG || 210;
+  const fatLogged = nutritionData?.fatsG || 62;
+  const hydrationLiters = nutritionData?.hydrationMl ? Math.round((nutritionData.hydrationMl / 1000) * 10) / 10 : 1.8;
+
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+
   return (
-    <PageContainer maxWidth="xl" className={cn('gap-6', className)}>
-      {/* 1. Hero Banner */}
-      <NutritionHero userName={userName} nutritionScore={88} readinessScore={88} />
-
-      {/* 2. Macro Rings Overview */}
-      <MacroRings />
-
-      {/* 3. Meal Recommendation & Hydration Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <MealRecommendation className="lg:col-span-2" />
-        <HydrationCard initialLiters={2.25} targetLiters={3.5} />
+    <div className={cn('w-full max-w-4xl mx-auto px-4 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8', className)}>
+      {/* 1. Header Identity */}
+      <div className="flex flex-col gap-0.5 select-none">
+        <span className="text-xs font-semibold text-slate-400 font-sans tracking-wide">
+          {formattedDate}
+        </span>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">
+          Nutrition & Fuel
+        </h1>
       </div>
 
-      {/* 4. Meal Timeline Stream & Shopping List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <MealTimeline className="lg:col-span-2" />
-        <ShoppingList />
+      {/* 2. Primary Hero: Nutrition Score & Calories/Protein Progress */}
+      <MinimalNutritionHero
+        nutritionScore={88}
+        caloriesLogged={caloriesLogged}
+        caloriesTarget={caloriesTarget}
+        proteinLoggedGrams={proteinLogged}
+        proteinTargetGrams={180}
+        headline="You're on track today."
+      />
+
+      {/* 3. Today's Chronological Meals */}
+      <ChronologicalMealList />
+
+      {/* 4. Hydration & Trinity Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MinimalHydrationSection
+          initialLiters={hydrationLiters}
+          targetLiters={2.5}
+          onLogWater={(ml) => logWater?.(ml)}
+        />
+        <div className="flex items-center">
+          <NutritionTrinityCard
+            insightText="You're 32g short of your protein target. A protein-rich dinner will keep you optimal."
+            onAskTrinity={() => onNavigateCoach('Help me optimize my dinner for my protein goal')}
+          />
+        </div>
       </div>
 
-      {/* 5. WHOOP/Oura Recovery Suite & AI Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <RecoveryCard className="lg:col-span-2" />
-        <CoachNutritionCard onAskDietAdvice={onNavigateCoach} />
-      </div>
-
-      {/* 6. AI Micronutrient Insights & End of Day Summary */}
-      <NutritionInsights />
-      <NutritionSummary />
-    </PageContainer>
+      {/* 5. Secondary Macronutrient Details */}
+      <SecondaryMacroDetails
+        proteinGrams={proteinLogged}
+        proteinTarget={180}
+        carbsGrams={carbsLogged}
+        carbsTarget={280}
+        fatGrams={fatLogged}
+        fatTarget={75}
+      />
+    </div>
   );
 });
 

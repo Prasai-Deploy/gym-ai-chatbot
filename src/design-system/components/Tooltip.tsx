@@ -41,10 +41,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.12 }}
             role="tooltip"
             className={cn(
-              'absolute z-50 px-2.5 py-1 text-xs font-medium text-white bg-slate-900 border border-white/15 rounded-lg shadow-xl whitespace-nowrap pointer-events-none select-none',
+              'absolute z-50 px-2.5 py-1 text-[11px] font-medium text-white bg-[#181C28] border border-white/[0.12] rounded-lg shadow-xl whitespace-nowrap pointer-events-none select-none',
               positionStyles[position],
               className
             )}

@@ -1,59 +1,79 @@
 import React from 'react';
-import { Badge } from '../components/Badge';
-import { TrendingUp, Award, Sparkles } from '../icons';
+import { motion } from 'motion/react';
+import { TrendingUp } from '../icons';
 import { cn } from '../tokens';
 
 export interface ProgressHeroProps {
-  userName?: string;
-  healthScore?: number;
+  overallProgressPct?: number;
   strengthGainPct?: number;
+  consistencyGainPct?: number;
+  bodyChangePct?: number;
+  headline?: string;
   className?: string;
 }
 
 export const ProgressHero: React.FC<ProgressHeroProps> = React.memo(({
-  userName = 'Alex',
-  healthScore = 92,
-  strengthGainPct = 14.5,
+  overallProgressPct = 12,
+  strengthGainPct = 14,
+  consistencyGainPct = 9,
+  bodyChangePct = -2,
+  headline = "You're moving in the right direction.",
   className,
 }) => {
   return (
     <div
       className={cn(
-        'w-full rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-slate-900 via-indigo-950/50 to-slate-900 border border-indigo-500/30 shadow-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 select-none',
+        'w-full rounded-2xl bg-[#11141D] border border-white/[0.07] p-6 sm:p-8 flex flex-col items-center text-center gap-6 select-none shadow-sm',
         className
       )}
     >
-      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Top Tag */}
+      <span className="text-[11px] font-bold text-orange-400 uppercase tracking-[0.14em] font-sans flex items-center gap-1.5">
+        <TrendingUp className="w-3.5 h-3.5" />
+        YOUR PROGRESS
+      </span>
 
-      <div className="relative z-10 flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="primary" size="sm" icon={<TrendingUp className="w-3.5 h-3.5" />}>
-            +{strengthGainPct}% STRENGTH GROWTH
-          </Badge>
-          <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY ANALYTICS
-          </Badge>
-        </div>
-
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight font-display">
-          Your Transformation, <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">{userName}</span> 📈
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-          You are <span className="text-white font-bold">14.5% stronger</span> than 30 days ago. Your cardiovascular efficiency and muscle density are trending upward.
-        </p>
+      {/* Central Large Metric */}
+      <div className="flex flex-col items-center">
+        <motion.span
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="text-5xl sm:text-6xl font-extrabold text-white font-display tracking-tight leading-none"
+        >
+          +{overallProgressPct}%
+        </motion.span>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mt-1.5 font-sans">
+          Overall Progress
+        </span>
       </div>
 
-      <div className="relative z-10 flex items-center gap-4 bg-slate-950/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shrink-0">
-        <div className="p-3 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30">
-          <Award className="w-6 h-6" />
+      {/* Main Headline */}
+      <p className="text-base sm:text-lg font-semibold text-white tracking-tight leading-snug max-w-sm">
+        {headline}
+      </p>
+
+      {/* 3 Supporting Metrics: Strength, Consistency, Body */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-6 w-full max-w-lg pt-5 border-t border-white/[0.06]">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-xs text-slate-400 font-medium">Strength</span>
+          <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
+            +{strengthGainPct}%
+          </span>
         </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Overall Health Score</span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-white">{healthScore}</span>
-            <span className="text-xs text-orange-400 font-bold">/ 100</span>
-          </div>
-          <span className="text-[10px] text-emerald-400 font-semibold">Elite Tier Member</span>
+
+        <div className="flex flex-col items-center gap-0.5 border-x border-white/[0.06]">
+          <span className="text-xs text-slate-400 font-medium">Consistency</span>
+          <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
+            +{consistencyGainPct}%
+          </span>
+        </div>
+
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-xs text-slate-400 font-medium">Body Comp</span>
+          <span className="text-lg sm:text-xl font-bold text-emerald-400 font-display tabular-nums">
+            {bodyChangePct}%
+          </span>
         </div>
       </div>
     </div>

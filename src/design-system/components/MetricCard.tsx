@@ -21,26 +21,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   variant = 'primary',
   className,
 }) => {
-  const percentage = Math.min(Math.round((currentValue / targetValue) * 100), 100);
+  const percentage = Math.min(Math.round((currentValue / (targetValue || 1)) * 100), 100);
 
   return (
     <div
       className={cn(
-        'p-5 rounded-2xl bg-slate-900/80 border border-white/10 flex flex-col gap-3 transition-all duration-200 hover:border-white/20 select-none',
+        'p-5 rounded-2xl bg-[#11141D] border border-white/[0.07] flex flex-col gap-3 transition-all duration-200 hover:border-white/[0.14] select-none shadow-sm',
         className
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {icon && <span className="text-orange-400">{icon}</span>}
-          <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{label}</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.12em]">{label}</span>
         </div>
-        <span className="text-xs font-bold text-slate-400">{percentage}%</span>
+        <span className="text-xs font-bold text-slate-400 tabular-nums">{percentage}%</span>
       </div>
 
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-black text-white">{currentValue}</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">{currentValue}</span>
           <span className="text-xs text-slate-400">/ {targetValue} {unit}</span>
         </div>
       </div>

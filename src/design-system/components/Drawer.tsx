@@ -44,22 +44,22 @@ export const Drawer: React.FC<DrawerProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-[#050608]/80 backdrop-blur-sm"
           />
 
           <motion.div
             initial={sideVariants[side].initial}
             animate={sideVariants[side].animate}
             exit={sideVariants[side].exit}
-            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 34 }}
             className={cn(
-              'fixed top-0 bottom-0 z-10 w-full max-w-md bg-slate-900 border-white/10 p-6 shadow-2xl flex flex-col gap-6',
+              'fixed top-0 bottom-0 z-10 w-full max-w-md bg-[#11141D] border-white/[0.08] p-6 shadow-2xl flex flex-col gap-6',
               side === 'right' ? 'right-0 border-l' : 'left-0 border-r',
               className
             )}
           >
             <div className="flex items-center justify-between">
-              {title && <h3 className="text-lg font-bold text-white">{title}</h3>}
+              {title && <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>}
               <IconButton
                 icon={<X className="w-4 h-4" />}
                 aria-label="Close drawer"

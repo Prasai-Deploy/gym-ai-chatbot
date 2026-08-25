@@ -21,7 +21,7 @@ export const PageContainer: React.FC<PageContainerProps> = React.memo(({
   action,
   breadcrumbs,
   children,
-  maxWidth = 'full',
+  maxWidth = 'xl',
   className,
 }) => {
   const maxWidthStyles = {
@@ -47,7 +47,7 @@ export const PageContainer: React.FC<PageContainerProps> = React.memo(({
         />
       )}
 
-      <main className="flex-1 w-full">{children}</main>
+      <div className="flex-1 w-full">{children}</div>
     </div>
   );
 });

@@ -29,8 +29,12 @@ export interface AgentResponse {
   agentId: AgentId;
   message: ChatMessage;
   toolsCalled?: string[];
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  totalTokens?: number | null;
   tokensUsed?: number;
   model?: string;
+  provider?: string;
   durationMs?: number;
 }
 
@@ -44,20 +48,35 @@ export interface AgentDefinition {
 }
 
 export interface MemoryRecord {
+  id?: string;
   userId: string;
+  organizationId: string;
+  agentId: AgentId | string;
   key: string;
   value: string;
   ttlDays?: number;
-  createdAt: string;
+  expiresAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UsageAnalytics {
-  agentId: AgentId;
+  id?: string;
+  agentId: AgentId | string;
   organizationId: string;
   userId: string;
-  tokensUsed: number;
+  sessionId?: string;
+  provider: string;
   model: string;
+  requestTimestamp: string;
   durationMs: number;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  toolCallsCount: number;
   toolsCalled: string[];
-  timestamp: string;
+  success: boolean;
+  errorCategory?: string | null;
+  createdAt?: string;
+  tokensUsed?: number;
 }

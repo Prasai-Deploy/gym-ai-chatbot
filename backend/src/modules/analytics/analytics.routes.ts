@@ -2,10 +2,17 @@ import { Router } from 'express';
 import { requireAuth } from '@middleware/auth';
 import { tenantMiddleware } from '@middleware/tenant.middleware';
 import { analyticsEngine } from './AnalyticsEngine';
-import { kpiEngine } from './KPIEngine';
-import { reportGenerator } from './ReportGenerator';
-import { revenueAnalytics, attendanceAnalytics, memberAnalytics, trainerAnalytics, workoutAnalytics, nutritionAnalytics, retentionAnalytics } from './AnalyticsEngines';
+import {
+  revenueAnalytics,
+  attendanceAnalytics,
+  memberAnalytics,
+  trainerAnalytics,
+  workoutAnalytics,
+  nutritionAnalytics,
+  retentionAnalytics,
+} from './AnalyticsEngines';
 import { DateRange, ReportType, ReportFormat } from './analytics.types';
+import { ValidationError } from '@errors/AppError';
 
 export const analyticsRouter = Router();
 analyticsRouter.use(tenantMiddleware);
@@ -18,7 +25,11 @@ function getPeriod(req: any): DateRange {
 }
 
 function getOrgId(req: any): string {
-  return req.organizationContext?.organizationId || '00000000-0000-0000-0000-000000000001';
+  const orgId = req.organizationContext?.organizationId || (req.headers['x-organization-id'] as string);
+  if (!orgId || orgId.trim() === '') {
+    throw new ValidationError('Organization context is required for analytics (fail-closed)');
+  }
+  return orgId;
 }
 
 // ─── Executive ───────────────────────────────────────────────────────────────
@@ -26,7 +37,9 @@ analyticsRouter.get('/executive', requireAuth, async (req, res, next) => {
   try {
     const report = await analyticsEngine.getFullReport(getOrgId(req), getPeriod(req));
     res.json({ success: true, data: report });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ─── KPIs ────────────────────────────────────────────────────────────────────
@@ -34,7 +47,9 @@ analyticsRouter.get('/kpis', requireAuth, async (req, res, next) => {
   try {
     const report = await analyticsEngine.getFullReport(getOrgId(req), getPeriod(req));
     res.json({ success: true, data: { kpis: report.kpis } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
 analyticsRouter.get('/kpis/catalog', requireAuth, (_req, res) => {
@@ -42,46 +57,67 @@ analyticsRouter.get('/kpis/catalog', requireAuth, (_req, res) => {
 });
 
 // ─── Domain-specific ─────────────────────────────────────────────────────────
-analyticsRouter.get('/revenue', requireAuth, (req, res, next) => {
+analyticsRouter.get('/revenue', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: revenueAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await revenueAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/attendance', requireAuth, (req, res, next) => {
+analyticsRouter.get('/attendance', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: attendanceAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await attendanceAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/members', requireAuth, (req, res, next) => {
+analyticsRouter.get('/members', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: memberAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await memberAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/trainers', requireAuth, (req, res, next) => {
+analyticsRouter.get('/trainers', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: trainerAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await trainerAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/workouts', requireAuth, (req, res, next) => {
+analyticsRouter.get('/workouts', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: workoutAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await workoutAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/nutrition', requireAuth, (req, res, next) => {
+analyticsRouter.get('/nutrition', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: nutritionAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await nutritionAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
-analyticsRouter.get('/retention', requireAuth, (req, res, next) => {
+analyticsRouter.get('/retention', requireAuth, async (req, res, next) => {
   try {
-    res.json({ success: true, data: retentionAnalytics.compute(getOrgId(req), getPeriod(req)) });
-  } catch (err) { next(err); }
+    const data = await retentionAnalytics.compute(getOrgId(req), getPeriod(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ─── Reports & Export ────────────────────────────────────────────────────────
@@ -97,5 +133,7 @@ analyticsRouter.post('/reports', requireAuth, async (req, res, next) => {
     }
 
     res.json({ success: true, data: result });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });

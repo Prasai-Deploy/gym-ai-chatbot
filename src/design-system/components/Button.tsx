@@ -37,29 +37,29 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
 }, ref) => {
   const isDisabled = disabled || isLoading || variant === 'disabled';
 
-  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050608] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none select-none';
 
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-lg',
-    md: 'px-4 py-2.5 text-sm gap-2 rounded-xl',
-    lg: 'px-6 py-3.5 text-base gap-2.5 rounded-2xl',
+    sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-lg font-medium',
+    md: 'px-4 py-2.5 text-sm gap-2 rounded-xl font-semibold',
+    lg: 'px-6 py-3 text-base gap-2.5 rounded-xl font-bold',
   };
 
   const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-lg shadow-orange-500/25 border border-orange-400/30',
-    secondary: 'bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white border border-white/10 shadow-sm',
-    ghost: 'bg-transparent hover:bg-white/10 active:bg-white/15 text-slate-300 hover:text-white',
-    outline: 'bg-transparent border border-white/20 hover:border-orange-500/50 hover:bg-orange-500/10 text-white',
-    danger: 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white shadow-lg shadow-red-500/25 border border-red-400/30',
-    success: 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25 border border-emerald-400/30',
-    premium: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500 hover:opacity-95 text-white font-bold shadow-lg shadow-indigo-500/30 border border-white/20',
-    disabled: 'bg-slate-800/50 text-slate-500 border border-slate-700/50 cursor-not-allowed shadow-none',
+    primary: 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-sm shadow-orange-500/20 border border-orange-400/25',
+    secondary: 'bg-[#181C28] hover:bg-[#1F2433] active:bg-[#11141D] text-white border border-white/[0.08] shadow-sm',
+    ghost: 'bg-transparent hover:bg-white/[0.06] active:bg-white/[0.10] text-slate-300 hover:text-white',
+    outline: 'bg-transparent border border-white/[0.14] hover:border-orange-500/40 hover:bg-orange-500/[0.08] text-white',
+    danger: 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white shadow-sm shadow-red-500/20 border border-red-400/25',
+    success: 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-sm shadow-emerald-500/20 border border-emerald-400/25',
+    premium: 'bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-orange-500/90 hover:opacity-95 text-white font-bold shadow-sm shadow-indigo-500/25 border border-white/[0.15]',
+    disabled: 'bg-[#11141D] text-slate-500 border border-white/[0.05] cursor-not-allowed shadow-none',
   };
 
   return (
     <motion.button
       ref={ref}
-      whileTap={isDisabled ? undefined : { scale: 0.97 }}
+      whileTap={isDisabled ? undefined : { scale: 0.98 }}
       disabled={isDisabled}
       aria-busy={isLoading}
       className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}

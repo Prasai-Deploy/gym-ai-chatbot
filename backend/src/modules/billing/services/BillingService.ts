@@ -160,6 +160,17 @@ export class BillingService {
   }
 
   public async cancelSubscription(userId: string): Promise<Result<Subscription, AppError>> {
+    const subRes = await this.repo.getByUserId(userId);
+    if (subRes.isFailure()) return fail(subRes.error);
+
+    const subscription = subRes.value;
+    if (subscription.stripe_subscription_id && subscription.stripe_subscription_id.startsWith('sub_')) {
+      const razorpaySuccess = await this.razorpayProvider.cancelSubscription(subscription.stripe_subscription_id, true);
+      if (!razorpaySuccess) {
+        return fail(new AppError('Razorpay subscription cancellation API request failed', 500));
+      }
+    }
+
     return this.repo.upsertSubscription(userId, {
       cancel_at_period_end: true,
       canceled_at: new Date().toISOString()

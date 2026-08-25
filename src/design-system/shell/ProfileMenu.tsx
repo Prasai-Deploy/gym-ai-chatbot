@@ -34,13 +34,13 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = React.memo(({
     },
     {
       id: 'settings',
-      label: 'App Settings',
+      label: 'System Settings',
       icon: <Settings className="w-4 h-4 text-slate-400" />,
       onClick: () => onNavigate?.('/settings'),
     },
     {
       id: 'admin',
-      label: 'Trainer Dashboard',
+      label: 'Management Console',
       icon: <Shield className="w-4 h-4 text-indigo-400" />,
       onClick: () => onNavigate?.('/admin'),
     },
@@ -54,16 +54,20 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = React.memo(({
   ];
 
   const trigger = (
-    <div className="flex items-center gap-2.5 p-1 rounded-2xl hover:bg-white/5 transition-all select-none">
-      <Avatar src={user.avatarUrl} name={user.name} size="md" status="online" />
-      <div className="hidden md:flex flex-col text-left">
-        <span className="text-xs font-bold text-white leading-tight">{user.name}</span>
-        <span className="text-[10px] font-semibold text-orange-400 flex items-center gap-0.5">
+    <button
+      type="button"
+      className="flex items-center gap-2 p-1 rounded-xl hover:bg-white/[0.04] transition-all select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+      aria-label="Open Profile Menu"
+    >
+      <Avatar src={user.avatarUrl} name={user.name} size="sm" status="online" />
+      <div className="hidden xl:flex flex-col text-left">
+        <span className="text-xs font-bold text-white leading-tight font-sans">{user.name}</span>
+        <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest flex items-center gap-0.5">
           <Sparkles className="w-2.5 h-2.5" />
           {user.role}
         </span>
       </div>
-    </div>
+    </button>
   );
 
   return <Dropdown trigger={trigger} items={items} align="right" />;

@@ -25,30 +25,30 @@ export const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   const variantStyles = {
-    default: 'bg-slate-900/80 border-white/10 hover:border-white/20',
-    primary: 'bg-orange-500/10 border-orange-500/30 hover:border-orange-500/50',
-    ai: 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50',
+    default: 'bg-[#11141D] border-white/[0.07] hover:border-white/[0.14]',
+    primary: 'bg-orange-500/[0.05] border-orange-500/20 hover:border-orange-500/35',
+    ai: 'bg-indigo-500/[0.05] border-indigo-500/20 hover:border-indigo-500/35',
   };
 
   return (
     <div
       className={cn(
-        'p-5 rounded-2xl border transition-all duration-200 flex flex-col gap-3 relative overflow-hidden group select-none',
+        'p-5 rounded-2xl border transition-all duration-200 flex flex-col gap-3 relative overflow-hidden group select-none shadow-sm',
         variantStyles[variant],
         className
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 font-sans">{title}</span>
         {icon && (
-          <div className="p-2 rounded-xl bg-white/5 text-orange-400 group-hover:scale-110 transition-transform">
+          <div className="p-2 rounded-xl bg-white/[0.04] text-orange-400 group-hover:scale-105 transition-transform">
             {icon}
           </div>
         )}
       </div>
 
       <div className="flex items-baseline gap-1.5">
-        <span className="text-2xl font-black text-white tracking-tight">{value}</span>
+        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">{value}</span>
         {unit && <span className="text-xs font-medium text-slate-400">{unit}</span>}
       </div>
 
@@ -58,7 +58,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             className={cn('w-3.5 h-3.5', trend.isPositive ? 'text-emerald-400' : 'text-red-400 rotate-180')}
           />
           <span className={trend.isPositive ? 'text-emerald-400' : 'text-red-400'}>{trend.value}</span>
-          <span className="text-slate-500 text-[10px] ml-0.5">vs last week</span>
+          <span className="text-slate-500 text-[10px] ml-0.5 tracking-wide">vs last week</span>
         </div>
       )}
     </div>
