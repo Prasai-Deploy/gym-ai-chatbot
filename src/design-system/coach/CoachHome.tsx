@@ -34,7 +34,7 @@ export const CoachHome: React.FC<CoachHomeProps> = React.memo(({
           className="p-4 flex flex-col gap-2"
         >
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-400" />
+            <Flame className="w-5 h-5 text-brand-400" />
             <span className="text-xs font-bold text-white">Workout Tuning</span>
           </div>
           <p className="text-[11px] text-slate-300">

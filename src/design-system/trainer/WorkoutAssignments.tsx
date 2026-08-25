@@ -31,10 +31,10 @@ export const WorkoutAssignments: React.FC<WorkoutAssignmentsProps> = React.memo(
     <Card variant="default" className={`p-6 flex flex-col gap-4 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-5 h-5 text-orange-400" />
+          <Dumbbell className="w-5 h-5 text-brand-400" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">Assigned Workout Routines</span>
         </div>
-        <Button variant="secondary" size="sm" leftIcon={<Plus className="w-3.5 h-3.5 text-orange-400" />} onClick={onAssignNew}>
+        <Button variant="secondary" size="sm" leftIcon={<Plus className="w-3.5 h-3.5 text-brand-400" />} onClick={onAssignNew}>
           Assign Workout
         </Button>
       </div>

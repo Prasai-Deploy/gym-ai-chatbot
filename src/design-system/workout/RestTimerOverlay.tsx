@@ -40,7 +40,7 @@ export const RestTimerOverlay: React.FC<RestTimerOverlayProps> = React.memo(({
             className="relative z-10 w-full max-w-sm rounded-3xl bg-slate-900 border border-white/10 p-8 shadow-2xl flex flex-col items-center gap-6 text-center select-none"
           >
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">Rest & Recovery</span>
+              <span className="text-xs font-bold text-brand-400 uppercase tracking-widest">Rest & Recovery</span>
               <h3 className="text-xl font-black text-white">Prepare for Next Set</h3>
             </div>
 
@@ -50,7 +50,7 @@ export const RestTimerOverlay: React.FC<RestTimerOverlayProps> = React.memo(({
               <Button
                 variant="secondary"
                 size="md"
-                leftIcon={<Plus className="w-4 h-4 text-orange-400" />}
+                leftIcon={<Plus className="w-4 h-4 text-brand-400" />}
                 onClick={onAddThirtySec}
                 className="flex-1"
               >

@@ -64,7 +64,7 @@ export const MealCard: React.FC<MealCardProps> = React.memo(({
       </div>
 
       <div className="flex items-center gap-4 text-xs font-semibold text-slate-300 pt-1 border-t border-white/5">
-        <span className="text-orange-400">{meal.proteinG}g Protein</span>
+        <span className="text-brand-400">{meal.proteinG}g Protein</span>
         <span className="text-indigo-400">{meal.carbsG}g Carbs</span>
         <span className="text-emerald-400">{meal.fatsG}g Fats</span>
       </div>

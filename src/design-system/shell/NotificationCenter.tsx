@@ -53,7 +53,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = React.memo(
       case 'ai':
         return <Bot className="w-4 h-4 text-indigo-400" />;
       case 'workout':
-        return <Flame className="w-4 h-4 text-orange-400" />;
+        return <Flame className="w-4 h-4 text-brand-400" />;
       case 'achievement':
         return <Award className="w-4 h-4 text-amber-400" />;
       default:
@@ -76,7 +76,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = React.memo(
             key={item.id}
             className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 select-none ${
               item.unread
-                ? 'bg-slate-900 border-orange-500/30 shadow-md shadow-orange-500/5'
+                ? 'bg-slate-900 border-brand-500/30 shadow-md shadow-brand-500/5'
                 : 'bg-slate-900/50 border-white/10 opacity-75'
             }`}
           >

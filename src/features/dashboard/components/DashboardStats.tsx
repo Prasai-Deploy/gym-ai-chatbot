@@ -27,7 +27,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ weeklySummary })
       <MetricCard 
         label="Avg Diet"
         value={`${Math.round(weeklySummary?.avg_diet || 0)}%`}
-        valueColor="text-orange-500"
+        valueColor="text-brand-500"
       />
     </div>
   );

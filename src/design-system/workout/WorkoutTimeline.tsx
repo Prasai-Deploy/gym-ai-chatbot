@@ -24,7 +24,7 @@ export const WorkoutTimeline: React.FC<WorkoutTimelineProps> = React.memo(({
     <Card variant="default" className={`p-5 flex flex-col gap-3 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-orange-400" />
+          <Dumbbell className="w-4 h-4 text-brand-400" />
           Completed Sets Log
         </span>
         <Badge variant="neutral" size="sm">{entries.length} Sets Logged</Badge>
@@ -39,7 +39,7 @@ export const WorkoutTimeline: React.FC<WorkoutTimelineProps> = React.memo(({
               <span className="text-slate-400 text-[11px]">Set {entry.setNumber}</span>
             </div>
             <div className="flex items-center gap-2 font-mono">
-              <span className="font-bold text-orange-400">{entry.weightKg} kg × {entry.reps}</span>
+              <span className="font-bold text-brand-400">{entry.weightKg} kg × {entry.reps}</span>
               <span className="text-[10px] text-slate-500">{entry.time}</span>
             </div>
           </div>

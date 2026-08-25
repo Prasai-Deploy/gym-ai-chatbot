@@ -39,9 +39,9 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(({
         />
         <div
           className={cn(
-            'w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-950',
+            'w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-950',
             checked
-              ? 'bg-orange-500 border-orange-500 text-white shadow-sm shadow-orange-500/20'
+              ? 'bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/20'
               : 'bg-slate-900 border-white/20 hover:border-white/40 text-transparent',
             error && !checked && 'border-red-500/80'
           )}

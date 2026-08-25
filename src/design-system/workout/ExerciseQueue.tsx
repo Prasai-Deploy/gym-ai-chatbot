@@ -38,7 +38,7 @@ export const ExerciseQueue: React.FC<ExerciseQueueProps> = React.memo(({
               className={cn(
                 'p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer group',
                 isActive
-                  ? 'bg-orange-500/15 border-orange-500/50 shadow-md shadow-orange-500/10'
+                  ? 'bg-brand-500/15 border-brand-500/50 shadow-md shadow-brand-500/10'
                   : ex.status === 'completed'
                   ? 'bg-slate-900/60 border-white/5 opacity-75'
                   : 'bg-slate-900 border-white/10 hover:border-white/20'
@@ -51,7 +51,7 @@ export const ExerciseQueue: React.FC<ExerciseQueueProps> = React.memo(({
                     ex.status === 'completed'
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : isActive
-                      ? 'bg-orange-500 text-white shadow-sm'
+                      ? 'bg-brand-500 text-white shadow-sm'
                       : 'bg-white/5 text-slate-400'
                   )}
                 >
@@ -59,7 +59,7 @@ export const ExerciseQueue: React.FC<ExerciseQueueProps> = React.memo(({
                 </div>
 
                 <div className="flex flex-col">
-                  <span className={cn('text-xs font-bold', isActive ? 'text-orange-400' : 'text-white')}>
+                  <span className={cn('text-xs font-bold', isActive ? 'text-brand-400' : 'text-white')}>
                     {ex.name}
                   </span>
                   <span className="text-[10px] text-slate-400">

@@ -1,31 +1,76 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" data-theme="dark">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- ==========================================================================
+       TENANT BRANDING BOOT SCRIPT  —  must stay FIRST in <head>
+       ==========================================================================
+       Applies the gym's brand colour before the stylesheet is even parsed, so
+       a returning member never sees a flash of the default orange before their
+       gym's colour appears. An inline style on <html> beats every stylesheet
+       rule and inherits to everything below it.
+
+       First-ever visit has nothing cached, so the app renders the default
+       orange until BrandingContext fetches after login — the login screen is
+       brand-neutral, so this is barely visible. Every visit after that is
+       instant and correct.
+
+       The hex regex is NOT optional. Without it, anything written into
+       localStorage flows straight into setProperty, which is a CSS injection
+       vector.
+       ====================================================================== -->
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem('striva-branding');
+        if (!raw) return;
+        var b = JSON.parse(raw);
+        if (b && typeof b.primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.primaryColor)) {
+          document.documentElement.style.setProperty('--brand-base', b.primaryColor);
+        }
+        if (b && typeof b.businessName === 'string' && b.businessName) {
+          document.title = b.businessName;
+        }
+      } catch (e) {
+        /* Any failure falls through to the default brand. Never block boot. */
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var storedTheme = localStorage.getItem('striva-theme') || 'system';
+        var resolvedTheme = storedTheme === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : storedTheme;
+        if (resolvedTheme !== 'dark' && resolvedTheme !== 'light') resolvedTheme = 'dark';
+        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.setAttribute('data-theme', resolvedTheme);
+      } catch (e) {
+        /* Keep the dark fallback if storage or media queries are unavailable. */
+      }
+    })();
+  </script>
   <meta name="description" content="STRIVA — Your premium AI-powered fitness companion for tracking workouts, macros, and reaching peak performance." />
   
-  <!-- PWA Meta Tags (kept for display only; service worker disabled) -->
-  <meta name="theme-color" content="#121212" />
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0d1018" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="STRIVA" />
   <meta name="application-name" content="STRIVA" />
-  <meta name="msapplication-TileColor" content="#121212" />
+  <meta name="msapplication-TileColor" content="#0d1018" />
   <meta name="msapplication-tap-highlight" content="no" />
   
   <!-- Icons -->
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="icon" href="/icons/icon-192x192.png" sizes="192x192" type="image/png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png">
-  
-  <!-- manifest link removed — PWA/SW disabled -->
-  
-  <!-- Preload & Preconnect for critical assets -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   
   <!-- SEO & Open Graph Meta Tags -->
   <meta property="og:title" content="STRIVA | Premium AI Fitness Coach" />
@@ -40,13 +85,16 @@
   <title>STRIVA</title>
 </head>
 
-<body style="margin:0;background:#121212;">
+<body style="margin:0;background:var(--bg-base,#0d1018);">
   <div id="app-loader" style="
-    position:fixed;inset:0;background:#121212;
+    position:fixed;inset:0;background:var(--bg-base,#0d1018);
     display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:20px;z-index:9999;">
+    <!-- Brand-tinted via the CSS `stroke` property rather than the SVG
+         presentation attribute: var() in a presentation attribute happens to
+         work in Chrome but is not guaranteed by spec. -->
     <svg width="56" height="56" viewBox="0 0 24 24" fill="none"
-      stroke="#22c55e" stroke-width="2" stroke-linecap="round">
+      style="stroke: var(--brand-base, #F97316)" stroke-width="2" stroke-linecap="round">
       <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
       <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
       <line x1="6" y1="1" x2="6" y2="4"/>
@@ -56,7 +104,7 @@
     <div style="
       width:36px;height:36px;
       border:3px solid #1f1f1f;
-      border-top:3px solid #22c55e;
+      border-top:3px solid var(--brand-base, #F97316);
       border-radius:50%;
       animation:spin 0.8s linear infinite;">
     </div>

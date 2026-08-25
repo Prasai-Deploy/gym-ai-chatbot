@@ -25,7 +25,7 @@ export const BusinessMetrics: React.FC<BusinessMetricsProps> = React.memo(({
         title="Customer Acq. Cost (CAC)"
         value={`$${cacAmount}`}
         unit="CAC"
-        icon={<Users className="w-5 h-5 text-orange-400" />}
+        icon={<Users className="w-5 h-5 text-brand-400" />}
         trend={{ value: 'Low Acquisition Cost', isPositive: true }}
         variant="default"
       />

@@ -97,7 +97,7 @@ export const PricingPage: React.FC = () => {
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </button>
           
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-semibold uppercase tracking-wider">
             <CreditCard className="w-3.5 h-3.5" /> Razorpay Powered • INR & Global Cards
           </div>
           
@@ -113,7 +113,7 @@ export const PricingPage: React.FC = () => {
             <button
               onClick={() => setInterval('monthly')}
               className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all ${
-                interval === 'monthly' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                interval === 'monthly' ? 'bg-brand-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
               Monthly Billing
@@ -121,7 +121,7 @@ export const PricingPage: React.FC = () => {
             <button
               onClick={() => setInterval('yearly')}
               className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                interval === 'yearly' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                interval === 'yearly' ? 'bg-brand-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
               Yearly Billing
@@ -169,14 +169,14 @@ export const PricingPage: React.FC = () => {
           </div>
 
           {/* PRO TIER */}
-          <div className="bg-gradient-to-b from-slate-900 to-slate-900/80 border-2 border-orange-500/80 rounded-2xl p-6 flex flex-col justify-between relative shadow-2xl shadow-orange-500/10 transform hover:-translate-y-1 transition-all">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-md">
+          <div className="bg-gradient-to-b from-slate-900 to-slate-900/80 border-2 border-brand-500/80 rounded-2xl p-6 flex flex-col justify-between relative shadow-2xl shadow-brand-500/10 transform hover:-translate-y-1 transition-all">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-md">
               Most Popular
             </div>
             
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                STRIVA Pro <Zap className="w-4 h-4 text-orange-400 fill-orange-400" />
+                STRIVA Pro <Zap className="w-4 h-4 text-brand-400 fill-brand-400" />
               </h3>
               <p className="text-slate-400 text-xs">For dedicated athletes seeking maximum results.</p>
               <div className="flex items-baseline text-white">
@@ -186,18 +186,18 @@ export const PricingPage: React.FC = () => {
               {interval === 'yearly' && <p className="text-[11px] text-emerald-400 font-medium">Billed annually (₹14,990/yr)</p>}
 
               <ul className="space-y-2.5 text-xs text-slate-200 pt-4 border-t border-slate-800">
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> Everything in Free</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 100 AI Coach Queries / day</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 10 AI Workout & Diet Plans / mo</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 1-Year Historical Analytics</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> Priority Email Support</li>
+                <li className="flex items-center"><Check className="w-4 h-4 text-brand-400 mr-2 shrink-0" /> Everything in Free</li>
+                <li className="flex items-center"><Check className="w-4 h-4 text-brand-400 mr-2 shrink-0" /> 100 AI Coach Queries / day</li>
+                <li className="flex items-center"><Check className="w-4 h-4 text-brand-400 mr-2 shrink-0" /> 10 AI Workout & Diet Plans / mo</li>
+                <li className="flex items-center"><Check className="w-4 h-4 text-brand-400 mr-2 shrink-0" /> 1-Year Historical Analytics</li>
+                <li className="flex items-center"><Check className="w-4 h-4 text-brand-400 mr-2 shrink-0" /> Priority Email Support</li>
               </ul>
             </div>
 
             <button
               onClick={() => handleSelectTier('pro')}
               disabled={loadingTier === 'pro'}
-              className="mt-8 w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center"
+              className="mt-8 w-full py-3 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center"
             >
               {loadingTier === 'pro' ? 'Initializing Razorpay...' : 'Pay with Razorpay'}
             </button>

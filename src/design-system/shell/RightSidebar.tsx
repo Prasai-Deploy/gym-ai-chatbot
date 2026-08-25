@@ -15,7 +15,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
   className,
 }) => {
   return (
-    <aside className={`w-80 shrink-0 hidden xl:flex flex-col gap-6 p-6 border-l border-white/10 bg-slate-950/50 backdrop-blur-xl ${className}`}>
+    <aside className={`glass-nav w-80 shrink-0 hidden xl:flex flex-col gap-5 p-4 m-3 ml-0 rounded-[28px] h-[calc(100vh-1.5rem)] sticky top-3 overflow-y-auto no-scrollbar ${className}`}>
       {/* Daily Progress Widget */}
       <Card variant="glass" className="flex flex-col items-center text-center p-5 gap-4">
         <div className="flex items-center justify-between w-full">
@@ -32,7 +32,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           </div>
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-slate-400">Workout</span>
-            <span className="font-bold text-orange-400">55 min</span>
+            <span className="font-bold text-brand-400">55 min</span>
           </div>
         </div>
       </Card>
@@ -44,7 +44,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           <span className="text-xs font-bold text-white">Trinity AI Coach</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          "Ready for your hypertrophy leg session today? Focus on explosive squat tempos."
+          Ready for your lower-body session? Keep the first working set controlled and leave one rep in reserve.
         </p>
         <Button variant="premium" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5" />} onClick={onOpenCoach}>
           Chat with AI
@@ -55,7 +55,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-orange-500" />
+            <Calendar className="w-3.5 h-3.5 text-brand-500" />
             Schedule
           </span>
         </div>
@@ -63,7 +63,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
         <div className="flex flex-col gap-2">
           <div className="p-3 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
-              <Flame className="w-4 h-4 text-orange-400" />
+              <Flame className="w-4 h-4 text-brand-400" />
               <div className="flex flex-col">
                 <span className="font-bold text-white">Lower Body Power</span>
                 <span className="text-[10px] text-slate-400">Today • 5:30 PM</span>

@@ -51,7 +51,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
           className={cn(
             'p-4 rounded-3xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap select-text shadow-sm',
             isUser
-              ? 'bg-orange-500 text-white rounded-tr-sm shadow-orange-500/20 font-medium'
+              ? 'bg-brand-500 text-white rounded-tr-sm shadow-brand-500/20 font-medium'
               : 'bg-slate-900 border border-white/10 text-slate-200 rounded-tl-sm'
           )}
         >

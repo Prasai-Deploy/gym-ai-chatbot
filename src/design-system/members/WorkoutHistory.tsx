@@ -27,7 +27,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = React.memo(({
     <Card variant="default" className={`p-4 flex flex-col gap-3 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-orange-400" />
+          <Dumbbell className="w-4 h-4 text-brand-400" />
           Completed Workouts
         </span>
         <Badge variant="primary" size="sm">{logs.length} Logged</Badge>
@@ -38,7 +38,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = React.memo(({
           <div key={l.id} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 flex items-center justify-between text-xs">
             <span className="font-bold text-white">{l.title}</span>
             <div className="flex items-center gap-2 font-mono">
-              <span className="text-orange-400 font-bold">{l.volumeKg.toLocaleString()} kg</span>
+              <span className="text-brand-400 font-bold">{l.volumeKg.toLocaleString()} kg</span>
               <span className="text-slate-500 text-[10px]">{l.date}</span>
             </div>
           </div>

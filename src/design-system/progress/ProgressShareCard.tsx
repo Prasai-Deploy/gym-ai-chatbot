@@ -33,24 +33,24 @@ export const ProgressShareCard: React.FC<ProgressShareCardProps> = React.memo(({
         <Badge variant="primary" size="sm" icon={<Award className="w-3.5 h-3.5" />}>
           STRIVA CERTIFIED MILESTONE
         </Badge>
-        <span className="text-xs font-mono font-bold text-orange-400">Shareable Card</span>
+        <span className="text-xs font-mono font-bold text-brand-400">Shareable Card</span>
       </div>
 
       <div className="flex items-center gap-4 bg-slate-950/80 p-4 rounded-2xl border border-white/10">
-        <div className="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 border border-orange-500/30">
+        <div className="w-12 h-12 rounded-2xl bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0 border border-brand-500/30">
           <Dumbbell className="w-6 h-6" />
         </div>
         <div className="flex flex-col">
           <span className="text-xs text-slate-400 font-semibold">{userName}'s Achievement</span>
           <h4 className="text-base font-extrabold text-white">{prTitle}</h4>
-          <span className="text-sm font-black text-orange-400 font-mono">{prStat}</span>
+          <span className="text-sm font-black text-brand-400 font-mono">{prStat}</span>
         </div>
       </div>
 
       <Button
         variant="secondary"
         size="md"
-        leftIcon={<Copy className="w-4 h-4 text-orange-400" />}
+        leftIcon={<Copy className="w-4 h-4 text-brand-400" />}
         onClick={handleCopyLink}
         className="w-full"
       >

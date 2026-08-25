@@ -28,7 +28,7 @@ export const Chip: React.FC<ChipProps> = ({
         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 select-none',
         onSelect && !disabled && 'cursor-pointer active:scale-95',
         selected
-          ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20 border border-orange-400/40'
+          ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/20 border border-brand-400/40'
           : 'bg-slate-900/80 text-slate-300 border border-white/10 hover:border-white/20 hover:text-white',
         disabled && 'opacity-50 cursor-not-allowed',
         className

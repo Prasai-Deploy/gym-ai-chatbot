@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { authApi } from '../api/authApi';
+import { clearBrandingCache } from '../lib/brandingCache';
 
 interface User {
   id: string;
@@ -103,7 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    window.location.href = '/auth/logout'; // Clear backend session too for demo users and redirect to root
+    // Drop the cached gym branding. Without this, the next person to sign in
+    // on a shared phone sees the previous gym's colour and name until their
+    // own branding loads.
+    clearBrandingCache();
+    window.location.href = '/login';
   };
 
   return (

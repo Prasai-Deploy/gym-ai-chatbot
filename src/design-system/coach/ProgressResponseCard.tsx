@@ -28,7 +28,7 @@ export const ProgressResponseCard: React.FC<ProgressResponseCardProps> = React.m
         <Badge variant="primary" size="sm" icon={<TrendingUp className="w-3.5 h-3.5" />}>
           STRENGTH & VOLUME INSIGHTS
         </Badge>
-        <span className="text-xs font-bold text-orange-400">30-Day Analysis</span>
+        <span className="text-xs font-bold text-brand-400">30-Day Analysis</span>
       </div>
 
       <p className="text-xs text-slate-300 leading-relaxed">{summary}</p>

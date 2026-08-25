@@ -13,7 +13,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = React.m
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <div className="md:hidden fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+    <div className="md:hidden fixed bottom-[calc(max(10px,env(safe-area-inset-bottom))+78px)] right-4 z-50 flex flex-col items-end gap-3">
       {isOpen && (
         <motion.div
           initial={{ opacity: 0, y: 10, scale: 0.9 }}
@@ -27,7 +27,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = React.m
               onQuickAction('coach');
               setIsOpen(false);
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-indigo-600 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 border border-indigo-400/40"
+            className="glass-nav flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-white text-xs font-bold border-indigo-500/30"
           >
             <span>Ask AI Coach</span>
             <Bot className="w-4 h-4" />
@@ -39,7 +39,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = React.m
               onQuickAction('workout');
               setIsOpen(false);
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-orange-500 text-white text-xs font-bold shadow-xl shadow-orange-500/30 border border-orange-400/40"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-brand-500 text-white text-xs font-bold shadow-xl shadow-brand-500/20 border border-brand-400/30"
           >
             <span>Log Workout</span>
             <Flame className="w-4 h-4" />
@@ -52,7 +52,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = React.m
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Quick Action Floating Button"
         className={cn(
-          'w-13 h-13 rounded-2xl bg-gradient-to-r from-orange-500 to-indigo-600 text-white flex items-center justify-center shadow-2xl shadow-orange-500/30 border border-white/20 transition-transform',
+          'w-13 h-13 rounded-2xl bg-brand-500 text-white flex items-center justify-center shadow-2xl shadow-brand-500/25 border border-brand-400/30 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 touch-manipulation',
           isOpen && 'rotate-45'
         )}
       >

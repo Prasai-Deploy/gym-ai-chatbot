@@ -55,7 +55,7 @@ export const NutritionSection: React.FC<NutritionSectionProps> = ({
                 </h4>
                 <div className="flex gap-2 flex-wrap mt-2">
                   {dashboardData.today_plan.difficulty && (
-                    <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20 uppercase text-[10px]">
+                    <Badge variant="outline" className="bg-brand-500/10 text-brand-500 border-brand-500/20 uppercase text-[10px]">
                       {dashboardData.today_plan.difficulty}
                     </Badge>
                   )}
@@ -114,11 +114,11 @@ export const NutritionSection: React.FC<NutritionSectionProps> = ({
               <div className="p-5 rounded-[24px] bg-surface-elevated">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Utensils size={18} className="text-orange-500" />
+                    <Utensils size={18} className="text-brand-500" />
                     <span className="text-sm font-bold uppercase tracking-widest text-text-primary">Meal Schedule</span>
                   </div>
                   {dashboardData.today_plan.calories_target ? (
-                    <div className="text-xs font-bold text-orange-500">{dashboardData.today_plan.calories_target} kcal</div>
+                    <div className="text-xs font-bold text-brand-500">{dashboardData.today_plan.calories_target} kcal</div>
                   ) : null}
                 </div>
                 <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
@@ -140,7 +140,7 @@ export const NutritionSection: React.FC<NutritionSectionProps> = ({
                           ) : (
                             <ul className="text-xs space-y-1 text-text-secondary">
                               {meal.items?.map((item: string, i: number) => (
-                                <li key={i} className="flex items-start gap-2"><span className="text-orange-500 flex-shrink-0">•</span><span>{item}</span></li>
+                                <li key={i} className="flex items-start gap-2"><span className="text-brand-500 flex-shrink-0">•</span><span>{item}</span></li>
                               ))}
                             </ul>
                           )}
@@ -194,7 +194,7 @@ export const NutritionSection: React.FC<NutritionSectionProps> = ({
                 </div>
                 <div className="p-4 rounded-2xl bg-surface-elevated/50">
                   <div className="flex items-center gap-2 mb-3">
-                    <Utensils size={16} className="text-orange-500" />
+                    <Utensils size={16} className="text-brand-500" />
                     <span className="text-xs font-bold uppercase text-zinc-400">Diet Plan</span>
                   </div>
                   <div className="text-sm prose prose-invert prose-sm max-w-none text-text-secondary">

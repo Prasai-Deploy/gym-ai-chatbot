@@ -53,7 +53,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           sizeStyles[size],
           isBot
             ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30'
-            : 'bg-slate-800 text-orange-400'
+            : 'bg-slate-800 text-brand-400'
         )}
       >
         {src ? (

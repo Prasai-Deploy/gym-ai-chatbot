@@ -21,7 +21,7 @@ export const DailyProgress: React.FC<DailyProgressProps> = React.memo(({
         title="Calories Burned"
         value={caloriesBurned}
         unit="kcal"
-        icon={<Flame className="w-5 h-5 text-orange-400" />}
+        icon={<Flame className="w-5 h-5 text-brand-400" />}
         trend={{ value: '+12%', isPositive: true }}
         variant="primary"
       />

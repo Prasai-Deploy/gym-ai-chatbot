@@ -21,7 +21,7 @@ export const WorkoutStats: React.FC<WorkoutStatsProps> = React.memo(({
         title="Volume Lifted"
         value={totalVolumeKg.toLocaleString()}
         unit="kg"
-        icon={<Dumbbell className="w-5 h-5 text-orange-400" />}
+        icon={<Dumbbell className="w-5 h-5 text-brand-400" />}
         variant="primary"
       />
       <StatCard

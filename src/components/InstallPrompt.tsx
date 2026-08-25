@@ -13,7 +13,7 @@ export function InstallPrompt() {
 
   useEffect(() => {
     // Don't show if already installed or previously dismissed
-    const dismissed = localStorage.getItem('sweatfix-install-dismissed');
+    const dismissed = localStorage.getItem('striva-install-dismissed');
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       || (window.navigator as any).standalone === true;
 
@@ -44,7 +44,7 @@ export function InstallPrompt() {
   const handleDismiss = () => {
     setShowBanner(false);
     setDeferredPrompt(null);
-    localStorage.setItem('sweatfix-install-dismissed', 'true');
+    localStorage.setItem('striva-install-dismissed', 'true');
   };
 
   return (
@@ -54,7 +54,7 @@ export function InstallPrompt() {
           initial={{ opacity: 0, y: -60 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -60 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           className="install-banner"
           id="install-prompt-banner"
         >
@@ -63,7 +63,7 @@ export function InstallPrompt() {
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--accent-primary)' }}
             >
-              <Download size={18} style={{ color: '#121212' }} />
+              <Download size={18} style={{ color: 'var(--text-on-accent)' }} />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>

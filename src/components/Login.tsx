@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell } from 'lucide-react';
-import { Button, LoadingButton, Card } from '../shared';
+import { Button, LoadingButton } from '../shared';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
+import { BrandMark } from '../design-system/brand/BrandMark';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LOGIN_BACKGROUND_VIDEO } from '../config/loginBackground';
@@ -11,6 +12,7 @@ export function Login() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { user, loading, setUser, rehydrate } = useAuth();
+  const { businessName } = useBranding();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -104,20 +106,23 @@ export function Login() {
             <source src={LOGIN_BACKGROUND_VIDEO} type="video/mp4" />
           </video>
           {/* Subtle dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-[1] pointer-events-none" />
+          <div className="absolute inset-0 bg-black/55 backdrop-blur-[1px] z-[1] pointer-events-none" />
         </>
       )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full relative z-10"
+        className="max-w-md w-full relative z-10 rounded-[32px] border border-white/15 bg-slate-950/68 backdrop-blur-2xl shadow-2xl shadow-black/35 p-5 sm:p-8"
       >
-        <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-          <Dumbbell className="text-white w-10 h-10" />
-        </div>
-        <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>STRIVA</h1>
-        <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
+        {/* On a first-ever visit there is no cached branding yet — the gym is
+            unknown until after login — so this shows the default mark. Every
+            visit after that is correctly branded. */}
+        <BrandMark size="lg" showWordmark={false} className="justify-center mb-6" />
+        <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight text-white">
+          {businessName}
+        </h1>
+        <p className="mb-8 text-sm sm:text-base text-slate-300">Your training, nutrition, and progress, all in one focused place.</p>
 
         <Button
           onClick={handleLogin}
@@ -127,9 +132,9 @@ export function Login() {
           Continue with Google
         </Button>
 
-        <Card className="shadow-xl w-full text-center">
-          <h3 className="text-xl font-bold mb-2 text-text-primary">Test Access</h3>
-          <p className="text-sm text-text-muted mb-6">Experience the platform without creating an account.</p>
+        <div className="w-full text-center border-t border-white/15 mt-3 pt-6">
+          <h3 className="text-base font-bold mb-1.5 text-white">Explore first</h3>
+          <p className="text-sm text-slate-400 mb-5">Try the experience without creating an account.</p>
           <div className="flex flex-col gap-3">
             <LoadingButton
               onClick={handleDemoLogin}
@@ -140,14 +145,14 @@ export function Login() {
               Explore as Demo User
             </LoadingButton>
           </div>
-        </Card>
+        </div>
 
 
 
         {/* PrasAI Cloud Branding Footer */}
-        <div className="mt-12 flex flex-col items-center justify-center gap-2 opacity-50 hover:opacity-80 transition-opacity duration-300">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-600">Powered by</p>
-          <img src="/prasai_cloud_logo.png" alt="PrasAI Cloud Logo" className="h-10 object-contain" />
+        <div className="mt-8 flex flex-col items-center justify-center gap-1.5 opacity-55 hover:opacity-80 transition-opacity duration-200">
+          <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-slate-500">Powered by</p>
+          <img src="/prasai_cloud_logo.png" alt="PrasAI Cloud Logo" className="h-8 object-contain" />
         </div>
       </motion.div>
     </div>

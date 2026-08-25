@@ -24,7 +24,7 @@ export const WorkoutProgress: React.FC<WorkoutProgressProps> = React.memo(({
         <span className="text-slate-300">
           Exercise <span className="text-white font-extrabold">{currentExerciseIndex + 1}</span> of {totalExercises}
         </span>
-        <span className="text-orange-400 font-bold">{completedSetsCount} / {totalSetsCount} Sets Completed ({percentage}%)</span>
+        <span className="text-brand-400 font-bold">{completedSetsCount} / {totalSetsCount} Sets Completed ({percentage}%)</span>
       </div>
       <Progress value={completedSetsCount} max={totalSetsCount} variant="primary" size="sm" />
     </div>

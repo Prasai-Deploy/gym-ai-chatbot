@@ -49,10 +49,10 @@ export const Accordion: React.FC<AccordionProps> = ({
               type="button"
               onClick={() => toggleItem(item.id)}
               aria-expanded={isExpanded}
-              className="w-full flex items-center justify-between p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              className="w-full flex items-center justify-between p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <div className="flex items-center gap-3">
-                {item.icon && <span className="text-orange-400">{item.icon}</span>}
+                {item.icon && <span className="text-brand-400">{item.icon}</span>}
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-white">{item.title}</span>
                   {item.subtitle && <span className="text-xs text-slate-400">{item.subtitle}</span>}

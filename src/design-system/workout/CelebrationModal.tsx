@@ -29,7 +29,7 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = React.memo(({
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="w-20 h-20 rounded-3xl bg-gradient-to-r from-orange-500 to-amber-500 p-0.5 shadow-2xl shadow-orange-500/40"
+          className="w-20 h-20 rounded-3xl bg-gradient-to-r from-brand-500 to-amber-500 p-0.5 shadow-2xl shadow-brand-500/40"
         >
           <div className="w-full h-full rounded-[22px] bg-slate-950 flex items-center justify-center text-amber-400">
             <Award className="w-10 h-10" />
@@ -51,7 +51,7 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = React.memo(({
         <div className="grid grid-cols-3 gap-2 w-full p-3 rounded-2xl bg-slate-950/80 border border-white/10 text-xs">
           <div className="flex flex-col">
             <span className="text-[10px] text-slate-400 font-semibold">Volume</span>
-            <span className="font-extrabold text-orange-400">{totalVolumeKg.toLocaleString()} kg</span>
+            <span className="font-extrabold text-brand-400">{totalVolumeKg.toLocaleString()} kg</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-slate-400 font-semibold">Calories</span>

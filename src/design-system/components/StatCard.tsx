@@ -26,14 +26,14 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const variantStyles = {
     default: 'bg-slate-900/80 border-white/10 hover:border-white/20',
-    primary: 'bg-orange-500/10 border-orange-500/30 hover:border-orange-500/50',
+    primary: 'bg-brand-500/10 border-brand-500/30 hover:border-brand-500/50',
     ai: 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50',
   };
 
   return (
     <div
       className={cn(
-        'p-5 rounded-2xl border transition-all duration-200 flex flex-col gap-3 relative overflow-hidden group select-none',
+        'p-4 sm:p-5 rounded-[22px] border transition-all duration-200 flex flex-col gap-3 relative overflow-hidden group select-none',
         variantStyles[variant],
         className
       )}
@@ -41,7 +41,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</span>
         {icon && (
-          <div className="p-2 rounded-xl bg-white/5 text-orange-400 group-hover:scale-110 transition-transform">
+          <div className="p-2 rounded-xl bg-white/5 text-brand-400">
             {icon}
           </div>
         )}

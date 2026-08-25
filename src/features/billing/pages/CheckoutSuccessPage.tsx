@@ -34,7 +34,7 @@ export const CheckoutSuccessPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/dashboard')}
-          className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2"
         >
           Go to Dashboard <ArrowRight className="w-4 h-4" />
         </button>

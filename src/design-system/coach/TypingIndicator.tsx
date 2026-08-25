@@ -24,7 +24,7 @@ export const TypingIndicator: React.FC = React.memo(() => {
           <motion.span
             animate={{ scale: [1, 1.4, 1] }}
             transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }}
-            className="w-2 h-2 rounded-full bg-orange-500"
+            className="w-2 h-2 rounded-full bg-brand-500"
           />
           <motion.span
             animate={{ scale: [1, 1.4, 1] }}

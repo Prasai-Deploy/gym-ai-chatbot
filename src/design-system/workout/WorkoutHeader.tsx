@@ -41,8 +41,8 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = React.memo(({
       </div>
 
       <div className="flex items-center justify-between sm:justify-end gap-3">
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-950/80 border border-white/10 font-mono text-sm font-bold text-orange-400">
-          <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-950/80 border border-white/10 font-mono text-sm font-bold text-brand-400">
+          <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
           {formatTime(elapsedSeconds)}
         </div>
 

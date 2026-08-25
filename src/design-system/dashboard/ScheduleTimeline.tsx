@@ -29,7 +29,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = React.memo(({
     <Card variant="default" className={`p-6 flex flex-col gap-4 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-orange-400" />
+          <Calendar className="w-4 h-4 text-brand-400" />
           Today's Schedule
         </span>
         <Badge variant="neutral" size="sm">3 Tasks</Badge>
@@ -43,7 +43,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = React.memo(({
                 ev.status === 'completed'
                   ? 'bg-emerald-500'
                   : ev.status === 'in-progress'
-                  ? 'bg-orange-500 ring-4 ring-orange-500/20'
+                  ? 'bg-brand-500 ring-4 ring-brand-500/20'
                   : 'bg-slate-600'
               }`}
             />

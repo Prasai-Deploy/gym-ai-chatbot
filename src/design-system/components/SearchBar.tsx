@@ -25,7 +25,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <div
       className={cn(
         'relative flex items-center w-full rounded-2xl bg-slate-900/90 border px-3.5 py-2.5 transition-all duration-200',
-        isFocused ? 'border-orange-500 ring-2 ring-orange-500/30 shadow-lg shadow-orange-500/10' : 'border-white/10 hover:border-white/20',
+        isFocused ? 'border-brand-500 ring-2 ring-brand-500/30 shadow-lg shadow-brand-500/10' : 'border-white/10 hover:border-white/20',
         className
       )}
     >

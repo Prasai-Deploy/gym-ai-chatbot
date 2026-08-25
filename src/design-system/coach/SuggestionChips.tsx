@@ -12,7 +12,7 @@ export const SuggestionChips: React.FC<SuggestionChipsProps> = React.memo(({
   className,
 }) => {
   const suggestions = [
-    { label: "Adjust today's chest & triceps workout", icon: <Flame className="w-3.5 h-3.5 text-orange-400" /> },
+    { label: "Adjust today's chest & triceps workout", icon: <Flame className="w-3.5 h-3.5 text-brand-400" /> },
     { label: "Calculate my post-workout macro target", icon: <PieChart className="w-3.5 h-3.5 text-emerald-400" /> },
     { label: "Audit my squat & deadlift form tips", icon: <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> },
     { label: "Analyze my 30-day strength progress", icon: <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> },

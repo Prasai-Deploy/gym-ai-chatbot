@@ -43,7 +43,7 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = React.memo(({
           title="Total Volume"
           value={totalVolumeKg.toLocaleString()}
           unit="kg"
-          icon={<Dumbbell className="w-5 h-5 text-orange-400" />}
+          icon={<Dumbbell className="w-5 h-5 text-brand-400" />}
           variant="primary"
         />
         <StatCard

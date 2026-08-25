@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Dumbbell, Flame, Bell, User } from 'lucide-react';
+import { Flame, Bell, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { BrandMark } from '../../../design-system/brand/BrandMark';
 
 export const TopNav: React.FC = () => {
   const navigate = useNavigate();
@@ -24,13 +25,9 @@ export const TopNav: React.FC = () => {
         className="flex items-center gap-3 cursor-pointer group"
         onClick={() => navigate('/v3/dashboard')}
       >
-        <div className="w-9 h-9 rounded-xl bg-[#F97316] text-white flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
-          <Dumbbell className="w-5 h-5" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-extrabold text-xl tracking-tight text-white font-display">STRIVA</span>
-          <span className="text-[9px] font-black uppercase text-orange-400 tracking-widest">v3 ENGINE</span>
-        </div>
+        {/* The "v3 ENGINE" tagline that used to sit under the wordmark was
+            STRIVA-specific and meaningless to a white-labelled gym. */}
+        <BrandMark size="md" className="group-hover:scale-105 transition-transform" />
       </div>
 
       {/* Desktop Links */}
@@ -43,7 +40,7 @@ export const TopNav: React.FC = () => {
               onClick={() => navigate(item.path)}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
                 isActive 
-                  ? 'bg-[#F97316] text-white shadow-md' 
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -62,12 +59,12 @@ export const TopNav: React.FC = () => {
 
         <button className="p-2 rounded-xl bg-[#131722] border border-white/10 text-slate-400 hover:text-white transition-colors relative">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#F97316]" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500" />
         </button>
 
         <button 
           onClick={() => navigate('/v3/profile')}
-          className="w-9 h-9 rounded-full bg-[#1A2030] border border-white/15 flex items-center justify-center text-slate-200 hover:border-orange-500 transition-colors"
+          className="w-9 h-9 rounded-full bg-[#1A2030] border border-white/15 flex items-center justify-center text-slate-200 hover:border-brand-500 transition-colors"
           title="Profile & Settings"
         >
           {user?.avatar ? (

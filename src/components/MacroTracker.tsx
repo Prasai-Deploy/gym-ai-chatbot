@@ -161,7 +161,7 @@ export function MacroTracker({
       <div className="pt-2 border-t border-slate-800/80 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-orange-400" />
+            <Scale className="w-4 h-4 text-brand-400" />
             <span className="text-xs font-bold text-white uppercase tracking-wider">Bodyweight Tracker</span>
           </div>
           {weightDiff !== null && (
@@ -182,7 +182,7 @@ export function MacroTracker({
               value={weight}
               onChange={e => setWeight(e.target.value)}
               placeholder="Log current weight (e.g. 74.5)"
-              className="w-full rounded-xl px-4 py-2.5 text-xs font-semibold outline-none bg-slate-900 border border-slate-800 focus:border-orange-500/60 text-white placeholder-slate-500 transition-all"
+              className="w-full rounded-xl px-4 py-2.5 text-xs font-semibold outline-none bg-slate-900 border border-slate-800 focus:border-brand-500/60 text-white placeholder-slate-500 transition-all"
               onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
@@ -191,7 +191,7 @@ export function MacroTracker({
           </div>
           <button
             onClick={handleLogWeight}
-            className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
           >
             <Check className="w-3.5 h-3.5" /> Log
           </button>

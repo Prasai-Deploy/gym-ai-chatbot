@@ -9,7 +9,9 @@ import { ChatMessage } from '../../design-system/coach/MessageBubble';
 
 export const V3CoachPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  // Was `signOut`, which AuthContext does not export — so `signOut?.()` below
+  // was silently a no-op and the logout button on this page did nothing.
+  const { user, logout } = useAuth();
   const userName = user?.name || user?.email?.split('@')[0] || 'Athlete';
   const { messages, sendMessage, isTyping } = useAIChat();
   const { isSending } = useCoachData();
@@ -33,7 +35,7 @@ export const V3CoachPage: React.FC = () => {
     <AppShell
       currentPath="/v3/coach"
       onNavigate={(path) => navigate(path)}
-      onLogout={() => signOut?.()}
+      onLogout={() => logout?.()}
       user={{
         name: userName,
         email: user?.email || 'athlete@striva.app',

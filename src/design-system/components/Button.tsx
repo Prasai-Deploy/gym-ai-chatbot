@@ -37,7 +37,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
 }, ref) => {
   const isDisabled = disabled || isLoading || variant === 'disabled';
 
-  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none touch-manipulation';
 
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-lg',
@@ -46,13 +46,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
   };
 
   const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-lg shadow-orange-500/25 border border-orange-400/30',
+    primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-lg shadow-brand-500/25 border border-brand-400/30',
     secondary: 'bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white border border-white/10 shadow-sm',
     ghost: 'bg-transparent hover:bg-white/10 active:bg-white/15 text-slate-300 hover:text-white',
-    outline: 'bg-transparent border border-white/20 hover:border-orange-500/50 hover:bg-orange-500/10 text-white',
+    outline: 'bg-transparent border border-white/20 hover:border-brand-500/50 hover:bg-brand-500/10 text-white',
     danger: 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white shadow-lg shadow-red-500/25 border border-red-400/30',
     success: 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25 border border-emerald-400/30',
-    premium: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500 hover:opacity-95 text-white font-bold shadow-lg shadow-indigo-500/30 border border-white/20',
+    premium: 'bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/20 border border-indigo-400/30',
     disabled: 'bg-slate-800/50 text-slate-500 border border-slate-700/50 cursor-not-allowed shadow-none',
   };
 

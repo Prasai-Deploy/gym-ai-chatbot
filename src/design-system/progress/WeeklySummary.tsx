@@ -26,7 +26,7 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = React.memo(({
         title="Weekly Volume"
         value={volumeThisWeekKg.toLocaleString()}
         unit="kg"
-        icon={<Dumbbell className="w-5 h-5 text-orange-400" />}
+        icon={<Dumbbell className="w-5 h-5 text-brand-400" />}
         trend={{ value: `+${pctDiff}% vs last week`, isPositive: true }}
         variant="primary"
       />

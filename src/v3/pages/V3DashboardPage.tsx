@@ -15,6 +15,7 @@ export const V3DashboardPage: React.FC = () => {
   return (
     <AppShell
       currentPath="/v3/dashboard"
+      showRightSidebar
       onNavigate={(path) => navigate(path)}
       onLogout={() => logout?.()}
       user={{

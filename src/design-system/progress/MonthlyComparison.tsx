@@ -28,7 +28,7 @@ export const MonthlyComparison: React.FC<MonthlyComparisonProps> = React.memo(({
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-white/5 flex flex-col gap-1">
           <span className="text-[10px] text-slate-400 font-semibold uppercase">Volume Growth</span>
-          <span className="text-xl font-extrabold text-orange-400">+{volumeDiffKg.toLocaleString()} kg</span>
+          <span className="text-xl font-extrabold text-brand-400">+{volumeDiffKg.toLocaleString()} kg</span>
           <span className="text-[10px] text-emerald-400 font-semibold">+15.2% heavier workload</span>
         </div>
 

@@ -27,12 +27,12 @@ export const WorkoutMetrics: React.FC<WorkoutMetricsProps> = React.memo(({
             <span className="text-xl font-black text-white">{heartRateBpm}</span>
             <span className="text-xs text-slate-400">BPM</span>
           </div>
-          <span className="text-[10px] text-orange-400 font-semibold">{intensityZone}</span>
+          <span className="text-[10px] text-brand-400 font-semibold">{intensityZone}</span>
         </div>
       </Card>
 
       <Card variant="glass" className="p-4 flex items-center gap-3">
-        <div className="p-3 rounded-2xl bg-orange-500/20 text-orange-400 border border-orange-500/30">
+        <div className="p-3 rounded-2xl bg-brand-500/20 text-brand-400 border border-brand-500/30">
           <Flame className="w-5 h-5" />
         </div>
         <div className="flex flex-col">

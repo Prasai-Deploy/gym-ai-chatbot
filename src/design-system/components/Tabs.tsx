@@ -45,7 +45,7 @@ export const Tabs: React.FC<TabsProps> = ({
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onChange(tab.id)}
             className={cn(
-              'relative flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+              'relative flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
               isActive
                 ? 'text-white'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5',
@@ -55,7 +55,7 @@ export const Tabs: React.FC<TabsProps> = ({
             {isActive && variant === 'pill' && (
               <motion.div
                 layoutId="activeTabPill"
-                className="absolute inset-0 bg-orange-500 rounded-xl shadow-md shadow-orange-500/20"
+                className="absolute inset-0 bg-brand-500 rounded-xl shadow-md shadow-brand-500/20"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
@@ -71,7 +71,7 @@ export const Tabs: React.FC<TabsProps> = ({
             {isActive && variant === 'underline' && (
               <motion.div
                 layoutId="activeTabUnderline"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 rounded-full"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-500 rounded-full"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}

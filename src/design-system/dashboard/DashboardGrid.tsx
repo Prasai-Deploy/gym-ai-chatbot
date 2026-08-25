@@ -22,13 +22,18 @@ export interface DashboardGridProps {
 
 export const DashboardGrid: React.FC<DashboardGridProps> = React.memo(({
   userName = 'Alex',
-  onNavigate = (path) => console.log('Dashboard navigate to:', path),
+  onNavigate = (path: string) => console.log('Dashboard navigate to:', path),
   className,
 }) => {
   return (
     <PageContainer maxWidth="xl" className={cn('gap-6', className)}>
       {/* 1. Greeting & Readiness Hero */}
-      <DashboardHero userName={userName} readinessScore={88} streakDays={7} />
+      <DashboardHero
+        userName={userName}
+        readinessScore={88}
+        streakDays={7}
+        onStartWorkout={() => onNavigate('/v3/workout')}
+      />
 
       {/* 2. Quick Actions Bar */}
       <QuickActions

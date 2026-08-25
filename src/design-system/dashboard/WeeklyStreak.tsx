@@ -33,7 +33,7 @@ export const WeeklyStreak: React.FC<WeeklyStreakProps> = React.memo(({
     <Card variant="glass" className={`p-6 flex flex-col gap-4 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Flame className="w-5 h-5 text-orange-500" />
+          <Flame className="w-5 h-5 text-brand-500" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">Consistency Streak</span>
         </div>
         <Badge variant="primary" size="sm">
@@ -47,7 +47,7 @@ export const WeeklyStreak: React.FC<WeeklyStreakProps> = React.memo(({
             key={idx}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border transition-all ${
               item.isToday
-                ? 'bg-orange-500/20 border-orange-500 text-white shadow-lg shadow-orange-500/20'
+                ? 'bg-brand-500/20 border-brand-500 text-white shadow-lg shadow-brand-500/20'
                 : item.completed
                 ? 'bg-slate-900 border-white/10 text-white'
                 : 'bg-slate-950/40 border-white/5 text-slate-500'
@@ -56,7 +56,7 @@ export const WeeklyStreak: React.FC<WeeklyStreakProps> = React.memo(({
             <span className="text-[10px] font-semibold uppercase">{item.day}</span>
             <div
               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                item.completed ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'
+                item.completed ? 'bg-brand-500 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
               {item.completed ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : item.date}

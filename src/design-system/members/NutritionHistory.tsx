@@ -36,7 +36,7 @@ export const NutritionHistory: React.FC<NutritionHistoryProps> = React.memo(({
             <span className="font-bold text-white">{h.date}</span>
             <div className="flex items-center gap-3 font-mono">
               <span className="text-slate-300">{h.calories} kcal</span>
-              <span className="text-orange-400 font-bold">{h.proteinG}g P</span>
+              <span className="text-brand-400 font-bold">{h.proteinG}g P</span>
               <Badge variant="success" size="sm">{h.adherencePct}%</Badge>
             </div>
           </div>

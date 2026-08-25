@@ -17,7 +17,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = React.memo(({ items, classN
   return (
     <nav aria-label="Breadcrumb" className={cn('flex items-center gap-1.5 text-xs text-slate-400 select-none', className)}>
       <span className="flex items-center gap-1 text-slate-500 font-semibold">
-        <Dumbbell className="w-3.5 h-3.5 text-orange-500" />
+        <Dumbbell className="w-3.5 h-3.5 text-brand-500" />
         <span>STRIVA</span>
       </span>
 

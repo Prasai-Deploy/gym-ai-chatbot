@@ -32,7 +32,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {icon && <span className="text-orange-400">{icon}</span>}
+          {icon && <span className="text-brand-400">{icon}</span>}
           <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{label}</span>
         </div>
         <span className="text-xs font-bold text-slate-400">{percentage}%</span>

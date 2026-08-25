@@ -55,7 +55,7 @@ export const CoachLayout: React.FC<CoachLayoutProps> = React.memo(({
         </div>
 
         <IconButton
-          icon={<Plus className="w-4 h-4 text-orange-400" />}
+          icon={<Plus className="w-4 h-4 text-brand-400" />}
           aria-label="New Session"
           size="sm"
           onClick={onNewSession}

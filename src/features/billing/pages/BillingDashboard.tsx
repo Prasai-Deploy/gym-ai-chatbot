@@ -76,7 +76,7 @@ export const BillingDashboard: React.FC = () => {
           
           <button
             onClick={() => navigate('/pricing')}
-            className="inline-flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-orange-500/20 transition-all"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/20 transition-all"
           >
             Change Membership <ArrowUpRight className="w-4 h-4 ml-1" />
           </button>
@@ -148,7 +148,7 @@ export const BillingDashboard: React.FC = () => {
                 <span className="text-white font-bold">{limits?.ai_queries_daily === 99999 ? 'Unlimited' : limits?.ai_queries_daily} / day</span>
               </div>
               <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div className="bg-orange-500 h-full w-1/4 rounded-full" />
+                <div className="bg-brand-500 h-full w-1/4 rounded-full" />
               </div>
             </div>
 

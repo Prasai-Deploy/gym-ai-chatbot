@@ -32,8 +32,8 @@ export const NutritionSummary: React.FC<NutritionSummaryProps> = React.memo(({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <StatCard title="Total Energy" value={totalCalories} unit="kcal" icon={<Flame className="w-5 h-5 text-orange-400" />} variant="default" />
-        <StatCard title="Protein Intake" value={`${proteinG}g`} unit="target: 180g" icon={<PieChart className="w-5 h-5 text-orange-400" />} variant="primary" />
+        <StatCard title="Total Energy" value={totalCalories} unit="kcal" icon={<Flame className="w-5 h-5 text-brand-400" />} variant="default" />
+        <StatCard title="Protein Intake" value={`${proteinG}g`} unit="target: 180g" icon={<PieChart className="w-5 h-5 text-brand-400" />} variant="primary" />
         <StatCard title="Carbohydrates" value={`${carbsG}g`} unit="target: 250g" icon={<PieChart className="w-5 h-5 text-indigo-400" />} variant="default" />
         <StatCard title="Healthy Fats" value={`${fatsG}g`} unit="target: 65g" icon={<Activity className="w-5 h-5 text-emerald-400" />} variant="default" />
       </div>

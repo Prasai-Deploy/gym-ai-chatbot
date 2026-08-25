@@ -28,7 +28,7 @@ export const AIInsightsCard: React.FC<AIInsightsCardProps> = React.memo(({
 
       <div className="flex flex-col gap-2 bg-slate-950/60 p-4 rounded-2xl border border-white/5 text-xs text-slate-300">
         <div className="flex flex-col gap-1">
-          <span className="font-bold text-orange-400 uppercase tracking-wider text-[10px]">1RM Projection</span>
+          <span className="font-bold text-brand-400 uppercase tracking-wider text-[10px]">1RM Projection</span>
           <p className="leading-relaxed">{predictionText}</p>
         </div>
 

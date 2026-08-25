@@ -25,7 +25,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = React.memo(({
   className,
 }) => {
   const icons = {
-    workout: <Flame className="w-4 h-4 text-orange-400" />,
+    workout: <Flame className="w-4 h-4 text-brand-400" />,
     ai: <Bot className="w-4 h-4 text-indigo-400" />,
     nutrition: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
   };

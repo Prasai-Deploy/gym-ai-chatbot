@@ -26,7 +26,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const [query, setQuery] = useState('');
 
   const commands: CommandItem[] = [
-    { id: '1', category: 'Navigation', title: 'Dashboard', subtitle: 'View workout metrics & health overview', icon: <Dumbbell className="w-4 h-4 text-orange-400" />, path: '/v3/dashboard' },
+    { id: '1', category: 'Navigation', title: 'Dashboard', subtitle: 'View workout metrics & health overview', icon: <Dumbbell className="w-4 h-4 text-brand-400" />, path: '/v3/dashboard' },
     { id: '2', category: 'Navigation', title: 'Workouts & Exercises', subtitle: 'Log routines, sets, and reps', icon: <Flame className="w-4 h-4 text-amber-400" />, path: '/v3/workout' },
     { id: '3', category: 'AI Coach', title: 'Trinity AI Fitness Coach', subtitle: 'Get personalized workout plan & advice', icon: <Bot className="w-4 h-4 text-indigo-400" />, path: '/v3/coach' },
     { id: '4', category: 'Navigation', title: 'Nutrition & Macros', subtitle: 'Track calories, protein, and meal plans', icon: <PieChart className="w-4 h-4 text-emerald-400" />, path: '/v3/nutrition' },
@@ -78,20 +78,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
                   onNavigate(cmd.path);
                   onClose();
                 }}
-                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 border border-white/5 hover:border-orange-500/40 hover:bg-orange-500/10 transition-all text-left group select-none"
+                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 border border-white/5 hover:border-brand-500/40 hover:bg-brand-500/10 transition-all text-left group select-none"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-white/5 group-hover:scale-110 transition-transform">
                     {cmd.icon}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
+                    <span className="text-xs font-bold text-white group-hover:text-brand-400 transition-colors">
                       {cmd.title}
                     </span>
                     {cmd.subtitle && <span className="text-[10px] text-slate-400">{cmd.subtitle}</span>}
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-orange-400 group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
               </button>
             ))
           )}

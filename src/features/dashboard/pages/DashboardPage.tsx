@@ -104,7 +104,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans pb-32 relative overflow-hidden">
       {/* Glow Backdrops */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-1/3 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <DashboardHeader 
@@ -123,9 +123,9 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           <button 
             onClick={() => dashboard.setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-orange-500/50 text-slate-200 text-xs font-bold transition-all shrink-0 hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-brand-500/50 text-slate-200 text-xs font-bold transition-all shrink-0 hover:scale-105"
           >
-            <Dumbbell className="w-4 h-4 text-orange-400" /> Log Workout
+            <Dumbbell className="w-4 h-4 text-brand-400" /> Log Workout
           </button>
           <button 
             onClick={() => dashboard.setShowForm(true)}

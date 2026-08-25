@@ -23,7 +23,7 @@ export const BodyMetrics: React.FC<BodyMetricsProps> = React.memo(({
         title="Body Weight"
         value={bodyWeightKg}
         unit="kg"
-        icon={<Activity className="w-5 h-5 text-orange-400" />}
+        icon={<Activity className="w-5 h-5 text-brand-400" />}
         trend={{ value: '-1.2 kg', isPositive: true }}
         variant="primary"
       />

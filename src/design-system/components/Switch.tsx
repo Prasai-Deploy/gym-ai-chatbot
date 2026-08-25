@@ -52,9 +52,9 @@ export const Switch: React.FC<SwitchProps> = ({
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
-          'relative inline-flex shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+          'relative inline-flex shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
           trackSizes[size],
-          checked ? 'bg-orange-500 shadow-md shadow-orange-500/20' : 'bg-slate-800 border border-white/10'
+          checked ? 'bg-brand-500 shadow-md shadow-brand-500/20' : 'bg-slate-800 border border-white/10'
         )}
       >
         <motion.span

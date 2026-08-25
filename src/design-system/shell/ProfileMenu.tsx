@@ -23,7 +23,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = React.memo(({
     {
       id: 'profile',
       label: 'My Profile',
-      icon: <User className="w-4 h-4 text-orange-400" />,
+      icon: <User className="w-4 h-4 text-brand-400" />,
       onClick: () => onNavigate?.('/v3/profile'),
     },
     {
@@ -58,7 +58,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = React.memo(({
       <Avatar src={user.avatarUrl} name={user.name} size="md" status="online" />
       <div className="hidden md:flex flex-col text-left">
         <span className="text-xs font-bold text-white leading-tight">{user.name}</span>
-        <span className="text-[10px] font-semibold text-orange-400 flex items-center gap-0.5">
+        <span className="text-[10px] font-semibold text-brand-400 flex items-center gap-0.5">
           <Sparkles className="w-2.5 h-2.5" />
           {user.role}
         </span>

@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationItem } from '../components/NavigationItem';
 import { Dumbbell, Bot, Flame, PieChart, TrendingUp, CreditCard, User, ChevronLeft, ChevronRight } from '../icons';
 import { cn } from '../tokens';
+import { BrandMark } from '../brand/BrandMark';
 
 export interface SidebarNavRoute {
   id: string;
@@ -39,27 +40,21 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col justify-between border-r border-white/10 bg-slate-950/80 backdrop-blur-xl p-4 transition-all duration-300 relative z-30 select-none',
-        collapsed ? 'w-20' : 'w-64',
+        'glass-nav hidden md:flex flex-col justify-between p-3.5 transition-[width] duration-200 relative z-30 select-none m-3 mr-0 h-[calc(100vh-1.5rem)] sticky top-3 rounded-[28px]',
+        collapsed ? 'w-[76px]' : 'w-64 lg:w-72',
         className
       )}
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-7 min-h-0">
         {/* Brand Header */}
         <div className={cn('flex items-center gap-3 px-2', collapsed && 'justify-center')}>
-          <div className="w-9 h-9 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 shrink-0">
-            <Dumbbell className="w-5 h-5 stroke-[2.5]" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-base font-black tracking-tight text-white font-display">STRIVA</span>
-              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Fitness AI v4</span>
-            </div>
-          )}
+          {/* The "Fitness AI v4" tagline was STRIVA-specific; a white-labelled
+              gym has no use for it. */}
+          <BrandMark size="md" showWordmark={!collapsed} />
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex flex-col gap-1.5">
+        <nav className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
           {routes.map((route) => (
             <NavigationItem
               key={route.id}
@@ -78,10 +73,10 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <button
         type="button"
         onClick={onToggleCollapse}
-        className="w-full flex items-center justify-center p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+        className="w-full flex items-center justify-center p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {collapsed ? <ChevronRight className="w-4 h-4" /> : <div className="flex items-center gap-2 text-xs font-semibold"><ChevronLeft className="w-4 h-4" /> Collapsed View</div>}
+        {collapsed ? <ChevronRight className="w-4 h-4" /> : <div className="flex items-center gap-2 text-xs font-semibold"><ChevronLeft className="w-4 h-4" /> Compact sidebar</div>}
       </button>
     </aside>
   );

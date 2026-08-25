@@ -1,7 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://ymrblyiwohvxptiqjfsi.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltcmJseWl3b2h2eHB0aXFqZnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDU2NDEsImV4cCI6MjA5Njk4MTY0MX0.iYJRWMsQlp0MuEG0Eb7bZcVy73CJifRwoNp_brUxKYY';
+/**
+ * Frontend Supabase client.
+ *
+ * Uses the ANON key, which is designed to be public — it is compiled into the
+ * JavaScript bundle and anyone can read it. What protects your data is Row
+ * Level Security (see supabase/migrations/0002_rls_core.sql), not the secrecy
+ * of this key.
+ *
+ * The SERVICE ROLE key must NEVER appear in this file or anywhere under src/.
+ * It bypasses every RLS policy. It belongs only in backend/.env.
+ *
+ * There are deliberately no hardcoded fallback values here. A previous version
+ * defaulted to a live project URL and key, which meant a misconfigured deploy
+ * silently connected to the wrong database instead of failing. Failing loudly
+ * at startup is far cheaper to debug than data appearing in the wrong project.
+ */
 
-// Frontend Supabase client — used only for initiating OAuth flow
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing Supabase configuration.\n' +
+      'Create a .env file in the project root containing:\n' +
+      '  VITE_SUPABASE_URL=https://<your-ref>.supabase.co\n' +
+      '  VITE_SUPABASE_ANON_KEY=<your anon key>\n' +
+      'See supabase/README.md for the full setup guide.'
+  );
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -7,8 +7,6 @@ import { RightSidebar } from './RightSidebar';
 import { NotificationCenter } from './NotificationCenter';
 import { CommandPalette } from './CommandPalette';
 import { ToastProvider } from '../components/Toast';
-import { ThemeProvider } from '../ThemeProvider';
-import { cn } from '../tokens';
 
 export interface AppShellProps {
   currentPath?: string;
@@ -28,7 +26,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   currentPath = '/v3/dashboard',
   onNavigate = (path) => console.log('Navigate to:', path),
   onLogout = () => console.log('Logout triggered'),
-  showRightSidebar = true,
+  showRightSidebar = false,
   user,
   children,
 }) => {
@@ -46,10 +44,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   }, [onNavigate]);
 
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans antialiased overflow-x-hidden">
-          <div className="flex-1 flex w-full">
+    <ToastProvider>
+      <div className="striva-shell min-h-screen bg-slate-950 text-white flex flex-col font-sans antialiased overflow-x-hidden relative isolate">
+        <div className="app-ambient" aria-hidden="true" />
+        <div className="relative z-10 flex-1 flex w-full">
             {/* Desktop / Tablet Sidebar */}
             <Sidebar
               currentPath={currentPath}
@@ -59,7 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             />
 
             {/* Main Area */}
-            <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
+            <div className="flex-1 flex flex-col min-w-0 pb-24 md:pb-0">
               {/* Sticky Top Header */}
               <TopNavigation
                 user={user}
@@ -79,7 +77,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                 )}
               </div>
             </div>
-          </div>
+        </div>
 
           {/* Mobile Navigation */}
           <MobileBottomNav currentPath={currentPath} onNavigate={onNavigate} />
@@ -98,8 +96,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             onClose={() => setIsCommandPaletteOpen(false)}
             onNavigate={onNavigate}
           />
-        </div>
-      </ToastProvider>
-    </ThemeProvider>
+      </div>
+    </ToastProvider>
   );
 };

@@ -27,11 +27,11 @@ export const ConsistencyHeatmap: React.FC<ConsistencyHeatmapProps> = React.memo(
   const getCellColor = (val: number) => {
     switch (val) {
       case 3:
-        return 'bg-orange-500 shadow-sm shadow-orange-500/30';
+        return 'bg-brand-500 shadow-sm shadow-brand-500/30';
       case 2:
-        return 'bg-orange-600/70';
+        return 'bg-brand-600/70';
       case 1:
-        return 'bg-orange-950/60 border border-orange-500/20';
+        return 'bg-brand-950/60 border border-brand-500/20';
       default:
         return 'bg-slate-900 border border-white/5';
     }
@@ -41,7 +41,7 @@ export const ConsistencyHeatmap: React.FC<ConsistencyHeatmapProps> = React.memo(
     <Card variant="default" className={`p-6 flex flex-col gap-4 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-orange-400" />
+          <Calendar className="w-5 h-5 text-brand-400" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">Consistency Heatmap (52 Weeks)</span>
         </div>
         <Badge variant="primary" size="sm">{totalActiveDays} Active Days</Badge>
@@ -64,9 +64,9 @@ export const ConsistencyHeatmap: React.FC<ConsistencyHeatmapProps> = React.memo(
       <div className="flex items-center justify-end gap-2 text-[10px] text-slate-400 font-semibold pt-1">
         <span>Less Active</span>
         <div className="w-3 h-3 rounded-md bg-slate-900 border border-white/5" />
-        <div className="w-3 h-3 rounded-md bg-orange-950/60" />
-        <div className="w-3 h-3 rounded-md bg-orange-600/70" />
-        <div className="w-3 h-3 rounded-md bg-orange-500" />
+        <div className="w-3 h-3 rounded-md bg-brand-950/60" />
+        <div className="w-3 h-3 rounded-md bg-brand-600/70" />
+        <div className="w-3 h-3 rounded-md bg-brand-500" />
         <span>Peak Intensity</span>
       </div>
     </Card>

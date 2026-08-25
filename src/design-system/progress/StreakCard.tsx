@@ -20,7 +20,7 @@ export const StreakCard: React.FC<StreakCardProps> = React.memo(({
     <Card variant="workout" className={`p-6 flex flex-col justify-between gap-4 select-none ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Flame className="w-5 h-5 text-orange-500" />
+          <Flame className="w-5 h-5 text-brand-500" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">Active Streak</span>
         </div>
         <Badge variant="primary" size="sm">{currentStreakDays} Days Streak</Badge>
@@ -33,7 +33,7 @@ export const StreakCard: React.FC<StreakCardProps> = React.memo(({
         </div>
         <div className="flex flex-col text-right">
           <span className="text-xs text-slate-400">All-Time Best</span>
-          <span className="text-xl font-bold text-orange-400">{bestStreakDays} Days</span>
+          <span className="text-xl font-bold text-brand-400">{bestStreakDays} Days</span>
         </div>
       </div>
 

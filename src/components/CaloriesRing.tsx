@@ -25,7 +25,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
     >
       <div className="flex flex-col items-center">
         {/* Glow backdrop behind ring */}
-        <div className="absolute w-40 h-40 rounded-full bg-orange-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute w-40 h-40 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" />
 
         {/* Ring Graphic */}
         <div className="relative w-52 h-52 sm:w-60 sm:h-60">
@@ -70,8 +70,8 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
 
           {/* Center Text Stats */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="w-10 h-10 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mb-1 text-orange-400">
-              <Flame className="w-5 h-5 fill-orange-400/20" />
+            <div className="w-10 h-10 rounded-full bg-brand-500/10 border border-brand-500/30 flex items-center justify-center mb-1 text-brand-400">
+              <Flame className="w-5 h-5 fill-brand-400/20" />
             </div>
             <span className="text-3xl sm:text-4xl font-extrabold text-white font-display tracking-tight tabular-nums">
               {burned.toLocaleString()}
@@ -85,7 +85,7 @@ export function CaloriesRing({ burned, goal }: CaloriesRingProps) {
         {/* Goal Statistics Pill Strip */}
         <div className="mt-6 w-full max-w-sm grid grid-cols-3 gap-2 bg-slate-950/60 border border-slate-800/80 p-3 rounded-2xl">
           <div className="text-center">
-            <span className="text-sm font-bold text-orange-400">{pct}%</span>
+            <span className="text-sm font-bold text-brand-400">{pct}%</span>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">Progress</p>
           </div>
           <div className="text-center border-x border-slate-800/80 px-2">

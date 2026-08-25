@@ -30,7 +30,7 @@ export const Progress: React.FC<ProgressProps> = ({
   };
 
   const variantStyles: Record<ProgressVariant, string> = {
-    primary: 'bg-orange-500 shadow-sm shadow-orange-500/30',
+    primary: 'bg-brand-500 shadow-sm shadow-brand-500/30',
     ai: 'bg-indigo-500 shadow-sm shadow-indigo-500/30',
     success: 'bg-emerald-500 shadow-sm shadow-emerald-500/30',
     warning: 'bg-amber-500 shadow-sm shadow-amber-500/30',

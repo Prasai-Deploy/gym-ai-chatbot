@@ -25,7 +25,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>((
   };
 
   const variantStyles = {
-    primary: 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20',
+    primary: 'bg-brand-500 hover:bg-brand-600 text-white shadow-md shadow-brand-500/20',
     secondary: 'bg-slate-800 hover:bg-slate-700 text-white border border-white/10',
     ghost: 'bg-transparent hover:bg-white/10 text-slate-400 hover:text-white',
     outline: 'bg-transparent border border-white/20 hover:border-white/40 text-white',
@@ -39,7 +39,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>((
       aria-label={ariaLabel}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 disabled:pointer-events-none touch-manipulation',
         sizeStyles[size],
         variantStyles[variant],
         className

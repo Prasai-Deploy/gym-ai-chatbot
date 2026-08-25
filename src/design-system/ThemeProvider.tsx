@@ -29,7 +29,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return defaultTheme;
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(() =>
+    typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light'
+      ? 'light'
+      : 'dark'
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -38,6 +42,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       root.classList.remove('light', 'dark');
       root.classList.add(targetTheme);
       root.setAttribute('data-theme', targetTheme);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        'content',
+        targetTheme === 'dark' ? '#0d1018' : '#f4f6fa'
+      );
       setResolvedTheme(targetTheme);
     };
 

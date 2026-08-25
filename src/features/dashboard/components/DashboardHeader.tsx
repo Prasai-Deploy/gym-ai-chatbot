@@ -16,13 +16,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user, onShowPr
     <header className="px-4 sm:px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 transition-all">
       {/* Brand & Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 transform hover:rotate-6 transition-all cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/20 transform hover:rotate-6 transition-all cursor-pointer" onClick={() => navigate('/dashboard')}>
           <Dumbbell className="w-5 h-5 text-white" />
         </div>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white font-display">STRIVA</span>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30">
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">
               v2 PRO
             </span>
           </div>
@@ -41,7 +41,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user, onShowPr
         {/* Pricing/Billing Direct Trigger */}
         <button 
           onClick={() => navigate('/pricing')}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-orange-400 hover:border-orange-500/40 transition-all"
+          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all"
           title="Subscription & Billing"
         >
           <CreditCard className="w-4 h-4" />
@@ -50,7 +50,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user, onShowPr
         {/* Notification Bell */}
         <button className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all relative">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-slate-950" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-slate-950" />
         </button>
 
         <ThemeToggle />
@@ -59,7 +59,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user, onShowPr
         <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
           <button 
             onClick={onShowProfile} 
-            className="relative group p-0.5 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 shadow-md transition-all hover:scale-105"
+            className="relative group p-0.5 rounded-full bg-gradient-to-tr from-brand-500 to-amber-400 shadow-md transition-all hover:scale-105"
             title="Profile & Settings"
           >
             <img 

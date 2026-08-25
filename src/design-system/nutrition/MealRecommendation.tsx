@@ -50,7 +50,7 @@ export const MealRecommendation: React.FC<MealRecommendationProps> = React.memo(
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-400 font-semibold">Protein</span>
-          <span className="font-extrabold text-orange-400">{proteinG}g</span>
+          <span className="font-extrabold text-brand-400">{proteinG}g</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-400 font-semibold">Carbs</span>

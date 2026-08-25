@@ -18,7 +18,7 @@ export interface AchievementsCarouselProps {
 
 export const AchievementsCarousel: React.FC<AchievementsCarouselProps> = React.memo(({
   achievements = [
-    { id: '1', title: '7-Day Warrior', description: 'Logged 7 consecutive daily workouts.', icon: <Flame className="w-5 h-5 text-orange-400" />, unlockedAt: 'Today' },
+    { id: '1', title: '7-Day Warrior', description: 'Logged 7 consecutive daily workouts.', icon: <Flame className="w-5 h-5 text-brand-400" />, unlockedAt: 'Today' },
     { id: '2', title: 'Centurion Lifter', description: 'Surpassed 100,000 kg total volume lifted.', icon: <Award className="w-5 h-5 text-amber-400" />, unlockedAt: 'Yesterday' },
     { id: '3', title: 'AI Optimized', description: 'Followed Trinity AI recommendations 10 times.', icon: <Sparkles className="w-5 h-5 text-indigo-400" />, unlockedAt: '3d ago' },
   ],

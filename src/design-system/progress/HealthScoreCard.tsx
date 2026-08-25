@@ -31,7 +31,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = React.memo(({
         <div className="flex flex-col gap-2 text-xs font-semibold">
           <div className="flex items-center justify-between gap-6 p-2 rounded-xl bg-slate-950/60 border border-white/5">
             <span className="text-slate-400">Strength Index:</span>
-            <span className="font-extrabold text-orange-400">{strengthIndex} / 100</span>
+            <span className="font-extrabold text-brand-400">{strengthIndex} / 100</span>
           </div>
           <div className="flex items-center justify-between gap-6 p-2 rounded-xl bg-slate-950/60 border border-white/5">
             <span className="text-slate-400">Recovery Index:</span>

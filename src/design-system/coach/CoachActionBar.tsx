@@ -16,7 +16,7 @@ export const CoachActionBar: React.FC<CoachActionBarProps> = React.memo(({
       <Button
         variant="outline"
         size="sm"
-        leftIcon={<Flame className="w-3.5 h-3.5 text-orange-400" />}
+        leftIcon={<Flame className="w-3.5 h-3.5 text-brand-400" />}
         onClick={() => onTriggerTool('Generate Workout')}
         className="shrink-0"
       >

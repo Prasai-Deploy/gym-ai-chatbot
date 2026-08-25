@@ -36,7 +36,7 @@ export const BottomNavigation = React.forwardRef<HTMLDivElement, BottomNavigatio
               return (
                 <div key={item.id} className="relative -top-5 flex flex-col items-center">
                   <button
-                    className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all border border-orange-400/40"
+                    className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/40 hover:scale-105 active:scale-95 transition-all border border-brand-400/40"
                     onClick={item.onClick}
                     aria-label={item.label}
                   >
@@ -57,14 +57,14 @@ export const BottomNavigation = React.forwardRef<HTMLDivElement, BottomNavigatio
 
             const content = (
               <div className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-2xl transition-all">
-                <div className={cn('transition-all duration-200', isActive ? 'text-orange-400 scale-110' : 'text-slate-500 hover:text-slate-300')}>
+                <div className={cn('transition-all duration-200', isActive ? 'text-brand-400 scale-110' : 'text-slate-500 hover:text-slate-300')}>
                   {item.icon}
                 </div>
                 <span className={cn('text-[10px] font-semibold tracking-wide transition-all', isActive ? 'text-white font-bold' : 'text-slate-500')}>
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500 animate-pulse mt-0.5" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-500 shadow-sm shadow-brand-500 animate-pulse mt-0.5" />
                 )}
               </div>
             );

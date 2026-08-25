@@ -34,7 +34,7 @@ export const WorkoutResponseCard: React.FC<WorkoutResponseCardProps> = React.mem
         <Badge variant="primary" size="sm" icon={<Flame className="w-3.5 h-3.5" />}>
           AI RECOMMENDED WORKOUT
         </Badge>
-        <span className="text-xs font-mono font-bold text-orange-400">{durationMin} min</span>
+        <span className="text-xs font-mono font-bold text-brand-400">{durationMin} min</span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -46,7 +46,7 @@ export const WorkoutResponseCard: React.FC<WorkoutResponseCardProps> = React.mem
         {exercises.map((ex, idx) => (
           <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-none">
             <span className="font-bold text-white flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-[10px]">
+              <span className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center text-[10px]">
                 {idx + 1}
               </span>
               {ex.name}

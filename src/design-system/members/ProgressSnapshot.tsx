@@ -25,7 +25,7 @@ export const ProgressSnapshot: React.FC<ProgressSnapshotProps> = React.memo(({
         </div>
         <div className="p-2 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col">
           <span className="text-[10px] text-slate-400">Strength</span>
-          <span className="font-extrabold text-orange-400">+{strengthGrowthPct}%</span>
+          <span className="font-extrabold text-brand-400">+{strengthGrowthPct}%</span>
         </div>
         <div className="p-2 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col">
           <span className="text-[10px] text-slate-400">Body Fat</span>

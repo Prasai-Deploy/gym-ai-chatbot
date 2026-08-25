@@ -1,102 +1,121 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { TopNav } from '../components/navigation/TopNav';
-import { MobileDock } from '../components/navigation/MobileDock';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { pageVariants } from '../theme/animations';
 import { useAuth } from '../../context/AuthContext';
-import { User, LogOut, Shield, Settings, Award } from 'lucide-react';
+import { AppShell } from '../../design-system/shell/AppShell';
+import { PageContainer } from '../../design-system/shell/PageContainer';
+import { Card } from '../../design-system/components/Card';
+import { Button } from '../../design-system/components/Button';
+import { Avatar } from '../../design-system/components/Avatar';
+import { Badge } from '../../design-system/components/Badge';
+import { LogOut, Shield, Settings, Award, TrendingUp, Bell } from 'lucide-react';
 
 export const V3ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const userName = user?.name || user?.email?.split('@')[0] || 'Athlete';
 
   return (
-    <div className="min-h-screen bg-[#090B10] text-white font-sans pt-20 pb-32 px-4 sm:px-8 max-w-4xl mx-auto space-y-6">
-      <TopNav />
-
-      <motion.div
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="space-y-6"
-      >
-        <div className="flex items-center gap-4 p-6 bg-[#131722] border border-white/10 rounded-3xl">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 p-0.5 shadow-lg shadow-orange-500/20">
-            <img 
-              src={user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Athlete'} 
-              className="w-full h-full rounded-full object-cover bg-[#090B10]"
-              alt="Profile"
-            />
+    <AppShell
+      currentPath="/v3/profile"
+      onNavigate={(path) => navigate(path)}
+      onLogout={logout}
+      user={{
+        name: userName,
+        email: user?.email || 'athlete@striva.app',
+        avatarUrl: user?.avatar,
+        role: 'PRO Member',
+      }}
+    >
+      <PageContainer maxWidth="md" className="gap-5">
+        <section className="glass-panel rounded-[30px] p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
+          <Avatar src={user?.avatar} name={userName} size="xl" status="online" />
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="text-2xl font-extrabold text-white tracking-tight truncate">{userName}</h1>
+              <Badge variant="primary" size="sm">Pro member</Badge>
+            </div>
+            <p className="text-sm text-slate-400 truncate">{user?.email || 'athlete@striva.app'}</p>
+            <p className="text-xs text-slate-400 mt-2 max-w-xl">Your fitness targets, privacy controls, and membership preferences live here.</p>
           </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-extrabold text-white font-display">{user?.name || 'STRIVA Athlete'}</h1>
-            <p className="text-xs text-slate-400">{user?.email || 'athlete@striva.fit'}</p>
-            <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30 text-[10px] font-bold">
-              PRO MEMBER
-            </span>
-          </div>
-        </div>
+          <Button variant="outline" size="sm" leftIcon={<Settings className="w-4 h-4" />}>
+            Edit profile
+          </Button>
+        </section>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card variant="default" className="space-y-4 p-6">
-            <div className="flex items-center gap-2">
-              <Settings className="w-4 h-4 text-orange-400" />
-              <h3 className="text-sm font-extrabold text-white">Fitness Targets</h3>
+          <Card className="space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-brand-400" />
+                <h2 className="text-sm font-bold text-white">Daily targets</h2>
+              </div>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Editable</span>
             </div>
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Daily Calorie Target</span>
-                <span className="font-bold text-white">2,000 kcal</span>
+            <dl className="divide-y divide-white/10 text-sm">
+              <div className="flex justify-between gap-4 py-3 first:pt-0">
+                <dt className="text-slate-400">Calories</dt>
+                <dd className="font-semibold text-white">2,000 kcal</dd>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Protein Goal</span>
-                <span className="font-bold text-white">160 g</span>
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="text-slate-400">Protein</dt>
+                <dd className="font-semibold text-white">160 g</dd>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Hydration Goal</span>
-                <span className="font-bold text-white">2.5 L</span>
+              <div className="flex justify-between gap-4 py-3 last:pb-0">
+                <dt className="text-slate-400">Hydration</dt>
+                <dd className="font-semibold text-white">2.5 L</dd>
               </div>
-            </div>
+            </dl>
           </Card>
 
-          <Card variant="default" className="space-y-4 p-6">
+          <Card className="space-y-5">
             <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-sm font-extrabold text-white">Member Accomplishments</h3>
+              <Award className="w-4 h-4 text-amber-400" />
+              <h2 className="text-sm font-bold text-white">Highlights</h2>
             </div>
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Active Streak</span>
-                <span className="font-bold text-amber-400">7 Days</span>
+            <dl className="divide-y divide-white/10 text-sm">
+              <div className="flex justify-between gap-4 py-3 first:pt-0">
+                <dt className="text-slate-400">Active streak</dt>
+                <dd className="font-semibold text-amber-400">7 days</dd>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Workouts Mastered</span>
-                <span className="font-bold text-white">24 Sessions</span>
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="text-slate-400">Sessions</dt>
+                <dd className="font-semibold text-white">24</dd>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span>Total Volume Lifted</span>
-                <span className="font-bold text-white">142,500 kg</span>
+              <div className="flex justify-between gap-4 py-3 last:pb-0">
+                <dt className="text-slate-400">Volume lifted</dt>
+                <dd className="font-semibold text-white">142,500 kg</dd>
               </div>
-            </div>
+            </dl>
           </Card>
         </div>
 
-        <Button 
-          variant="destructive" 
-          size="lg" 
-          icon={<LogOut className="w-5 h-5" />} 
-          onClick={logout}
-          className="w-full"
-        >
-          Sign Out of STRIVA
-        </Button>
-      </motion.div>
+        <Card variant="glass" className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white">Notifications and privacy</h2>
+                <p className="text-xs text-slate-400 mt-1">Control reminders, leaderboard visibility, and data preferences.</p>
+              </div>
+            </div>
+            <Button variant="secondary" size="sm" leftIcon={<Shield className="w-4 h-4" />}>
+              Manage settings
+            </Button>
+          </div>
+        </Card>
 
-      <MobileDock />
-    </div>
+        <Button
+          variant="danger"
+          size="lg"
+          leftIcon={<LogOut className="w-5 h-5" />}
+          onClick={logout}
+          className="w-full sm:w-auto sm:self-end"
+        >
+          Sign out
+        </Button>
+      </PageContainer>
+    </AppShell>
   );
 };

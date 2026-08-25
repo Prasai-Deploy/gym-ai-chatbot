@@ -213,7 +213,7 @@ export function WorkoutTracker() {
   if (loading) {
     return (
       <div className="glass-card p-8 flex items-center justify-center min-h-[300px]">
-        <Loader2 className="animate-spin text-orange-400" size={32} />
+        <Loader2 className="animate-spin text-brand-400" size={32} />
       </div>
     );
   }
@@ -225,7 +225,7 @@ export function WorkoutTracker() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-card p-8 text-center space-y-4"
       >
-        <div className="w-16 h-16 rounded-3xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mx-auto text-orange-400">
+        <div className="w-16 h-16 rounded-3xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center mx-auto text-brand-400">
           <Zap size={28} />
         </div>
         <h3 className="text-xl font-extrabold text-white font-display">No Workout Planned</h3>
@@ -255,7 +255,7 @@ export function WorkoutTracker() {
               : `${plan.difficulty} • ${plan.duration}`}
           </p>
         </div>
-        <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 shadow-md">
+        <div className="w-10 h-10 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 shadow-md">
           <Dumbbell size={20} />
         </div>
       </div>
@@ -273,7 +273,7 @@ export function WorkoutTracker() {
             <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80">
               <div className="text-center">
                 <p className="text-[10px] uppercase font-bold text-slate-400">Target</p>
-                <p className="text-sm font-bold text-orange-400">{plan.calories_estimate > 0 ? `${plan.calories_estimate} kcal` : '—'}</p>
+                <p className="text-sm font-bold text-brand-400">{plan.calories_estimate > 0 ? `${plan.calories_estimate} kcal` : '—'}</p>
               </div>
               <div className="text-center border-x border-slate-800/80">
                 <p className="text-[10px] uppercase font-bold text-slate-400">Exercises</p>
@@ -292,7 +292,7 @@ export function WorkoutTracker() {
                   key={ex.name}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/70 border border-slate-800/80"
                 >
-                  <div className="w-7 h-7 rounded-xl bg-orange-500/20 text-orange-400 font-bold text-xs flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-xl bg-brand-500/20 text-brand-400 font-bold text-xs flex items-center justify-center">
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -315,7 +315,7 @@ export function WorkoutTracker() {
             <button
               onClick={handleStart}
               disabled={starting}
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2"
             >
               {starting ? <Loader2 className="animate-spin" size={20} /> : <><Play size={18} fill="currentColor" /> START WORKOUT ENGINE</>}
             </button>
@@ -333,14 +333,14 @@ export function WorkoutTracker() {
             {/* Active Session Timer & Meter */}
             <div className="flex items-center justify-between p-4 bg-slate-950/80 border border-slate-800/80 rounded-2xl">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-400" />
+                <Clock className="w-4 h-4 text-brand-400" />
                 <span className="text-xl font-mono font-bold text-white">{formatTime(elapsed)}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-slate-300">{completedCount}/{totalCount} Completed</span>
                 <div className="w-20 h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-orange-500 to-emerald-400 transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-brand-500 to-emerald-400 transition-all duration-500"
                     style={{ width: `${(completedCount / totalCount) * 100}%` }}
                   />
                 </div>
@@ -390,12 +390,12 @@ export function WorkoutTracker() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-8 space-y-4"
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center mx-auto text-white shadow-2xl shadow-orange-500/30">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-brand-500 flex items-center justify-center mx-auto text-white shadow-2xl shadow-brand-500/30">
               <Trophy size={40} />
             </div>
             <h4 className="text-2xl font-extrabold text-white font-display">Workout Mastered! 💪</h4>
             <p className="text-xs text-slate-400">Completed {completedCount}/{totalCount} exercises in {formatTime(elapsed)}</p>
-            <button onClick={handleReset} className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
+            <button onClick={handleReset} className="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
               Return to Dashboard
             </button>
           </motion.div>

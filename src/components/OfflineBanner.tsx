@@ -35,7 +35,7 @@ export function OfflineBanner() {
           id="offline-banner"
         >
           <WifiOff size={14} />
-          <span>You're offline — showing cached data</span>
+          <span>You&apos;re offline, showing cached screens</span>
         </motion.div>
       )}
       {showReconnected && !isOffline && (
@@ -48,7 +48,7 @@ export function OfflineBanner() {
           id="online-banner"
         >
           <Wifi size={14} />
-          <span>Back online — syncing data</span>
+          <span>Back online, syncing data</span>
         </motion.div>
       )}
     </AnimatePresence>

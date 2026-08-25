@@ -36,7 +36,7 @@ export const WorkoutControls: React.FC<WorkoutControlsProps> = React.memo(({
         <Button
           variant="outline"
           size="md"
-          leftIcon={<RefreshCw className="w-4 h-4 text-orange-400" />}
+          leftIcon={<RefreshCw className="w-4 h-4 text-brand-400" />}
           onClick={onStartRestTimer}
         >
           Rest Timer

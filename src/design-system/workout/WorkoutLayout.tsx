@@ -157,7 +157,7 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
           />
         </div>
         <IconButton
-          icon={<Menu className="w-4 h-4 text-orange-400" />}
+          icon={<Menu className="w-4 h-4 text-brand-400" />}
           aria-label="Toggle exercise queue sidebar"
           size="lg"
           variant="secondary"

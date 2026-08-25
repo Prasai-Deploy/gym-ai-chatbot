@@ -19,11 +19,11 @@ export const Card: React.FC<CardProps> = ({
 
   const variants = {
     default: "bg-[#131722] border border-white/10 hover:border-white/20",
-    hero: "bg-gradient-to-br from-[#131722] via-[#1A2030] to-[#131722] border border-orange-500/30 v3-glow-orange",
+    hero: "bg-gradient-to-br from-[#131722] via-[#1A2030] to-[#131722] border border-brand-500/30 v3-glow-orange",
     coach: "bg-gradient-to-br from-[#131722] via-[#1A2030] to-[#131722] border border-indigo-500/30 v3-glow-indigo",
     metric: "bg-[#131722] border border-white/10 hover:border-white/20",
     insight: "bg-[#1A2030] border border-white/10",
-    workout: "bg-[#131722] border border-white/10 hover:border-orange-500/40"
+    workout: "bg-[#131722] border border-white/10 hover:border-brand-500/40"
   };
 
   return (

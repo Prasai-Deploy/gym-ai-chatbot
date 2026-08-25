@@ -51,7 +51,7 @@ export const SetRow: React.FC<SetRowProps> = React.memo(({
           onChange={(e) => onUpdateSet('weightKg', e.target.value)}
           placeholder="kg"
           disabled={set.completed}
-          className="w-full bg-slate-950/80 border border-white/10 rounded-xl p-2 text-center text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-75"
+          className="w-full bg-slate-950/80 border border-white/10 rounded-xl p-2 text-center text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-75"
         />
       </div>
 
@@ -62,7 +62,7 @@ export const SetRow: React.FC<SetRowProps> = React.memo(({
           onChange={(e) => onUpdateSet('reps', e.target.value)}
           placeholder="reps"
           disabled={set.completed}
-          className="w-full bg-slate-950/80 border border-white/10 rounded-xl p-2 text-center text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-75"
+          className="w-full bg-slate-950/80 border border-white/10 rounded-xl p-2 text-center text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-75"
         />
       </div>
 

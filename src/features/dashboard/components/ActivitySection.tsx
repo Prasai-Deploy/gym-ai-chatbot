@@ -35,7 +35,7 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({ activities }) 
 
           const colors = {
             workout: 'text-emerald-500',
-            diet: 'text-orange-500',
+            diet: 'text-brand-500',
             hydration: 'text-blue-500',
             chatbot: 'text-purple-500',
             achievement: 'text-yellow-500',

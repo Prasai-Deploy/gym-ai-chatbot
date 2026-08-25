@@ -44,7 +44,7 @@ export const Radio: React.FC<RadioGroupProps> = ({
               className={cn(
                 'flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none',
                 isSelected
-                  ? 'bg-orange-500/10 border-orange-500/50 shadow-sm'
+                  ? 'bg-brand-500/10 border-brand-500/50 shadow-sm'
                   : 'bg-slate-900/60 border-white/10 hover:border-white/20',
                 opt.disabled && 'opacity-50 cursor-not-allowed'
               )}
@@ -61,8 +61,8 @@ export const Radio: React.FC<RadioGroupProps> = ({
                 />
                 <div
                   className={cn(
-                    'w-4 h-4 rounded-full border flex items-center justify-center transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500',
-                    isSelected ? 'border-orange-500 bg-orange-500' : 'border-white/30 bg-transparent'
+                    'w-4 h-4 rounded-full border flex items-center justify-center transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500',
+                    isSelected ? 'border-brand-500 bg-brand-500' : 'border-white/30 bg-transparent'
                   )}
                 >
                   {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}

@@ -27,7 +27,7 @@ export const MissionCard: React.FC<MissionCardProps> = React.memo(({
         <Badge variant="primary" size="sm" icon={<Flame className="w-3.5 h-3.5" />}>
           TODAY'S MISSION
         </Badge>
-        <span className="text-xs font-semibold text-orange-400">High Intensity</span>
+        <span className="text-xs font-semibold text-brand-400">High Intensity</span>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -37,7 +37,7 @@ export const MissionCard: React.FC<MissionCardProps> = React.memo(({
 
       <div className="flex items-center gap-4 text-xs font-semibold text-slate-300">
         <div className="flex items-center gap-1.5">
-          <Zap className="w-4 h-4 text-orange-400" />
+          <Zap className="w-4 h-4 text-brand-400" />
           <span>{durationMin} Minutes</span>
         </div>
         <div className="flex items-center gap-1.5">
