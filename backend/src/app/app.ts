@@ -46,6 +46,19 @@ if (process.env.NODE_ENV !== 'test') {
 // Infrastructure Routes
 app.use('/', healthRouter);
 
+// OAuth Direct Fallback Endpoints
+app.get('/auth/google', (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL || 'https://ymrblyiwohvxptiqjfsi.supabase.co';
+  const appUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+  const redirectUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(`${appUrl}/auth/callback`)}`;
+  res.redirect(redirectUrl);
+});
+
+app.get('/auth/google/callback', (req, res) => {
+  const appUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+  res.redirect(`${appUrl}/auth/callback`);
+});
+
 import { identityRouter } from '../modules/identity/routes';
 import { exerciseRouter, adminExerciseRouter } from '../modules/exercise/routes';
 import { workoutRouter, adminWorkoutRouter } from '../modules/workout/routes';

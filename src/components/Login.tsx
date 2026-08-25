@@ -9,6 +9,7 @@ import { LOGIN_BACKGROUND_VIDEO } from '../config/loginBackground';
 
 export function Login() {
   const [demoLoading, setDemoLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { user, loading, setUser, rehydrate } = useAuth();
   const navigate = useNavigate();
@@ -43,9 +44,29 @@ export function Login() {
     return <Navigate to="/v3/dashboard" replace />;
   }
 
-  // Google login via Express backend
-  const handleLogin = () => {
-    window.location.href = '/auth/google';
+  // Google login via Supabase OAuth flow
+  const handleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const redirectOrigin = window.location.origin;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${redirectOrigin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error('Google login error:', error);
+        alert(error.message || 'Google login initialization failed.');
+      }
+    } catch (err: any) {
+      console.error('Google login exception:', err);
+      // Fallback to backend redirect if needed
+      window.location.href = '/auth/google';
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleDemoLogin = async () => {
@@ -134,10 +155,11 @@ export function Login() {
           <button
             type="button"
             onClick={handleLogin}
-            className="w-full py-3.5 rounded-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-colors shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            disabled={googleLoading}
+            className="w-full py-3.5 rounded-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-colors shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60 cursor-pointer"
           >
             <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-            <span>Continue with Google</span>
+            <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
           </button>
 
           <div className="flex items-center gap-3 my-1">
