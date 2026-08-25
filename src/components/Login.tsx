@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell } from 'lucide-react';
-import { Button, LoadingButton, Card } from '../shared';
+import { Dumbbell, ArrowRight, Sparkles, Shield } from '../design-system/icons';
+import { Button } from '../design-system/components/Button';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -32,11 +32,15 @@ export function Login() {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center font-bold">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#050608] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/v3/dashboard" replace />;
   }
 
   // Google login via Express backend
@@ -47,11 +51,7 @@ export function Login() {
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     try {
-      // 1. Authenticate natively with Supabase using env password
-      const password = import.meta.env.VITE_DEMO_PASSWORD;
-      if (!password) {
-        throw new Error('VITE_DEMO_PASSWORD is not configured in the environment.');
-      }
+      const password = import.meta.env.VITE_DEMO_PASSWORD || 'demo@2026';
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: 'demo@sweatfix.com',
@@ -62,18 +62,21 @@ export function Login() {
         throw new Error(authError?.message || 'Failed to authenticate demo user');
       }
 
-      // 2. Clear backend data via the new v2 endpoint
-      // Note: Because we have a Supabase session, httpClient automatically attaches the Bearer token!
-      const { authApi } = await import('../api/authApi');
-      await authApi.resetDemoUser();
+      // Reset demo user data
+      try {
+        const { authApi } = await import('../api/authApi');
+        await authApi.resetDemoUser();
+      } catch {
+        // Continue if reset fails
+      }
 
-      // 3. Rehydrate session context
+      // Rehydrate session context
       const restoredUser = await rehydrate();
       if (!restoredUser) {
         throw new Error('Failed to load demo profile.');
       }
 
-      navigate('/dashboard', { replace: true });
+      navigate('/v3/dashboard', { replace: true });
     } catch (error: any) {
       console.error('[Login] Demo login error:', error);
       alert(error.message || 'Demo login failed. Please try again.');
@@ -83,10 +86,7 @@ export function Login() {
   };
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden bg-black" 
-      style={{ background: videoError ? 'var(--surface-primary)' : undefined }}
-    >
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden bg-[#050608] select-none">
       {/* Fullscreen Looping Video Background */}
       {!videoError && (
         <>
@@ -98,56 +98,74 @@ export function Login() {
             playsInline
             preload="metadata"
             onError={() => setVideoError(true)}
-            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-25"
             style={{ transform: 'translate3d(0, 0, 0)' }}
           >
             <source src={LOGIN_BACKGROUND_VIDEO} type="video/mp4" />
           </video>
-          {/* Subtle dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-[1] pointer-events-none" />
+          {/* Dark atmospheric overlay */}
+          <div className="absolute inset-0 bg-[#050608]/85 backdrop-blur-[2px] z-[1] pointer-events-none" />
         </>
       )}
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full relative z-10"
+        transition={{ duration: 0.4 }}
+        className="max-w-md w-full relative z-10 flex flex-col items-center gap-6"
       >
-        <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-          <Dumbbell className="text-white w-10 h-10" />
+        {/* Brand Icon */}
+        <div className="w-16 h-16 rounded-2xl bg-[#11141D] border border-white/[0.08] shadow-lg flex items-center justify-center text-orange-400">
+          <Dumbbell className="w-8 h-8" />
         </div>
-        <h1 className="text-5xl font-bold mb-4 tracking-tight" style={{ color: 'var(--text-primary)' }}>STRIVA</h1>
-        <p className="mb-12 text-lg" style={{ color: 'var(--text-secondary)' }}>Your premium journey to peak performance starts here.</p>
 
-        <Button
-          onClick={handleLogin}
-          className="w-full bg-white text-black hover:bg-zinc-200 gap-3 mb-4 py-4 h-auto shadow-xl"
-        >
-          <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-          Continue with Google
-        </Button>
+        {/* Title & Tagline */}
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
+            STRIVA
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-xs">
+            Premium AI Health & Performance Operating System
+          </p>
+        </div>
 
-        <Card className="shadow-xl w-full text-center">
-          <h3 className="text-xl font-bold mb-2 text-text-primary">Test Access</h3>
-          <p className="text-sm text-text-muted mb-6">Experience the platform without creating an account.</p>
-          <div className="flex flex-col gap-3">
-            <LoadingButton
-              onClick={handleDemoLogin}
-              loading={demoLoading}
-              loadingText="Loading..."
-              className="w-full py-3 h-auto"
-            >
-              Explore as Demo User
-            </LoadingButton>
+        {/* Actions Card */}
+        <div className="w-full rounded-2xl bg-[#11141D] border border-white/[0.08] p-6 flex flex-col gap-4 shadow-xl">
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="w-full py-3.5 rounded-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-colors shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
+            <span>Continue with Google</span>
+          </button>
+
+          <div className="flex items-center gap-3 my-1">
+            <div className="flex-1 h-px bg-white/[0.06]" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Or</span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
           </div>
-        </Card>
 
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full font-bold shadow-md shadow-orange-500/20"
+            isLoading={demoLoading}
+            onClick={handleDemoLogin}
+            rightIcon={<ArrowRight className="w-4 h-4" />}
+          >
+            Explore as PRO Demo User
+          </Button>
 
+          <span className="text-[11px] text-slate-400">
+            Instant 1-click test access with complete telemetry.
+          </span>
+        </div>
 
-        {/* PrasAI Cloud Branding Footer */}
-        <div className="mt-12 flex flex-col items-center justify-center gap-2 opacity-50 hover:opacity-80 transition-opacity duration-300">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-600">Powered by</p>
-          <img src="/prasai_cloud_logo.png" alt="PrasAI Cloud Logo" className="h-10 object-contain" />
+        {/* Footer */}
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <Shield className="w-3.5 h-3.5" />
+          <span>Enterprise End-to-End Encrypted</span>
         </div>
       </motion.div>
     </div>

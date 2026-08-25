@@ -22,3 +22,11 @@ createRoot(rootElement).render(
     </QueryClientProvider>
   </StrictMode>
 );
+
+// Ensure HTML splash loader is dismissed once React boots
+const appLoader = document.getElementById('app-loader');
+if (appLoader) {
+  appLoader.style.transition = 'opacity 0.25s ease';
+  appLoader.style.opacity = '0';
+  setTimeout(() => appLoader.remove(), 250);
+}

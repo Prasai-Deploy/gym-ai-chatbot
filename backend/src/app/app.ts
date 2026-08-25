@@ -12,8 +12,13 @@ import { NotFoundError } from '@errors/AppError';
 
 export const app = express();
 
-// Security Middlewares
-app.use(helmet());
+// Security Middlewares - Relax CSP for SPA fonts, icons, and media
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(cors());
 
 // Parsing & Compression
@@ -69,20 +74,28 @@ app.use('/api/v1/integrations', integrationRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 
 // Production Frontend Static Serving & SPA Fallback
-const clientDistPath = path.resolve(process.cwd(), 'dist');
+const possibleDistPaths = [
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(process.cwd(), '../dist'),
+  path.resolve(__dirname, '../../dist'),
+  path.resolve(__dirname, '../../../dist'),
+  path.resolve(__dirname, '../../../../dist'),
+];
+
+const clientDistPath = possibleDistPaths.find((p) => fs.existsSync(path.join(p, 'index.html'))) || possibleDistPaths[0];
 const distExists = fs.existsSync(clientDistPath);
 const indexExists = fs.existsSync(path.join(clientDistPath, 'index.html'));
 
 logger.info(`[Startup Diagnostic] process.cwd(): ${process.cwd()}`);
-logger.info(`[Startup Diagnostic] clientDistPath: ${clientDistPath}`);
+logger.info(`[Startup Diagnostic] selected clientDistPath: ${clientDistPath}`);
 logger.info(`[Startup Diagnostic] fs.existsSync(clientDistPath): ${distExists}`);
 logger.info(`[Startup Diagnostic] fs.existsSync(index.html): ${indexExists}`);
 
-if (process.env.NODE_ENV === 'production' || distExists) {
+if (process.env.NODE_ENV === 'production' || distExists || indexExists) {
   logger.info(`Serving frontend from: ${clientDistPath}`);
   app.use(express.static(clientDistPath));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
+    if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
       return next();
     }
     res.sendFile(path.join(clientDistPath, 'index.html'));
