@@ -2,6 +2,10 @@
  * STRIVA v4 Design System - Workout Barrel Export
  */
 
+export * from './MinimalWorkoutHero';
+export * from './ActiveTrainingView';
+export * from './MinimalRestTimer';
+export * from './MinimalCompletionView';
 export * from './WorkoutHeader';
 export * from './WorkoutProgress';
 export * from './ExerciseMedia';

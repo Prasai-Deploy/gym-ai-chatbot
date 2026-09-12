@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { Flame, Play, Check } from '../icons';
+import { Flame, Play } from '../icons';
 
 export interface ExerciseSetDetail {
   name: string;

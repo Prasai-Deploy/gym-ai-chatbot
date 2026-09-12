@@ -1,7 +1,7 @@
 import React from 'react';
 import { Drawer } from '../components/Drawer';
 import { Button } from '../components/Button';
-import { Building, Settings, Users, CreditCard, ChevronRight } from '../icons';
+import { Building, Settings, ChevronRight } from '../icons';
 
 export interface Facility {
   id: string;

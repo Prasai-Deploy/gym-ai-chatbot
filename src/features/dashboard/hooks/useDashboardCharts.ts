@@ -12,14 +12,14 @@ export function useDashboardCharts(weeklyChartData: ChartData[]) {
   useLayoutEffect(() => {
     if (!weeklyChartData.length) return;
 
-    let root = am5.Root.new("chartdiv");
+    const root = am5.Root.new("chartdiv");
 
     root.setThemes([
       am5themes_Animated.new(root),
       am5themes_Dark.new(root)
     ]);
 
-    let chart = root.container.children.push(am5xy.XYChart.new(root, {
+    const chart = root.container.children.push(am5xy.XYChart.new(root, {
       panX: true,
       panY: false,
       wheelX: "panX",
@@ -29,20 +29,20 @@ export function useDashboardCharts(weeklyChartData: ChartData[]) {
     }));
 
     // Add cursor (tooltips only, no behavior change)
-    let cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
+    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
       behavior: "none"
     }));
     cursor.lineX.set("visible", false);
     cursor.lineY.set("visible", false);
 
     // Create axes
-    let xAxisRenderer = am5xy.AxisRendererX.new(root, {
+    const xAxisRenderer = am5xy.AxisRendererX.new(root, {
       minGridDistance: 30,
       minorGridEnabled: true
     });
     xAxisRenderer.grid.template.set("strokeOpacity", 0);
 
-    let xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+    const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
       categoryField: "date",
       renderer: xAxisRenderer,
       tooltip: am5.Tooltip.new(root, {})
@@ -54,11 +54,11 @@ export function useDashboardCharts(weeklyChartData: ChartData[]) {
     }));
     xAxis.data.setAll(formattedData);
 
-    let yAxisRenderer = am5xy.AxisRendererY.new(root, {});
+    const yAxisRenderer = am5xy.AxisRendererY.new(root, {});
     yAxisRenderer.grid.template.set("strokeOpacity", 0.05);
     yAxisRenderer.grid.template.set("strokeDasharray", [3, 3]);
 
-    let yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+    const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
       renderer: yAxisRenderer,
       min: 0
     }));
@@ -110,7 +110,7 @@ export function useDashboardCharts(weeklyChartData: ChartData[]) {
     });
 
     series.bullets.push(function () {
-      let graphics = am5.Circle.new(root, {
+      const graphics = am5.Circle.new(root, {
         radius: 6,
         fill: am5.color(0x18181b),
         stroke: am5.color(config.color),

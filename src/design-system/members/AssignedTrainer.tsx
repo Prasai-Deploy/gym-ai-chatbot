@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { Button } from '../components/Button';
-import { User, MessageSquare } from '../icons';
+import { MessageSquare } from '../icons';
 
 export interface AssignedTrainerProps {
   trainerName?: string;

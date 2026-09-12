@@ -10,15 +10,20 @@ interface RateEntry {
 
 const rateLimitStore = new Map<string, RateEntry>();
 
-const RATE_LIMIT_MAX = 120;      // requests per window
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;  // 1 minute window
+const RATE_LIMIT_MAX = 120; // requests per window
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
 
 export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const clientKey = `${req.ip}:${req.path}`;
+  const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const entry = rateLimitStore.get(clientKey);
 
   if (!entry || now > entry.resetAt) {
+    if (rateLimitStore.size > 10_000) {
+      for (const [key, value] of rateLimitStore) {
+        if (now > value.resetAt) rateLimitStore.delete(key);
+      }
+    }
     rateLimitStore.set(clientKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return next();
   }
@@ -26,6 +31,7 @@ export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunct
   entry.count++;
   if (entry.count > RATE_LIMIT_MAX) {
     logger.warn(`[RateLimiter] Limit exceeded for key ${clientKey}`);
+    res.setHeader('Retry-After', Math.ceil((entry.resetAt - now) / 1000));
     res.status(429).json({
       success: false,
       error: 'Too Many Requests',
@@ -39,14 +45,22 @@ export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunct
 
 // ─── Correlation ID Injector ──────────────────────────────────────────────────
 export const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const correlationId = (req.headers['x-correlation-id'] as string) || randomUUID();
+  const requestedId = req.headers['x-correlation-id'];
+  const correlationId =
+    typeof requestedId === 'string' && /^[a-zA-Z0-9_-]{8,100}$/.test(requestedId)
+      ? requestedId
+      : randomUUID();
   req.headers['x-correlation-id'] = correlationId;
   res.setHeader('x-correlation-id', correlationId);
   next();
 };
 
 // ─── Security Response Headers ────────────────────────────────────────────────
-export const securityHeadersMiddleware = (_req: Request, res: Response, next: NextFunction): void => {
+export const securityHeadersMiddleware = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');

@@ -1,5 +1,3 @@
-import { Result } from '@shared/core/Result';
-import { AppError } from '@errors/AppError';
 
 /**
  * Interface defining the expected behavior for any mapping layer.

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Bot, Sparkles, ArrowRight } from '../icons';
+import { Bot, ArrowRight } from '../icons';
 
 export interface CoachNutritionCardProps {
   onAskDietAdvice?: (prompt: string) => void;

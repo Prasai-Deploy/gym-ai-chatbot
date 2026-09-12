@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/Badge';
-import { Users, Sparkles, AlertTriangle, ShieldCheck } from '../icons';
+import { Users, Sparkles, AlertTriangle } from '../icons';
 import { cn } from '../tokens';
 
 export interface MemberHeroProps {

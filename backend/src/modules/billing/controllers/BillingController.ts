@@ -103,8 +103,8 @@ export class BillingController {
 
   public handleRazorpayWebhook = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const signature = req.headers['x-razorpay-signature'] as string || '';
-      const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const signature = (req.headers['x-razorpay-signature'] || req.headers['x-signature'] || '') as string;
+      const rawBody = (req as any).rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
       const result = await this.service.handleRazorpayWebhook(rawBody, signature, req.body);
       if (result.isFailure()) throw result.error;

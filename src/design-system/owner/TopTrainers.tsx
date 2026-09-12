@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Award, Zap } from '../icons';
+import { Award } from '../icons';
 
 export interface TopTrainerItem {
   id: string;

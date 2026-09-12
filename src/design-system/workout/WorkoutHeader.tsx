@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
-import { Flame, RefreshCw, X, Play } from '../icons';
+import { Flame } from '../icons';
 
 export interface WorkoutHeaderProps {
   title?: string;

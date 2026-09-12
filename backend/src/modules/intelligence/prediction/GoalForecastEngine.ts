@@ -14,9 +14,8 @@ export class GoalForecastEngine {
    * Returns on-track status, required weekly delta, and confidence.
    */
   public forecast(input: GoalInput): GoalForecast {
-    const remaining      = input.targetValue - input.currentValue;
-    const isDecreasing   = remaining < 0; // e.g. weight loss
-    const absRemaining   = Math.abs(remaining);
+    const remaining = input.targetValue - input.currentValue;
+    const absRemaining = Math.abs(remaining);
     const absWeeklyDelta = Math.abs(input.weeklyDelta);
 
     let weeksNeeded = absWeeklyDelta > 0 ? absRemaining / absWeeklyDelta : 52;
@@ -38,7 +37,7 @@ export class GoalForecastEngine {
       predictedAchievementDate: achievementDate.toISOString().split('T')[0],
       onTrack,
       requiredWeeklyDelta,
-      confidence: onTrack ? 0.80 : 0.55,
+      confidence: onTrack ? 0.8 : 0.55,
     };
   }
 }

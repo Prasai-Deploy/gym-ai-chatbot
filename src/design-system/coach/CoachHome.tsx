@@ -3,7 +3,7 @@ import { CoachGreeting } from './CoachGreeting';
 import { CoachStatus } from './CoachStatus';
 import { SuggestionChips } from './SuggestionChips';
 import { Card } from '../components/Card';
-import { Flame, PieChart, Activity, Sparkles } from '../icons';
+import { Flame, PieChart, Sparkles } from '../icons';
 
 export interface CoachHomeProps {
   userName?: string;

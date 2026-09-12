@@ -1,6 +1,5 @@
 import React from 'react';
-import { Badge } from '../components/Badge';
-import { Dumbbell, CheckCircle2, ChevronRight } from '../icons';
+import { CheckCircle2, ChevronRight } from '../icons';
 import { cn } from '../tokens';
 
 export interface QueueExercise {

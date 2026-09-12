@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { TrendingUp, Award, Zap } from '../icons';
+import { TrendingUp, Award } from '../icons';
 
 export interface ProgressMetric {
   name: string;

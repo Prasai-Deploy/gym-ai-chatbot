@@ -1,8 +1,8 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(() => {
   return {
@@ -10,61 +10,83 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: "autoUpdate",
         includeAssets: [
-          'icon.svg',
-          'icons/icon-192x192.png',
-          'icons/icon-512x512.png',
-          'icons/icon-maskable-192x192.png',
-          'icons/icon-maskable-512x512.png',
-          'icons/apple-touch-icon-180x180.png',
+          "icon.svg",
+          "icons/icon-192x192.png",
+          "icons/icon-512x512.png",
+          "icons/icon-maskable-192x192.png",
+          "icons/icon-maskable-512x512.png",
+          "icons/apple-touch-icon-180x180.png",
         ],
         manifest: {
-          id: '/',
-          name: 'STRIVA Fitness',
-          short_name: 'STRIVA',
-          description: 'Workouts, nutrition, progress, and coaching in one focused fitness app.',
-          start_url: '/',
-          scope: '/',
-          display: 'standalone',
-          orientation: 'portrait-primary',
-          background_color: '#0d1018',
-          theme_color: '#0d1018',
+          id: "/",
+          name: "STRIVA Fitness",
+          short_name: "STRIVA",
+          description:
+            "Workouts, nutrition, progress, and coaching in one focused fitness app.",
+          start_url: "/",
+          scope: "/",
+          display: "standalone",
+          orientation: "portrait-primary",
+          background_color: "#0d1018",
+          theme_color: "#0d1018",
           icons: [
-            { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-            { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
-            { src: '/icons/icon-maskable-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-            { src: '/icons/icon-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+            {
+              src: "/icons/icon-192x192.png",
+              sizes: "192x192",
+              type: "image/png",
+            },
+            {
+              src: "/icons/icon-512x512.png",
+              sizes: "512x512",
+              type: "image/png",
+            },
+            {
+              src: "/icons/icon-maskable-192x192.png",
+              sizes: "192x192",
+              type: "image/png",
+              purpose: "maskable",
+            },
+            {
+              src: "/icons/icon-maskable-512x512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
           ],
         },
         workbox: {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
-          navigateFallback: '/index.html',
+          navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api\//, /^\/auth\/google/],
           runtimeCaching: [
             {
-              urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-              handler: 'NetworkOnly',
+              urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+              handler: "NetworkOnly",
             },
             {
               urlPattern: /^https:\/\/[^/]+\.supabase\.co\//,
-              handler: 'NetworkOnly',
+              handler: "NetworkOnly",
             },
             {
-              urlPattern: ({ request }) => request.destination === 'image',
-              handler: 'CacheFirst',
+              urlPattern: ({ request }) => request.destination === "image",
+              handler: "CacheFirst",
               options: {
-                cacheName: 'striva-images',
-                expiration: { maxEntries: 48, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheName: "striva-images",
+                expiration: {
+                  maxEntries: 48,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
               },
             },
           ],
         },
       }),
     ],
-    base: '/',
+    base: "/",
 
     // NOTE: the `define` block that used to live here injected
     // `process.env.SUPABASE_KEY` into client code. Combined with an
@@ -78,26 +100,52 @@ export default defineConfig(() => {
 
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        "@": path.resolve(__dirname, "."),
       },
     },
     server: {
       proxy: {
-        '/api/v1': 'http://localhost:5000',
-        '/api': 'http://localhost:5000',
+        "/api/v1": "http://localhost:5000",
+        "/api": "http://localhost:5000",
       },
-      hmr: process.env.DISABLE_HMR !== 'true',
+      hmr: process.env.DISABLE_HMR !== "true",
     },
     build: {
-      target: 'es2022',
-      chunkSizeWarningLimit: 1500,
+      target: "es2022",
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return undefined;
+            if (
+              /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/.test(
+                id,
+              )
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("@supabase")) return "vendor-supabase";
+            if (id.includes("@tanstack")) return "vendor-query";
+            if (id.includes("motion")) return "vendor-motion";
+            if (id.includes("lucide-react")) return "vendor-icons";
+            if (
+              id.includes("recharts") ||
+              id.includes("chart.js") ||
+              id.includes("@amcharts")
+            ) {
+              return "vendor-charts";
+            }
+            return undefined;
+          },
+        },
+      },
     },
     esbuild: {
-      target: 'es2022',
+      target: "es2022",
     },
     optimizeDeps: {
       esbuildOptions: {
-        target: 'es2022',
+        target: "es2022",
       },
     },
   };

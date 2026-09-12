@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Award, Flame, Zap, Shield, Sparkles } from '../icons';
+import { Award, Flame, Sparkles } from '../icons';
 
 export interface AchievementItem {
   id: string;

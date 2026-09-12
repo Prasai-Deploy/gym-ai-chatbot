@@ -3,6 +3,11 @@
  */
 
 export * from './ProgressHero';
+export * from './ProgressTrend';
+export * from './ProgressHighlights';
+export * from './GoalProgress';
+export * from './ProgressTrinityCard';
+export * from './SecondaryProgressDetails';
 export * from './HealthScoreCard';
 export * from './StrengthChart';
 export * from './BodyMetrics';
@@ -10,7 +15,6 @@ export * from './BodyCompositionCard';
 export * from './ConsistencyHeatmap';
 export * from './StreakCard';
 export * from './PersonalRecords';
-export * from './GoalProgress';
 export * from './AIInsightsCard';
 export * from './AchievementsTimeline';
 export * from './WeeklySummary';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/Badge';
-import { Bot, Sparkles, Activity, Shield } from '../icons';
+import { Bot, Sparkles, Activity } from '../icons';
 
 export interface CoachStatusProps {
   modelName?: string;

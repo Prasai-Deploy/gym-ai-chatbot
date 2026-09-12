@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { User, Clock } from '../icons';
+import { User } from '../icons';
 
 export interface ScheduleItem {
   id: string;

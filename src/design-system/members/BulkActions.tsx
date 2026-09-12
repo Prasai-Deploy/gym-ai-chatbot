@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../components/Button';
-import { Bell, Plus, ExternalLink, User } from '../icons';
+import { Bell, ExternalLink, User } from '../icons';
 
 export interface BulkActionsProps {
   onAddMember?: () => void;

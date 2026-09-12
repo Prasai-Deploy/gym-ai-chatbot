@@ -29,9 +29,9 @@ export const PricingPage: React.FC = () => {
       const res = await billingApi.createRazorpayCheckout(tier, interval);
 
       if (res && res.subscriptionId) {
-        // Prepare Razorpay Modal Configuration
+        // Prepare Razorpay Modal Configuration using server-provided public Key ID
         const options = {
-          key: res.keyId || 'rzp_test_striva2026',
+          key: res.keyId,
           amount: res.amount,
           currency: res.currency || 'INR',
           name: 'STRIVA Fitness Engine',
@@ -39,11 +39,14 @@ export const PricingPage: React.FC = () => {
           subscription_id: res.subscriptionId,
           handler: async (response: any) => {
             try {
+              if (!response?.razorpay_payment_id || !response?.razorpay_signature) {
+                throw new Error('Payment transaction returned missing cryptographic signature');
+              }
               // Verify Payment Signature on Backend
               await billingApi.verifyRazorpayPayment({
-                razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_subscription_id: response.razorpay_subscription_id || res.subscriptionId,
-                razorpay_signature: response.razorpay_signature || 'valid_sig_striva_verification',
+                razorpay_signature: response.razorpay_signature,
                 tier,
                 interval
               });
@@ -61,20 +64,14 @@ export const PricingPage: React.FC = () => {
           }
         };
 
-        // If Razorpay JS SDK loaded in DOM, launch popup; otherwise simulate verified activation
         if (window.Razorpay) {
           const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', function (response: any) {
+            setError(`Payment failed: ${response?.error?.description || 'Transaction declined'}`);
+          });
           rzp.open();
         } else {
-          // Direct verified checkout simulation
-          await billingApi.verifyRazorpayPayment({
-            razorpay_payment_id: `pay_sim_${Date.now()}`,
-            razorpay_subscription_id: res.subscriptionId,
-            razorpay_signature: `sig_sim_${Date.now()}`,
-            tier,
-            interval
-          });
-          navigate(`/checkout/success?tier=${tier}&interval=${interval}`);
+          setError('Razorpay Checkout SDK failed to load. Please disable ad-blockers and try again.');
         }
       }
     } catch (err: any) {

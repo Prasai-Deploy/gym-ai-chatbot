@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { BaseRepository } from '@shared/database/repositories/BaseRepository';
 import { IIdentityRepository } from './IIdentityRepository';
-import { Profile, FitnessProfile, UserPreferences, MemberSettings } from '../domain/IdentitySchemas';
+import { Profile, FitnessProfile, UserPreferences } from '../domain/IdentitySchemas';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError, NotFoundError } from '@errors/AppError';
 import { logger } from '@logger/index';

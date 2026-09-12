@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Activity, Heart, CheckCircle2 } from '../icons';
+import { Activity, CheckCircle2 } from '../icons';
 
 export interface RecoveryProtocol {
   title: string;

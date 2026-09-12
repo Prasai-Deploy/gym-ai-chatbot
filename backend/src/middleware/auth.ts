@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthError } from '@errors/AppError';
 import { supabase } from '@database/supabase';
+export { requireAdmin, ALLOWED_ADMIN_ROLES } from './auth.middleware';
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -10,7 +11,10 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (error || !user) {
       throw new AuthError('Invalid or expired token');

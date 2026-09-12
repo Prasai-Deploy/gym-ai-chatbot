@@ -1,9 +1,15 @@
-import { supabase } from '@database/supabase';
-import { Organization, OrganizationLocation, OrganizationBranding, OrganizationStaff, OrganizationAuditLog } from './organization.types';
+import { supabaseAdmin } from '@database/supabase';
+import {
+  Organization,
+  OrganizationLocation,
+  OrganizationBranding,
+  OrganizationStaff,
+  OrganizationAuditLog,
+} from './organization.types';
 
 export class OrganizationRepository {
   async findById(orgId: string): Promise<Organization | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('organizations')
       .select('*')
       .eq('id', orgId)
@@ -14,7 +20,7 @@ export class OrganizationRepository {
   }
 
   async getLocations(orgId: string): Promise<OrganizationLocation[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('organization_locations')
       .select('*')
       .eq('organization_id', orgId);
@@ -24,7 +30,7 @@ export class OrganizationRepository {
   }
 
   async getBranding(orgId: string): Promise<OrganizationBranding | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('organization_branding')
       .select('*')
       .eq('organization_id', orgId)
@@ -35,7 +41,7 @@ export class OrganizationRepository {
   }
 
   async getStaff(orgId: string): Promise<OrganizationStaff[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('organization_staff')
       .select('*')
       .eq('organization_id', orgId);
@@ -45,6 +51,6 @@ export class OrganizationRepository {
   }
 
   async logAudit(log: Partial<OrganizationAuditLog>): Promise<void> {
-    await supabase.from('organization_audit_logs').insert([log]);
+    await supabaseAdmin.from('organization_audit_logs').insert([log]);
   }
 }

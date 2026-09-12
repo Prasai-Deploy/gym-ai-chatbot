@@ -1,5 +1,11 @@
 import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
-import { Subscription, Invoice, SubscriptionTier, BillingInterval, TIER_LIMITS } from '../domain/BillingSchemas';
+import {
+  Subscription,
+  Invoice,
+  SubscriptionTier,
+  BillingInterval,
+  TIER_LIMITS,
+} from '../domain/BillingSchemas';
 import { RazorpayProvider } from '../providers/RazorpayProvider';
 import { CheckoutSessionResult } from '../providers/IPaymentProvider';
 import { Result, ok, fail } from '@shared/core/Result';
@@ -12,7 +18,9 @@ export class BillingService {
     this.razorpayProvider = new RazorpayProvider();
   }
 
-  public async getSubscriptionStatus(userId: string): Promise<Result<{ subscription: Subscription; limits: typeof TIER_LIMITS.free }, AppError>> {
+  public async getSubscriptionStatus(
+    userId: string,
+  ): Promise<Result<{ subscription: Subscription; limits: typeof TIER_LIMITS.free }, AppError>> {
     const subRes = await this.repo.getByUserId(userId);
     if (subRes.isFailure()) return fail(subRes.error);
 
@@ -22,19 +30,29 @@ export class BillingService {
     return ok({ subscription, limits });
   }
 
-  public async createCheckoutSession(userId: string, tier: SubscriptionTier, interval: BillingInterval = 'monthly', successUrl?: string, cancelUrl?: string): Promise<Result<{ url: string; sessionId: string }, AppError>> {
+  public async createCheckoutSession(
+    userId: string,
+    tier: SubscriptionTier,
+    interval: BillingInterval = 'monthly',
+    successUrl?: string,
+    _cancelUrl?: string,
+  ): Promise<Result<{ url: string; sessionId: string }, AppError>> {
     const fakeSessionId = `cs_test_${Date.now()}_${userId.slice(0, 8)}`;
-    const redirectUrl = successUrl 
+    const redirectUrl = successUrl
       ? `${successUrl}?session_id=${fakeSessionId}&tier=${tier}&interval=${interval}`
       : `/checkout/success?session_id=${fakeSessionId}&tier=${tier}&interval=${interval}`;
 
     return ok({
       url: redirectUrl,
-      sessionId: fakeSessionId
+      sessionId: fakeSessionId,
     });
   }
 
-  public async createRazorpayCheckout(userId: string, tier: SubscriptionTier, interval: BillingInterval = 'monthly'): Promise<Result<CheckoutSessionResult, AppError>> {
+  public async createRazorpayCheckout(
+    userId: string,
+    tier: SubscriptionTier,
+    interval: BillingInterval = 'monthly',
+  ): Promise<Result<CheckoutSessionResult, AppError>> {
     try {
       const checkoutResult = await this.razorpayProvider.createSubscription(userId, tier, interval);
       return ok(checkoutResult);
@@ -43,11 +61,20 @@ export class BillingService {
     }
   }
 
-  public async verifyRazorpayPayment(userId: string, payload: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string; tier: SubscriptionTier; interval: BillingInterval }): Promise<Result<Subscription, AppError>> {
+  public async verifyRazorpayPayment(
+    userId: string,
+    payload: {
+      razorpay_payment_id: string;
+      razorpay_subscription_id: string;
+      razorpay_signature: string;
+      tier: SubscriptionTier;
+      interval: BillingInterval;
+    },
+  ): Promise<Result<Subscription, AppError>> {
     const isValid = this.razorpayProvider.verifyPaymentSignature(
       payload.razorpay_payment_id,
       payload.razorpay_subscription_id,
-      payload.razorpay_signature
+      payload.razorpay_signature,
     );
 
     if (!isValid) {
@@ -62,21 +89,28 @@ export class BillingService {
       stripe_subscription_id: payload.razorpay_subscription_id,
       stripe_customer_id: `rzp_cust_${userId.slice(0, 8)}`,
       current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + (payload.interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-      cancel_at_period_end: false
+      current_period_end: new Date(
+        Date.now() + (payload.interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      cancel_at_period_end: false,
     });
 
     return updateRes;
   }
 
-  public async handleRazorpayWebhook(rawBody: string, signature: string, payload: any): Promise<Result<{ processed: boolean }, AppError>> {
+  public async handleRazorpayWebhook(
+    rawBody: string,
+    signature: string,
+    payload: any,
+  ): Promise<Result<{ processed: boolean }, AppError>> {
     // 1. Verify HMAC SHA256 Webhook Signature
     const isValidSig = this.razorpayProvider.verifyWebhookSignature(rawBody, signature);
     if (!isValidSig) {
       return fail(new ValidationError('Invalid Razorpay webhook signature'));
     }
 
-    const eventId = payload.event_id || payload.payload?.payment?.entity?.id || `evt_rzp_${Date.now()}`;
+    const eventId =
+      payload.event_id || payload.payload?.payment?.entity?.id || `evt_rzp_${Date.now()}`;
     const eventType = payload.event || 'payment.captured';
 
     // 2. Idempotency Store Verification
@@ -88,11 +122,16 @@ export class BillingService {
     }
 
     // 3. Process Razorpay Event Type
-    const entity = payload.payload?.subscription?.entity || payload.payload?.payment?.entity || payload;
+    const entity =
+      payload.payload?.subscription?.entity || payload.payload?.payment?.entity || payload;
     const userId = entity.notes?.user_id || payload.user_id;
 
     if (userId) {
-      if (eventType === 'subscription.activated' || eventType === 'subscription.charged' || eventType === 'payment.captured') {
+      if (
+        eventType === 'subscription.activated' ||
+        eventType === 'subscription.charged' ||
+        eventType === 'payment.captured'
+      ) {
         const tier: SubscriptionTier = entity.notes?.tier || 'pro';
         const interval: BillingInterval = entity.notes?.interval || 'monthly';
 
@@ -103,8 +142,10 @@ export class BillingService {
           stripe_subscription_id: entity.id || entity.subscription_id,
           stripe_customer_id: entity.customer_id || `rzp_cust_${userId.slice(0, 8)}`,
           current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-          cancel_at_period_end: false
+          current_period_end: new Date(
+            Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          cancel_at_period_end: false,
         });
       } else if (eventType === 'payment.failed') {
         await this.repo.upsertSubscription(userId, { status: 'past_due' });
@@ -116,7 +157,11 @@ export class BillingService {
     return ok({ processed: true });
   }
 
-  public async handleWebhook(eventId: string, eventType: string, payload: any): Promise<Result<{ processed: boolean }, AppError>> {
+  public async handleWebhook(
+    eventId: string,
+    eventType: string,
+    payload: any,
+  ): Promise<Result<{ processed: boolean }, AppError>> {
     const eventRes = await this.repo.recordPaymentEvent(eventId, eventType, payload);
     if (eventRes.isFailure()) return fail(eventRes.error);
     if (!eventRes.value) {
@@ -136,8 +181,10 @@ export class BillingService {
           stripe_customer_id: payload.customer_id || `cus_${userId.slice(0, 8)}`,
           stripe_subscription_id: payload.subscription_id || `sub_${userId.slice(0, 8)}`,
           current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-          cancel_at_period_end: false
+          current_period_end: new Date(
+            Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          cancel_at_period_end: false,
         });
       } else if (eventType === 'invoice.payment_failed') {
         await this.repo.upsertSubscription(userId, { status: 'past_due' });
@@ -149,20 +196,43 @@ export class BillingService {
     return ok({ processed: true });
   }
 
-  public async updateSubscription(userId: string, tier: SubscriptionTier, interval: BillingInterval): Promise<Result<Subscription, AppError>> {
+  public async updateSubscription(
+    userId: string,
+    tier: SubscriptionTier,
+    interval: BillingInterval,
+  ): Promise<Result<Subscription, AppError>> {
     return this.repo.upsertSubscription(userId, {
       tier,
       interval,
       status: 'active',
       current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString()
+      current_period_end: new Date(
+        Date.now() + (interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000,
+      ).toISOString(),
     });
   }
 
   public async cancelSubscription(userId: string): Promise<Result<Subscription, AppError>> {
+    const subRes = await this.repo.getByUserId(userId);
+    if (subRes.isFailure()) return fail(subRes.error);
+
+    const subscription = subRes.value;
+    if (
+      subscription.stripe_subscription_id &&
+      subscription.stripe_subscription_id.startsWith('sub_')
+    ) {
+      const razorpaySuccess = await this.razorpayProvider.cancelSubscription(
+        subscription.stripe_subscription_id,
+        true,
+      );
+      if (!razorpaySuccess) {
+        return fail(new AppError('Razorpay subscription cancellation API request failed', 500));
+      }
+    }
+
     return this.repo.upsertSubscription(userId, {
       cancel_at_period_end: true,
-      canceled_at: new Date().toISOString()
+      canceled_at: new Date().toISOString(),
     });
   }
 
@@ -170,7 +240,10 @@ export class BillingService {
     return this.repo.getInvoices(userId);
   }
 
-  public async checkFeatureUsage(userId: string, featureKey: string): Promise<Result<{ allowed: boolean; remaining: number }, AppError>> {
+  public async checkFeatureUsage(
+    userId: string,
+    featureKey: string,
+  ): Promise<Result<{ allowed: boolean; remaining: number }, AppError>> {
     const subRes = await this.repo.getByUserId(userId);
     if (subRes.isFailure()) return fail(subRes.error);
 

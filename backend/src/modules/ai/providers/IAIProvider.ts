@@ -5,9 +5,18 @@ export interface ChatMessage {
   tool_call_id?: string;
 }
 
+export interface ChatResponseUsage {
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_tokens: number | null;
+}
+
 export interface ChatResponse {
   message: ChatMessage;
   finish_reason: 'stop' | 'tool_calls' | 'length';
+  usage?: ChatResponseUsage | null;
+  model?: string | null;
+  provider?: string;
 }
 
 export interface IAIProvider {

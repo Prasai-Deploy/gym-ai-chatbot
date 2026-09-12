@@ -1,5 +1,5 @@
 import { ToolRegistry } from '../tools/ToolRegistry';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result, fail } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { logger } from '@logger/index';
 
@@ -8,7 +8,7 @@ export class ToolRuntime {
 
   public async executeToolCall(toolCall: any, userId: string): Promise<Result<any, AppError>> {
     const { name, arguments: argsJson } = toolCall.function;
-    
+
     logger.info(`[ToolRuntime] Executing tool ${name} for user ${userId}`);
 
     const tool = this.registry.getTool(name);
@@ -20,7 +20,7 @@ export class ToolRuntime {
     let parsedArgs;
     try {
       parsedArgs = typeof argsJson === 'string' ? JSON.parse(argsJson) : argsJson;
-    } catch (err) {
+    } catch {
       return fail(new AppError('Invalid JSON arguments provided to tool', 400));
     }
 

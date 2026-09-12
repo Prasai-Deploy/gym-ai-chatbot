@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/Badge';
-import { Shield, Sparkles, Activity, Users } from '../icons';
+import { Shield, Sparkles, Users } from '../icons';
 import { cn } from '../tokens';
 
 export interface AttendanceHeroProps {

@@ -1,5 +1,5 @@
 import { ProgressRepository } from '../repositories/ProgressRepository';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { ProgressStatistics } from '../domain/ProgressSchemas';
 import { logger } from '@logger/index';

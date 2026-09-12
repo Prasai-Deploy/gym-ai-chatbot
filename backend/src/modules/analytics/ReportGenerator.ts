@@ -1,9 +1,36 @@
 import { ReportRequest, ReportResult, ReportType, ReportFormat } from './analytics.types';
-import { revenueAnalytics, attendanceAnalytics, memberAnalytics, trainerAnalytics, workoutAnalytics, nutritionAnalytics, retentionAnalytics } from './AnalyticsEngines';
+import {
+  revenueAnalytics,
+  attendanceAnalytics,
+  memberAnalytics,
+  trainerAnalytics,
+  workoutAnalytics,
+  nutritionAnalytics,
+  retentionAnalytics,
+  RevenueAnalyticsEngine,
+  AttendanceAnalyticsEngine,
+  MemberAnalyticsEngine,
+  TrainerAnalyticsEngine,
+  WorkoutAnalyticsEngine,
+  NutritionAnalyticsEngine,
+  RetentionAnalyticsEngine,
+} from './AnalyticsEngines';
 
 export class ReportGenerator {
+  constructor(
+    private readonly engines: {
+      revenue?: RevenueAnalyticsEngine;
+      attendance?: AttendanceAnalyticsEngine;
+      members?: MemberAnalyticsEngine;
+      trainers?: TrainerAnalyticsEngine;
+      workouts?: WorkoutAnalyticsEngine;
+      nutrition?: NutritionAnalyticsEngine;
+      retention?: RetentionAnalyticsEngine;
+    } = {}
+  ) {}
+
   public async generate(request: ReportRequest): Promise<ReportResult> {
-    const data = this.fetchData(request);
+    const data = await this.fetchData(request);
     const formatted = this.format(data, request.format, request.reportType);
 
     return {
@@ -17,16 +44,24 @@ export class ReportGenerator {
     };
   }
 
-  private fetchData(request: ReportRequest): any {
+  private async fetchData(request: ReportRequest): Promise<any> {
     const { organizationId: orgId, period } = request;
+    const rev = this.engines.revenue || revenueAnalytics;
+    const att = this.engines.attendance || attendanceAnalytics;
+    const mem = this.engines.members || memberAnalytics;
+    const trn = this.engines.trainers || trainerAnalytics;
+    const wrk = this.engines.workouts || workoutAnalytics;
+    const nut = this.engines.nutrition || nutritionAnalytics;
+    const ret = this.engines.retention || retentionAnalytics;
+
     switch (request.reportType) {
-      case 'revenue':    return revenueAnalytics.compute(orgId, period);
-      case 'attendance': return attendanceAnalytics.compute(orgId, period);
-      case 'members':    return memberAnalytics.compute(orgId, period);
-      case 'trainers':   return trainerAnalytics.compute(orgId, period);
-      case 'workouts':   return workoutAnalytics.compute(orgId, period);
-      case 'nutrition':  return nutritionAnalytics.compute(orgId, period);
-      case 'retention':  return retentionAnalytics.compute(orgId, period);
+      case 'revenue':    return await rev.compute(orgId, period);
+      case 'attendance': return await att.compute(orgId, period);
+      case 'members':    return await mem.compute(orgId, period);
+      case 'trainers':   return await trn.compute(orgId, period);
+      case 'workouts':   return await wrk.compute(orgId, period);
+      case 'nutrition':  return await nut.compute(orgId, period);
+      case 'retention':  return await ret.compute(orgId, period);
       default:           return {};
     }
   }
@@ -42,7 +77,6 @@ export class ReportGenerator {
     }
 
     if (format === 'pdf_blueprint') {
-      // PDF blueprint returns structured sections for client-side PDF rendering
       return {
         rowCount: 1,
         data: {
@@ -93,6 +127,39 @@ export class ReportGenerator {
         `Occupancy Rate,${data.occupancyRate}%`,
         `No Show Rate,${data.noShowRate}%`,
         `Avg Duration (min),${data.avgVisitDurationMin}`,
+      ].join('\n'),
+
+      trainers: () => [
+        'Metric,Value',
+        `Total Trainers,${data.totalTrainers}`,
+        `Avg Client Load,${data.avgClientLoad}`,
+        `Avg Client Health Score,${data.avgClientHealthScore}`,
+        `Session Completion Rate,${data.sessionCompletionRate}%`,
+        `Revenue Per Trainer,${data.revenuePerTrainer}`,
+      ].join('\n'),
+
+      workouts: () => [
+        'Metric,Value',
+        `Total Sessions,${data.totalSessions}`,
+        `Avg Session Duration (min),${data.avgSessionDurationMin}`,
+        `Total Volume (kg),${data.totalVolumeKg}`,
+        `Avg Completion Rate,${data.avgCompletionRate}%`,
+      ].join('\n'),
+
+      nutrition: () => [
+        'Metric,Value',
+        `Avg Calories Logged,${data.avgCaloriesLogged}`,
+        `Avg Protein Adherence %,${data.avgProteinAdherencePct}`,
+        `Avg Macro Score,${data.avgMacroScore}`,
+        `Members Logging Daily,${data.membersLoggingDaily}`,
+        `Logging Adherence %,${data.loggingAdherencePct}`,
+        `Top Deficit Day,${data.topDeficitDay}`,
+      ].join('\n'),
+
+      retention: () => [
+        'Metric,Value',
+        `Overall Retention %,${data.overallRetentionPct}`,
+        `Avg Days Before Churn,${data.avgDaysBeforeChurn}`,
       ].join('\n'),
     };
 

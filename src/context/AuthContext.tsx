@@ -1,7 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { authApi } from '../api/authApi';
-import { clearBrandingCache } from '../lib/brandingCache';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { supabase } from "../lib/supabase";
+import { clearBrandingCache } from "../lib/brandingCache";
 
 interface User {
   id: string;
@@ -34,17 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!sbUser) return null;
     return {
       id: sbUser.id as string,
-      email: sbUser.email || '',
-      name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
-      avatar: sbUser.user_metadata?.avatar_url || '',
+      email: sbUser.email || "",
+      name:
+        sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || "User",
+      avatar: sbUser.user_metadata?.avatar_url || "",
     };
   };
 
   const rehydrate = useCallback(async (): Promise<User | null> => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       // If no Supabase session, the user is not authenticated.
       // (Demo logins now natively generate a Supabase session).
       if (!session) {
@@ -56,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(mappedUser);
       return mappedUser;
     } catch (error) {
-      console.error('[AuthContext] Failed to load session:', error);
+      console.error("[AuthContext] Failed to load session:", error);
       setUser(null);
       return null;
     } finally {
@@ -68,36 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     rehydrate();
 
     try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          try {
-            const { data: adminData } = await supabase
-              .from('admins')
-              .select('role')
-              .eq('email', session.user.email)
-              .single();
-
-            if (adminData) {
-              window.location.replace('/admin');
-            } else {
-              setUser(mapSupabaseUser(session.user));
-              if (window.location.pathname.startsWith('/admin')) {
-                window.location.replace('/dashboard');
-              }
-            }
-          } catch (err) {
-            console.error('Error checking admin status:', err);
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === "SIGNED_IN" && session) {
+            setUser(mapSupabaseUser(session.user));
+          } else if (!session) {
+            setUser(null);
           }
-        } else if (!session) {
-          setUser((prev) => (prev?.email === 'demo@sweatfix.com' ? prev : null));
-        }
-      });
+        },
+      );
 
       return () => {
         data?.subscription?.unsubscribe();
       };
     } catch (err) {
-      console.error('Error in onAuthStateChange:', err);
+      console.error("Error in onAuthStateChange:", err);
     }
   }, [rehydrate]);
 
@@ -108,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // on a shared phone sees the previous gym's colour and name until their
     // own branding loads.
     clearBrandingCache();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   return (
@@ -121,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

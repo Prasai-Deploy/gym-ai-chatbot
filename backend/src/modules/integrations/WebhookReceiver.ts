@@ -1,4 +1,4 @@
-import { WebhookPayload, IntegrationProvider } from './integration.types';
+import { WebhookPayload } from './integration.types';
 import { syncEngine } from './SyncEngine';
 import { logger } from '@logger/index';
 

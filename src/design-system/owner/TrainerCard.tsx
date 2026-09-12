@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { User, Award, Zap } from '../icons';
+import { Award, Zap } from '../icons';
 
 export interface TrainerCardProps {
   activeTrainersOnFloor?: number;

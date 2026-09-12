@@ -2,6 +2,11 @@
  * STRIVA v4 Design System - AI Coach Barrel Export
  */
 
+export * from './MinimalCoachHero';
+export * from './TrinityRecommendation';
+export * from './TrinityQuickQuestions';
+export * from './MinimalChatExperience';
+export * from './TrinityInput';
 export * from './CoachGreeting';
 export * from './CoachStatus';
 export * from './SuggestionChips';

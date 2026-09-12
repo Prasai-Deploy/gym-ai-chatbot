@@ -14,7 +14,7 @@ export interface ProgressRingProps {
 export const ProgressRing: React.FC<ProgressRingProps> = ({
   value,
   size = 80,
-  strokeWidth = 8,
+  strokeWidth = 7,
   variant = 'primary',
   label,
   className,
@@ -39,7 +39,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255, 255, 255, 0.08)"
+          stroke="rgba(255, 255, 255, 0.07)"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -52,15 +52,15 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           strokeLinecap="round"
           fill="transparent"
         />
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-sm font-extrabold text-white tracking-tight">{Math.round(percentage)}%</span>
-        {label && <span className="text-[10px] text-slate-400 font-medium">{label}</span>}
+        <span className="text-sm font-extrabold text-white font-display tracking-tight tabular-nums">{Math.round(percentage)}%</span>
+        {label && <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.10em]">{label}</span>}
       </div>
     </div>
   );

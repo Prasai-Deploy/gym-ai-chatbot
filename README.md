@@ -1,58 +1,108 @@
----
-# 🏋️ Sweat Fix Gym - AI Fitness Ecosystem
+# STRIVA Fitness Platform
 
-A production-ready AI coaching platform developed for **Sweat Fix Gym**. This system integrates frontier-level AI reasoning with personalized progress tracking to automate the personal training experience.
+STRIVA is a mobile-first fitness and gym-management application with member workouts, nutrition, progress tracking, AI coaching, attendance, billing, and owner analytics. The frontend is an installable PWA and the Express server hosts both the API and production frontend.
 
----
+## Technology
 
-## 🚀 Live Demo & Deployment
-* **Access:** https://stirva.space/
-* **Infrastructure:** Hosted & Managed by **Prasai Cloud**
+- React 19, TypeScript, Vite, Tailwind CSS, and Motion
+- Express and TypeScript
+- Supabase Auth and PostgreSQL
+- TanStack Query for server state
+- Groq-backed AI coaching and Razorpay billing integrations
+- Vite PWA with offline app-shell and image caching
 
----
+## Local setup
 
-## ✨ Key Features
+Requirements:
 
-- **🤖 Frontier AI Coaching:** Powered by **Arcee Trinity Large (400B MoE)** via OpenRouter for high-density fitness reasoning and agentic planning.
-- **📊 Dynamic Progress Tracking:** Interactive bar graphs that visualize workout consistency and diet adherence.
-- **🔐 Secure User Lifecycle:** Full **Google OAuth** integration for secure, one-tap login.
-- **🗄️ Persistence Layer:** Integrated **PostgreSQL** database for long-term storage of user profiles, workout history, and custom diet plans.
-- **🛠️ Admin Control Panel:** Dedicated interface for trainers to upload custom charts and manage member data.
+- Node.js 20.19 or newer
+- npm 10 or newer
+- A Supabase project
 
----
+Install and configure the project:
 
-## 🛠️ Technical Stack
+```bash
+npm ci
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
 
-| Layer | Technology |
-| :--- | :--- |
-| **Model** | Arcee-AI Trinity Large Preview (via OpenRouter) |
-| **UI Framework** | Express |
-| **Database** | PostgreSQL |
-| **Auth** | Google OAuth 2.0 |
-| **Architecture** | Agentic AI Workflow / Full-Stack Web App |
+Fill in the two environment files. Frontend values prefixed with `VITE_` are public and are embedded during the build. Secrets such as `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, and webhook secrets must stay in `backend/.env` only.
 
----
+Apply the SQL migrations in numerical order from `backend/supabase/migrations/`. This is the only active migration directory; see `supabase/README.md` for details.
 
-## ⚙️ Development & Migration
-Originally prototyped with Grok, the system was migrated to the **Arcee Trinity 400B** model to leverage its superior 128k context window and complex tool-calling capabilities, ensuring more accurate data synchronization with the PostgreSQL backend.
+Start the frontend and backend together:
 
----
+```bash
+npm run dev
+```
 
-## 💼 Business Context
-Developed as a flagship product for **Prasai Cloud** to demonstrate the integration of Generative AI into traditional service industries.
+- Frontend: `http://localhost:5173`
+- Backend and API: `http://localhost:5000`
+- Health check: `http://localhost:5000/health`
 
-📧hello@prasai.cloud
+## Demo access
 
----
----
+The **Explore the demo** button signs into the Supabase account `demo@sweatfix.com`.
 
-## 👥 The Team
-This project is the result of a collaborative, equal-effort initiative by the founding team at **Prasai Cloud**:
+1. Create that user in Supabase Auth.
+2. Give it only isolated, resettable demo data—never real member data.
+3. Set `VITE_DEMO_PASSWORD` before building.
+4. Set `VITE_ENABLE_DEMO_MODE=true` only on the demo deployment if mock read-only fallback data is desired.
 
-* **Debosmita Ghosh**
-* **Kinjal Dutta**
-* **Priyanshu Kumar Paswan**
+Because Vite embeds frontend variables at build time, changing `VITE_DEMO_PASSWORD` or another `VITE_` value requires a new build and deployment.
 
-Each member contributed equally to the research, development, AI integration, and strategic deployment of this ecosystem.
+## Quality checks
 
----
+Run the complete check before every deployment:
+
+```bash
+npm run verify
+```
+
+This performs frontend type checking, frontend and backend linting, backend security tests, and both production builds.
+
+## Hostinger deployment
+
+Deploy the `demo` branch as a **Node.js application**, not as a static-only site. The Express server serves the generated `dist/` folder and handles SPA route fallbacks.
+
+Use these settings:
+
+- Node version: 20.19 or newer
+- Application root: this repository directory
+- Install command: `npm ci`
+- Build command: `npm run build`
+- Start command: `npm start`
+- Entry file, if Hostinger asks for one: `backend/dist/server.js`
+- Environment: `NODE_ENV=production`
+- `APP_URL`: the public HTTPS origin, with no trailing slash
+- `CORS_ORIGINS`: the allowed public frontend origin(s), comma-separated
+- `PORT`: use the value supplied by Hostinger when it provides one
+
+Add all values from `.env.example` and `backend/.env.example` to Hostinger's environment panel. Do not upload either real `.env` file to GitHub.
+
+For Supabase Auth, add these URLs to the project allowlist:
+
+- `https://YOUR_DOMAIN/auth/callback`
+- `http://localhost:5173/auth/callback`
+
+PWA installation and service workers require HTTPS in production. A successful build generates `dist/manifest.webmanifest`, `dist/sw.js`, and the Workbox runtime.
+
+## Useful commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Run frontend and backend locally |
+| `npm run typecheck` | Check frontend TypeScript |
+| `npm run lint` | Check frontend code quality |
+| `npm test` | Run backend security tests |
+| `npm run build` | Build frontend and backend |
+| `npm start` | Run the built production server |
+| `npm run verify` | Run the full pre-deployment gate |
+
+## Repository safety
+
+- Production work should merge through reviewed branches.
+- The current preview deployment is maintained on `demo`; `main` remains unchanged.
+- `.env*` files are ignored except for the two documented example files.
+- Organization access is resolved on the server from authenticated membership records; client-supplied role or organization claims are not trusted.

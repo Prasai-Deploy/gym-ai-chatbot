@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { ProgressRing } from '../components/ProgressRing';
-import { Users, Activity } from '../icons';
+import { Activity } from '../icons';
 
 export interface AttendanceCardProps {
   currentOccupancy?: number;

@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext';
-import { dashboardService } from '../services/dashboard.service';
+import { useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
 
 interface UseDashboardRealtimeProps {
   fetchProgress: () => void;
@@ -19,20 +18,20 @@ export function useDashboardRealtime({
   fetchTodayWater,
   fetchDashboardData,
   fetchUser,
-  fetchPlans
+  fetchPlans,
 }: UseDashboardRealtimeProps) {
   const { user } = useAuth();
 
   useEffect(() => {
     if (user && (user as any).is_admin) {
-      window.location.replace('/admin');
+      window.location.replace("/admin");
       return;
     }
     if (!user) return;
 
-    const es = new EventSource('/api/stream');
+    const es = new EventSource("/api/stream");
 
-    es.addEventListener('dashboard-update', (e: MessageEvent) => {
+    es.addEventListener("dashboard-update", (e: MessageEvent) => {
       try {
         const flags = JSON.parse(e.data);
         if (flags.progress || flags.activity) {
@@ -55,7 +54,9 @@ export function useDashboardRealtime({
           fetchTodayWater();
           fetchUser();
         }
-      } catch {}
+      } catch {
+        // Ignore malformed server-sent events; the fallback poll will recover.
+      }
     });
 
     es.onerror = () => {
@@ -79,6 +80,6 @@ export function useDashboardRealtime({
     fetchTodayWater,
     fetchDashboardData,
     fetchUser,
-    fetchPlans
+    fetchPlans,
   ]);
 }

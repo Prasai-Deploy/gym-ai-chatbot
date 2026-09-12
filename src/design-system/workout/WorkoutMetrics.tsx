@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from '../components/Card';
-import { Heart, Activity, Flame } from '../icons';
+import { Heart, Flame } from '../icons';
 
 export interface WorkoutMetricsProps {
   heartRateBpm?: number;

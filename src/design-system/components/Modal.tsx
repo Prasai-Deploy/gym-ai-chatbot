@@ -55,18 +55,18 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            className="fixed inset-0 bg-[#050608]/80 backdrop-blur-md"
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 16 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
             role="dialog"
             aria-modal="true"
             className={cn(
-              'relative z-10 w-full rounded-3xl bg-slate-900 border border-white/10 p-6 shadow-2xl overflow-hidden flex flex-col gap-4',
+              'relative z-10 w-full rounded-2xl bg-[#11141D] border border-white/[0.09] p-6 shadow-2xl overflow-hidden flex flex-col gap-4',
               sizeStyles[size],
               className
             )}
@@ -88,7 +88,7 @@ export const Modal: React.FC<ModalProps> = ({
 
             <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1">{children}</div>
 
-            {footer && <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">{footer}</div>}
+            {footer && <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.07]">{footer}</div>}
           </motion.div>
         </div>
       )}

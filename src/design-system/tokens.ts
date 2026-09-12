@@ -12,6 +12,7 @@ import { radius } from './radius';
 import { shadows } from './shadows';
 import { transitions, motionVariants } from './animations';
 import { breakpoints } from './breakpoints';
+import { visualSurfaces, visualEffects, visualColors, visualTypography, visualMotionVariants } from './visual';
 
 /**
  * Standard utility to merge Tailwind classes safely with zero duplication
@@ -29,6 +30,11 @@ export const tokens = {
   transitions,
   motionVariants,
   breakpoints,
+  visualSurfaces,
+  visualEffects,
+  visualColors,
+  visualTypography,
+  visualMotionVariants,
 } as const;
 
 export type Tokens = typeof tokens;

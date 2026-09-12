@@ -1,7 +1,7 @@
 import React from 'react';
 import { DashboardCharts } from './DashboardCharts';
 import { WaterTracker } from './WaterTracker';
-import { ChartMetric, WeeklySummary, ChartData } from '../types/dashboard.types';
+import { ChartMetric, WeeklySummary } from '../types/dashboard.types';
 
 interface ProgressSectionProps {
   chartMetric: ChartMetric;

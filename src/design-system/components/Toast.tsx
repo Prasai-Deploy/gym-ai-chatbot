@@ -47,11 +47,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {toasts.map((t) => (
             <motion.div
               key={t.id}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              exit={{ opacity: 0, y: -12, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
               className={cn(
-                'pointer-events-auto flex items-start gap-3 p-4 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl backdrop-blur-xl'
+                'pointer-events-auto flex items-start gap-3 p-4 rounded-xl bg-[#11141D] border border-white/[0.09] shadow-2xl backdrop-blur-xl'
               )}
             >
               <div className="shrink-0 mt-0.5">{icons[t.type]}</div>
@@ -62,7 +63,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <button
                 type="button"
                 onClick={() => removeToast(t.id)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 rounded-lg focus:outline-none focus-visible:ring-1 focus-visible:ring-orange-500"
+                aria-label="Close notification"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

@@ -1,8 +1,8 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Flame, Bell, User } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
-import { BrandMark } from '../../../design-system/brand/BrandMark';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Flame, Bell, User } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
+import { BrandMark } from "../../../design-system/brand/BrandMark";
 
 export const TopNav: React.FC = () => {
   const navigate = useNavigate();
@@ -10,25 +10,30 @@ export const TopNav: React.FC = () => {
   const { user } = useAuth();
 
   const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard', path: '/v3/dashboard' },
-    { id: 'workout', label: 'Workout', path: '/v3/workout' },
-    { id: 'coach', label: 'AI Coach', path: '/v3/coach' },
-    { id: 'nutrition', label: 'Nutrition', path: '/v3/nutrition' },
-    { id: 'progress', label: 'Progress', path: '/v3/progress' },
-    { id: 'billing', label: 'Billing', path: '/v3/billing' },
+    { id: "dashboard", label: "Dashboard", path: "/v3/dashboard" },
+    { id: "workout", label: "Workout", path: "/v3/workout" },
+    { id: "coach", label: "AI Coach", path: "/v3/coach" },
+    { id: "nutrition", label: "Nutrition", path: "/v3/nutrition" },
+    { id: "progress", label: "Progress", path: "/v3/progress" },
+    { id: "billing", label: "Billing", path: "/v3/billing" },
   ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#090B10]/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between font-sans">
       {/* Brand */}
-      <div 
+      <button
+        type="button"
+        aria-label="Go to dashboard"
         className="flex items-center gap-3 cursor-pointer group"
-        onClick={() => navigate('/v3/dashboard')}
+        onClick={() => navigate("/v3/dashboard")}
       >
         {/* The "v3 ENGINE" tagline that used to sit under the wordmark was
             STRIVA-specific and meaningless to a white-labelled gym. */}
-        <BrandMark size="md" className="group-hover:scale-105 transition-transform" />
-      </div>
+        <BrandMark
+          size="md"
+          className="group-hover:scale-105 transition-transform"
+        />
+      </button>
 
       {/* Desktop Links */}
       <nav className="hidden md:flex items-center gap-1 bg-[#131722] p-1.5 rounded-2xl border border-white/10">
@@ -39,9 +44,9 @@ export const TopNav: React.FC = () => {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                isActive 
-                  ? 'bg-brand-500 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                isActive
+                  ? "bg-brand-500 text-white shadow-md"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
               }`}
             >
               {item.label}
@@ -57,18 +62,26 @@ export const TopNav: React.FC = () => {
           <span>7d Streak</span>
         </div>
 
-        <button className="p-2 rounded-xl bg-[#131722] border border-white/10 text-slate-400 hover:text-white transition-colors relative">
+        <button
+          type="button"
+          aria-label="Open notifications"
+          className="min-w-11 min-h-11 p-2 rounded-xl bg-[#131722] border border-white/10 text-slate-400 hover:text-white transition-colors relative"
+        >
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500" />
         </button>
 
-        <button 
-          onClick={() => navigate('/v3/profile')}
-          className="w-9 h-9 rounded-full bg-[#1A2030] border border-white/15 flex items-center justify-center text-slate-200 hover:border-brand-500 transition-colors"
+        <button
+          onClick={() => navigate("/v3/profile")}
+          className="w-11 h-11 rounded-full bg-[#1A2030] border border-white/15 flex items-center justify-center text-slate-200 hover:border-brand-500 transition-colors"
           title="Profile & Settings"
         >
           {user?.avatar ? (
-            <img src={user.avatar} className="w-full h-full rounded-full object-cover" alt="User" />
+            <img
+              src={user.avatar}
+              className="w-full h-full rounded-full object-cover"
+              alt="User"
+            />
           ) : (
             <User className="w-4 h-4" />
           )}

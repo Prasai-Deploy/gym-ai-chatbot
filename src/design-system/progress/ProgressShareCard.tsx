@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { Dumbbell, Award, ExternalLink, Copy } from '../icons';
+import { Dumbbell, Award, Copy } from '../icons';
 
 export interface ProgressShareCardProps {
   userName?: string;

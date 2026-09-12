@@ -9,7 +9,7 @@ import {
 import { logger } from '@logger/index';
 
 export class MockEmailProvider implements EmailProvider {
-  async sendEmail(to: string, subject: string, bodyHtml: string): Promise<boolean> {
+  async sendEmail(to: string, subject: string, _bodyHtml: string): Promise<boolean> {
     logger.info(`[EmailProvider Abstraction] Sent email to ${to}: ${subject}`);
     return true;
   }
@@ -23,15 +23,21 @@ export class MockSMSProvider implements SMSProvider {
 }
 
 export class MockPushProvider implements PushProvider {
-  async sendPushNotification(deviceToken: string, title: string, body: string): Promise<boolean> {
+  async sendPushNotification(deviceToken: string, title: string, _body: string): Promise<boolean> {
     logger.info(`[PushProvider Abstraction] Sent Web Push to ${deviceToken}: ${title}`);
     return true;
   }
 }
 
 export class MockWhatsAppProvider implements WhatsAppProvider {
-  async sendWhatsAppMessage(toPhone: string, templateName: string, params: Record<string, any>): Promise<boolean> {
-    logger.info(`[WhatsAppProvider Interface] Sent WhatsApp message to ${toPhone} using template ${templateName}`);
+  async sendWhatsAppMessage(
+    toPhone: string,
+    templateName: string,
+    _params: Record<string, any>,
+  ): Promise<boolean> {
+    logger.info(
+      `[WhatsAppProvider Interface] Sent WhatsApp message to ${toPhone} using template ${templateName}`,
+    );
     return true;
   }
 }
@@ -43,7 +49,9 @@ export class NotificationDispatcher {
   private whatsappProvider: WhatsAppProvider = new MockWhatsAppProvider();
 
   public async dispatch(event: NotificationEvent, channels: NotificationChannel[]): Promise<void> {
-    logger.info(`[NotificationDispatcher] Dispatching notification '${event.title}' to user ${event.userId}`);
+    logger.info(
+      `[NotificationDispatcher] Dispatching notification '${event.title}' to user ${event.userId}`,
+    );
 
     for (const channel of channels) {
       try {
@@ -55,29 +63,34 @@ export class NotificationDispatcher {
             await this.emailProvider.sendEmail(
               event.metadata?.email || 'user@striva.app',
               event.title,
-              `<p>${event.message}</p>`
+              `<p>${event.message}</p>`,
             );
             break;
           case 'sms':
-            await this.smsProvider.sendSMS(event.metadata?.phone || '+15550192831', `${event.title}: ${event.message}`);
+            await this.smsProvider.sendSMS(
+              event.metadata?.phone || '+15550192831',
+              `${event.title}: ${event.message}`,
+            );
             break;
           case 'push':
             await this.pushProvider.sendPushNotification(
               event.metadata?.deviceToken || 'dev_token_sample',
               event.title,
-              event.message
+              event.message,
             );
             break;
           case 'whatsapp':
             await this.whatsappProvider.sendWhatsAppMessage(
               event.metadata?.phone || '+15550192831',
               'striva_alert_template',
-              { title: event.title, message: event.message }
+              { title: event.title, message: event.message },
             );
             break;
         }
       } catch (err: any) {
-        logger.error(`[NotificationDispatcher] Channel ${channel} dispatch error: ${err?.message || err}`);
+        logger.error(
+          `[NotificationDispatcher] Channel ${channel} dispatch error: ${err?.message || err}`,
+        );
       }
     }
   }

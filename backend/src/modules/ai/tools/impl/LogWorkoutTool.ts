@@ -1,6 +1,6 @@
 import { BaseTool } from '../BaseTool';
 import { z } from 'zod';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 
 export const LogWorkoutSchema = z.object({

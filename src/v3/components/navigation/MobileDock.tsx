@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Sparkles, Activity, User, Plus } from 'lucide-react';
+import { Home, Dumbbell, Sparkles, Activity, Plus } from 'lucide-react';
 
 export const MobileDock: React.FC<{ onLogPress?: () => void }> = ({ onLogPress }) => {
   const navigate = useNavigate();

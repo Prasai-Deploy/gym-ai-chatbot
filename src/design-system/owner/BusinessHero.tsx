@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/Badge';
-import { CreditCard, Activity, Sparkles, Building } from '../icons';
+import { CreditCard, Sparkles, Building } from '../icons';
 import { cn } from '../tokens';
 
 export interface BusinessHeroProps {

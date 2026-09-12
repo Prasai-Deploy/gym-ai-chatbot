@@ -6,7 +6,6 @@ import { ToolRuntime } from '../core/ToolRuntime';
 import { SafetyGuard } from '../safety/SafetyGuard';
 import { ToolRegistry } from '../tools/ToolRegistry';
 import { ValidationError, AppError } from '@errors/AppError';
-import { logger } from '@logger/index';
 
 // We mock ContextBuilder for this slice since it lives in the intelligence domain
 interface IMockContextBuilder {

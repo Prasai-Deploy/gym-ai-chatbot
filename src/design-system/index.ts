@@ -2,6 +2,9 @@
  * STRIVA v4 Design System - Barrel Export
  */
 
+// Visual Identity System (Sprint 5B.1)
+export * from './visual';
+
 // Tokens & Utilities
 export * from './colors';
 export * from './typography';
@@ -51,31 +54,34 @@ export * from './components/SearchBar';
 export * from './shell';
 
 // Dashboard Experience
-export * from './dashboard';
+export * as dashboard from './dashboard';
 
 // AI Coach Experience
-export * from './coach';
+export * as coach from './coach';
 
 // Workout Execution Experience
-export * from './workout';
+export * as workout from './workout';
 
 // Nutrition & Recovery Experience
-export * from './nutrition';
+export * as nutrition from './nutrition';
 
 // Progress & Analytics Experience
-export * from './progress';
+export * as progress from './progress';
+
+// Profile Experience
+export * as profile from './profile';
 
 // Gym Owner SaaS Operating System
-export * from './owner';
+export * as owner from './owner';
 
 // Personal Trainer Operating System
-export * from './trainer';
+export * as trainer from './trainer';
 
 // Member Management Customer Success Platform
-export * from './members';
+export * as members from './members';
 
 // Attendance & Access Control System
-export * from './attendance';
+export * as attendance from './attendance';
 
 // Membership & Billing Revenue OS
-export * from './billing';
+export * as billing from './billing';

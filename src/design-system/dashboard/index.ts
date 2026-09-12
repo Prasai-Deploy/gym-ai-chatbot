@@ -2,6 +2,9 @@
  * STRIVA v4 Design System - Dashboard Barrel Export
  */
 
+export * from './HealthScoreHero';
+export * from './TodayActionSection';
+export * from './TrinityAssistantSection';
 export * from './DashboardHero';
 export * from './RecoveryCard';
 export * from './MissionCard';

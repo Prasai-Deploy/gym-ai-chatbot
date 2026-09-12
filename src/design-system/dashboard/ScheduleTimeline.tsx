@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Calendar, Flame, CheckCircle2 } from '../icons';
+import { Calendar, CheckCircle2 } from '../icons';
 
 export interface ScheduleEvent {
   id: string;

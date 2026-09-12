@@ -9,7 +9,7 @@ export interface ScannerPanelProps {
 }
 
 export const ScannerPanel: React.FC<ScannerPanelProps> = React.memo(({
-  onScanResult = (res) => console.log('Scanner result:', res),
+  onScanResult = (res: string) => console.log('Scanner result:', res),
   className,
 }) => {
   return (

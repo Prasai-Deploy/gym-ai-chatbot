@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Users, TrendingUp } from '../icons';
+import { Users } from '../icons';
 
 export interface GrowthPoint {
   month: string;

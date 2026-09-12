@@ -5,56 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-  <!-- ==========================================================================
-       TENANT BRANDING BOOT SCRIPT  —  must stay FIRST in <head>
-       ==========================================================================
-       Applies the gym's brand colour before the stylesheet is even parsed, so
-       a returning member never sees a flash of the default orange before their
-       gym's colour appears. An inline style on <html> beats every stylesheet
-       rule and inherits to everything below it.
-
-       First-ever visit has nothing cached, so the app renders the default
-       orange until BrandingContext fetches after login — the login screen is
-       brand-neutral, so this is barely visible. Every visit after that is
-       instant and correct.
-
-       The hex regex is NOT optional. Without it, anything written into
-       localStorage flows straight into setProperty, which is a CSS injection
-       vector.
-       ====================================================================== -->
-  <script>
-    (function () {
-      try {
-        var raw = localStorage.getItem('striva-branding');
-        if (!raw) return;
-        var b = JSON.parse(raw);
-        if (b && typeof b.primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.primaryColor)) {
-          document.documentElement.style.setProperty('--brand-base', b.primaryColor);
-        }
-        if (b && typeof b.businessName === 'string' && b.businessName) {
-          document.title = b.businessName;
-        }
-      } catch (e) {
-        /* Any failure falls through to the default brand. Never block boot. */
-      }
-    })();
-  </script>
-  <script>
-    (function () {
-      try {
-        var storedTheme = localStorage.getItem('striva-theme') || 'system';
-        var resolvedTheme = storedTheme === 'system'
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : storedTheme;
-        if (resolvedTheme !== 'dark' && resolvedTheme !== 'light') resolvedTheme = 'dark';
-        document.documentElement.classList.remove('dark', 'light');
-        document.documentElement.classList.add(resolvedTheme);
-        document.documentElement.setAttribute('data-theme', resolvedTheme);
-      } catch (e) {
-        /* Keep the dark fallback if storage or media queries are unavailable. */
-      }
-    })();
-  </script>
+  <script src="/boot.js"></script>
   <meta name="description" content="STRIVA — Your premium AI-powered fitness companion for tracking workouts, macros, and reaching peak performance." />
   
   <!-- PWA Meta Tags -->
@@ -113,40 +64,7 @@
     </style>
   </div>
   <div id="root"></div>
-  <script>
-    (function() {
-      function hideLoader() {
-        const loader = document.getElementById('app-loader');
-        if (loader) {
-          loader.style.transition = 'opacity 0.3s ease';
-          loader.style.opacity = '0';
-          setTimeout(() => loader.remove(), 300);
-        }
-      }
-      
-      function checkAndHide() {
-        const root = document.getElementById('root');
-        if (root && root.children.length > 0) {
-          hideLoader();
-          return true;
-        }
-        return false;
-      }
-
-      if (!checkAndHide()) {
-        const root = document.getElementById('root');
-        if (root) {
-          const observer = new MutationObserver(() => {
-            if (checkAndHide()) {
-              observer.disconnect();
-            }
-          });
-          observer.observe(root, { childList: true, subtree: true });
-        }
-        setTimeout(hideLoader, 1500);
-      }
-    })();
-  </script>
+  <script src="/loader.js"></script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

@@ -1,31 +1,25 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useAIChat } from '../../features/coach/hooks/useAIChat';
-import { useCoachData } from '../../hooks/useStrivaApi';
-import { AppShell } from '../../design-system/shell/AppShell';
-import { CoachLayout } from '../../design-system/coach/CoachLayout';
-import { ChatMessage } from '../../design-system/coach/MessageBubble';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useAIChat } from "../../features/coach/hooks/useAIChat";
+import { AppShell } from "../../design-system/shell/AppShell";
+import { CoachLayout } from "../../design-system/coach/CoachLayout";
+import { ChatMessage } from "../../design-system/coach/MessageBubble";
 
 export const V3CoachPage: React.FC = () => {
   const navigate = useNavigate();
-  // Was `signOut`, which AuthContext does not export — so `signOut?.()` below
-  // was silently a no-op and the logout button on this page did nothing.
   const { user, logout } = useAuth();
-  const userName = user?.name || user?.email?.split('@')[0] || 'Athlete';
+  const userName = user?.name || user?.email?.split("@")[0] || "Athlete";
   const { messages, sendMessage, isTyping } = useAIChat();
-  const { isSending } = useCoachData();
 
-  const formattedMessages: ChatMessage[] = messages.map((m: any, idx: number) => ({
-    id: m.id || `msg-${idx}`,
-    sender: m.role === 'user' ? 'user' : 'assistant',
-    content: m.text || m.content || '',
-    timestamp: 'Just now',
-    workoutData: m.workoutData,
-    mealData: m.mealData,
-    recoveryData: m.recoveryData,
-    progressData: m.progressData,
-  }));
+  const formattedMessages: ChatMessage[] = messages.map(
+    (m: any, idx: number) => ({
+      id: m.id || `msg-${idx}`,
+      sender: m.role === "user" ? "user" : "assistant",
+      content: m.text || m.content || "",
+      timestamp: "Just now",
+    }),
+  );
 
   const handleSend = (text: string) => {
     sendMessage(text);
@@ -34,22 +28,23 @@ export const V3CoachPage: React.FC = () => {
   return (
     <AppShell
       currentPath="/v3/coach"
+      showRightSidebar={false}
       onNavigate={(path) => navigate(path)}
       onLogout={() => logout?.()}
       user={{
         name: userName,
-        email: user?.email || 'athlete@striva.app',
-        role: 'PRO Member',
+        email: user?.email || "athlete@striva.app",
+        role: "PRO Member",
       }}
     >
       <CoachLayout
         userName={userName}
         messages={formattedMessages}
-        isLoading={isTyping || isSending}
+        isLoading={isTyping}
         onSendMessage={handleSend}
         onActionClick={(action) => {
-          if (action === 'load_workout') navigate('/v3/workout');
-          else if (action === 'log_meal') navigate('/v3/nutrition');
+          if (action === "load_workout") navigate("/v3/workout");
+          else if (action === "log_meal") navigate("/v3/nutrition");
         }}
       />
     </AppShell>

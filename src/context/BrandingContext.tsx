@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { httpClient } from "../api/httpClient";
+import { useAuth } from "./AuthContext";
 import {
   Branding,
   DEFAULT_BRANDING,
@@ -8,7 +8,7 @@ import {
   applyBrandColor,
   readBrandingCache,
   writeBrandingCache,
-} from '../lib/brandingCache';
+} from "../lib/brandingCache";
 
 /**
  * Per-gym white-label branding.
@@ -26,9 +26,8 @@ import {
  *      every `bg-brand-500` / `text-brand-400` / `border-brand-500/30` in the
  *      app follows automatically.
  *
- * The gym row is read straight from Supabase rather than through our API. The
- * "read own gym" RLS policy (migration 0002) already restricts a member to
- * their own gym, so a backend route would add nothing but a hop.
+ * Branding is loaded through the authenticated API. The backend verifies the
+ * user's organization membership before using its service-role database client.
  */
 
 interface BrandingContextValue extends Branding {
@@ -47,7 +46,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   // Without this the first render shows "STRIVA" in the header while the page
   // is already the tenant's colour.
   const [branding, setBranding] = useState<Branding>(
-    () => readBrandingCache() ?? DEFAULT_BRANDING
+    () => readBrandingCache() ?? DEFAULT_BRANDING,
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,26 +60,22 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        // RLS scopes this to the caller's own gym — there is no gym id in the
-        // query because there cannot be one. `maybeSingle` rather than
-        // `single` because a user whose profile has no gym_id yet (an owner
-        // mid-signup) legitimately matches zero rows; that is not an error.
-        const { data, error } = await supabase
-          .from('gyms')
-          .select('name, logo_url, primary_color')
-          .maybeSingle();
+        const response = (await httpClient.get(
+          "/organizations/branding",
+        )) as any;
+        const data = response?.data ?? response;
 
         if (cancelled) return;
 
-        if (error || !data) {
+        if (!data) {
           setIsLoading(false);
           return;
         }
 
         const next: Branding = {
-          businessName: data.name || DEFAULT_BRANDING.businessName,
+          businessName: data.business_name || DEFAULT_BRANDING.businessName,
           logoUrl: data.logo_url || null,
-          primaryColor: HEX_RE.test(data.primary_color ?? '')
+          primaryColor: HEX_RE.test(data.primary_color ?? "")
             ? data.primary_color
             : DEFAULT_BRANDING.primaryColor,
         };

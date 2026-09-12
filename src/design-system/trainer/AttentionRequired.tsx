@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
-import { AlertTriangle, ChevronRight, MessageSquare } from '../icons';
+import { AlertTriangle, MessageSquare } from '../icons';
 
 export interface AttentionItem {
   id: string;

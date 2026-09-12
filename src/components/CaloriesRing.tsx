@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Flame, Zap, Target } from 'lucide-react';
+import { Flame } from 'lucide-react';
 
 interface CaloriesRingProps {
   burned: number;

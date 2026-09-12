@@ -6,9 +6,16 @@ import { ValidationError } from '@errors/AppError';
 export class AdminController {
   constructor(private readonly service: AdminService) {}
 
+  private getOrganizationId(req: Request): string {
+    if (!req.organizationContext?.organizationId) {
+      throw new ValidationError('Organization context is required');
+    }
+    return req.organizationContext.organizationId;
+  }
+
   public getDashboardData = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.service.getDashboardStats();
+      const result = await this.service.getDashboardStats(this.getOrganizationId(req));
       if (result.isFailure()) throw result.error;
       return res.status(200).json({ success: true, data: result.value });
     } catch (err) {
@@ -22,7 +29,11 @@ export class AdminController {
       const offset = req.query.offset ? Number(req.query.offset) : 0;
       const search = req.query.search as string | undefined;
 
-      const result = await this.service.getMembers({ limit, offset, search });
+      const result = await this.service.getMembers(this.getOrganizationId(req), {
+        limit,
+        offset,
+        search,
+      });
       if (result.isFailure()) throw result.error;
       return res.status(200).json({ success: true, data: result.value });
     } catch (err) {
@@ -32,7 +43,7 @@ export class AdminController {
 
   public getMembershipPlans = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.service.getMembershipPlans();
+      const result = await this.service.getMembershipPlans(this.getOrganizationId(req));
       if (result.isFailure()) throw result.error;
       return res.status(200).json({ success: true, data: result.value });
     } catch (err) {
@@ -52,7 +63,7 @@ export class AdminController {
         throw new ValidationError('Invalid assign plan data', parsed.error.format());
       }
 
-      const result = await this.service.assignPlan(parsed.data);
+      const result = await this.service.assignPlan(this.getOrganizationId(req), parsed.data);
       if (result.isFailure()) throw result.error;
       return res.status(200).json({ success: true, message: 'Plan assigned successfully' });
     } catch (err) {

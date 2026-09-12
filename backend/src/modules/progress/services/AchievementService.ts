@@ -1,5 +1,5 @@
 import { AchievementRepository } from '../repositories/AchievementRepository';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { eventBus } from '@shared/core/EventBus';
 import { logger } from '@logger/index';

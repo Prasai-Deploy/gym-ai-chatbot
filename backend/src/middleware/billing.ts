@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthError, AppError } from '@errors/AppError';
+import { AuthError } from '@errors/AppError';
 import { supabase } from '@database/supabase';
 import { SubscriptionRepository } from '../modules/billing/repositories/SubscriptionRepository';
 import { SubscriptionTier, TIER_LIMITS } from '../modules/billing/domain/BillingSchemas';

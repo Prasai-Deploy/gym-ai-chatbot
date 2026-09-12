@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { BaseRepository } from '@shared/database/repositories/BaseRepository';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
-import { Subscription, Invoice, FeatureUsage, SubscriptionTier, BillingInterval } from '../domain/BillingSchemas';
+import { Subscription, Invoice } from '../domain/BillingSchemas';
 
 export class SubscriptionRepository extends BaseRepository<Subscription> {
   constructor(supabase: SupabaseClient) {
@@ -28,7 +28,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
           status: 'active',
           current_period_start: new Date().toISOString(),
           current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          cancel_at_period_end: false
+          cancel_at_period_end: false,
         };
 
         const { data: created, error: createErr } = await this.supabase
@@ -47,7 +47,10 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     }
   }
 
-  public async upsertSubscription(userId: string, data: Partial<Subscription>): Promise<Result<Subscription, AppError>> {
+  public async upsertSubscription(
+    userId: string,
+    data: Partial<Subscription>,
+  ): Promise<Result<Subscription, AppError>> {
     try {
       const payload = { ...data, user_id: userId };
       const { data: updated, error } = await this.supabase
@@ -78,17 +81,19 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     }
   }
 
-  public async recordPaymentEvent(eventId: string, eventType: string, payload: any): Promise<Result<boolean, AppError>> {
+  public async recordPaymentEvent(
+    eventId: string,
+    eventType: string,
+    payload: any,
+  ): Promise<Result<boolean, AppError>> {
     try {
-      const { error } = await this.supabase
-        .from('payment_events')
-        .insert({
-          event_id: eventId,
-          event_type: eventType,
-          payload,
-          status: 'PROCESSED',
-          processed_at: new Date().toISOString()
-        });
+      const { error } = await this.supabase.from('payment_events').insert({
+        event_id: eventId,
+        event_type: eventType,
+        payload,
+        status: 'PROCESSED',
+        processed_at: new Date().toISOString(),
+      });
 
       if (error) {
         if (error.code === '23505') {
@@ -103,7 +108,11 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     }
   }
 
-  public async checkAndUpdateFeatureUsage(userId: string, featureKey: string, limit: number): Promise<Result<{ allowed: boolean; remaining: number }, AppError>> {
+  public async checkAndUpdateFeatureUsage(
+    userId: string,
+    featureKey: string,
+    limit: number,
+  ): Promise<Result<{ allowed: boolean; remaining: number }, AppError>> {
     try {
       const now = new Date();
       const { data: existing, error } = await this.supabase
@@ -118,14 +127,17 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
       if (!existing || new Date(existing.reset_at) <= now) {
         // Reset or initialize counter
         const resetAt = new Date(now.valueOf() + 24 * 60 * 60 * 1000).toISOString();
-        const { data: upserted, error: upErr } = await this.supabase
+        const { error: upErr } = await this.supabase
           .from('feature_usage')
-          .upsert({
-            user_id: userId,
-            feature_key: featureKey,
-            usage_count: 1,
-            reset_at: resetAt
-          }, { onConflict: 'user_id,feature_key' })
+          .upsert(
+            {
+              user_id: userId,
+              feature_key: featureKey,
+              usage_count: 1,
+              reset_at: resetAt,
+            },
+            { onConflict: 'user_id,feature_key' },
+          )
           .select()
           .single();
 
@@ -152,7 +164,18 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     }
   }
 
-  public async getAdminRevenueMetrics(): Promise<Result<{ totalMRR: number; totalARR: number; activeSubscriptions: number; failedPaymentsCount: number; tierBreakdown: Record<string, number> }, AppError>> {
+  public async getAdminRevenueMetrics(): Promise<
+    Result<
+      {
+        totalMRR: number;
+        totalARR: number;
+        activeSubscriptions: number;
+        failedPaymentsCount: number;
+        tierBreakdown: Record<string, number>;
+      },
+      AppError
+    >
+  > {
     try {
       const { data: subs, error: subErr } = await this.supabase
         .from('subscriptions')
@@ -187,7 +210,7 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
         totalARR: Math.round(totalARR),
         activeSubscriptions: activeSubs,
         failedPaymentsCount: failedPayments,
-        tierBreakdown
+        tierBreakdown,
       });
     } catch (err: any) {
       return fail(new AppError(err.message, 500));

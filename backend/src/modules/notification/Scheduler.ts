@@ -1,4 +1,3 @@
-import { automationEngine } from './AutomationEngine';
 import { logger } from '@logger/index';
 
 export class Scheduler {

@@ -2,6 +2,11 @@
  * STRIVA v4 Design System - Nutrition Barrel Export
  */
 
+export * from './MinimalNutritionHero';
+export * from './ChronologicalMealList';
+export * from './MinimalHydrationSection';
+export * from './NutritionTrinityCard';
+export * from './SecondaryMacroDetails';
 export * from './NutritionHero';
 export * from './NutritionScore';
 export * from './MacroRings';

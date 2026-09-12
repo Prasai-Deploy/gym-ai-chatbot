@@ -16,7 +16,7 @@ export const CurrentVisitors: React.FC<CurrentVisitorsProps> = React.memo(({
     { id: 'v2', name: 'Sarah Jenkins', planName: 'Gold Pro Plan', checkInTime: '08:45 AM', status: 'Due Soon' },
     { id: 'v3', name: 'Alexander Hayes', planName: 'VIP Unlimited', checkInTime: '09:05 AM', status: 'Valid' },
     { id: 'v4', name: 'Samantha Reed', planName: 'Gold Pro Plan', checkInTime: '09:20 AM', status: 'Valid' },
-  ],
+  ] satisfies VisitorRecord[],
   onCheckOut,
   onInspect,
   className,

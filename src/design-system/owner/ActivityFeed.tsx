@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
-import { Activity, User, CheckCircle2 } from '../icons';
+import { Activity, CheckCircle2 } from '../icons';
 
 export interface GymEvent {
   id: string;

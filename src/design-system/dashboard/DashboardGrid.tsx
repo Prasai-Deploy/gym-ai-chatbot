@@ -1,18 +1,8 @@
-import React from 'react';
-import { DashboardHero } from './DashboardHero';
-import { RecoveryCard } from './RecoveryCard';
-import { MissionCard } from './MissionCard';
-import { CoachRecommendation } from './CoachRecommendation';
-import { DailyProgress } from './DailyProgress';
-import { MacroOverview } from './MacroOverview';
-import { HydrationCard } from './HydrationCard';
-import { QuickActions } from './QuickActions';
-import { ScheduleTimeline } from './ScheduleTimeline';
-import { WeeklyStreak } from './WeeklyStreak';
-import { AchievementsCarousel } from './AchievementsCarousel';
-import { ActivityFeed } from './ActivityFeed';
-import { PageContainer } from '../shell/PageContainer';
-import { cn } from '../tokens';
+import React from "react";
+import { HealthScoreHero } from "./HealthScoreHero";
+import { TodayActionSection } from "./TodayActionSection";
+import { TrinityAssistantSection } from "./TrinityAssistantSection";
+import { cn } from "../tokens";
 
 export interface DashboardGridProps {
   userName?: string;
@@ -20,66 +10,74 @@ export interface DashboardGridProps {
   className?: string;
 }
 
-export const DashboardGrid: React.FC<DashboardGridProps> = React.memo(({
-  userName = 'Alex',
-  onNavigate = (path: string) => console.log('Dashboard navigate to:', path),
-  className,
-}) => {
-  return (
-    <PageContainer maxWidth="xl" className={cn('gap-6', className)}>
-      {/* 1. Greeting & Readiness Hero */}
-      <DashboardHero
-        userName={userName}
-        readinessScore={88}
-        streakDays={7}
-        onStartWorkout={() => onNavigate('/v3/workout')}
-      />
+export const DashboardGrid: React.FC<DashboardGridProps> = React.memo(
+  ({
+    userName = "Athlete",
+    onNavigate = (path: string) => console.log("Dashboard navigate to:", path),
+    className,
+  }) => {
+    // Determine time-of-day greeting
+    const getGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) return "Good morning";
+      if (hour < 17) return "Good afternoon";
+      return "Good evening";
+    };
 
-      {/* 2. Quick Actions Bar */}
-      <QuickActions
-        onLogWorkout={() => onNavigate('/v3/workout')}
-        onAskCoach={() => onNavigate('/v3/coach')}
-        onLogNutrition={() => onNavigate('/v3/nutrition')}
-        onRecordWeight={() => onNavigate('/v3/profile')}
-      />
+    const formattedDate = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
 
-      {/* 3. Primary Mission & Recovery Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <MissionCard
-          onStartMission={() => onNavigate('/v3/workout')}
-          className="lg:col-span-2"
-        />
-        <RecoveryCard score={88} hrvMs={74} sleepHours={7.8} strainScore={14.2} />
-      </div>
-
-      {/* 4. AI Coach Recommendation & Daily Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <CoachRecommendation
-          onOpenCoach={() => onNavigate('/v3/coach')}
-          className="lg:col-span-1"
-        />
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <DailyProgress caloriesBurned={1850} activeMinutes={55} workoutsLogged={1} />
-          <WeeklyStreak streakCount={7} />
+    return (
+      <div
+        className={cn(
+          "w-full max-w-4xl mx-auto px-4 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8",
+          className,
+        )}
+      >
+        {/* 1. Header Greeting */}
+        <div className="flex flex-col gap-0.5 select-none">
+          <span className="text-xs font-semibold text-slate-400 font-sans tracking-wide">
+            {formattedDate}
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">
+            {getGreeting()}, {userName}
+          </h1>
         </div>
+
+        {/* 2. Primary Hero: Large Central Health Score & Supporting Metrics */}
+        <HealthScoreHero
+          score={88}
+          recoveryScore={88}
+          sleepScore={92}
+          activityScore={84}
+          headline="You're ready for a strong training day."
+        />
+
+        {/* 3. Today's Top Actions */}
+        <TodayActionSection
+          workoutName="Upper Body Push & Core"
+          workoutDurationMin={52}
+          caloriesLogged={2240}
+          caloriesTarget={2650}
+          proteinLoggedGrams={148}
+          proteinTargetGrams={180}
+          initialHydrationLiters={1.8}
+          targetHydrationLiters={2.5}
+          onStartWorkout={() => onNavigate("/v3/workout")}
+          onOpenNutrition={() => onNavigate("/v3/nutrition")}
+        />
+
+        {/* 4. Quiet Trinity AI Recommendation */}
+        <TrinityAssistantSection
+          insightText="You're well recovered today. Keep intensity high on your main lifts and aim for 150g protein."
+          onOpenCoach={() => onNavigate("/v3/coach")}
+        />
       </div>
+    );
+  },
+);
 
-      {/* 5. Nutrition & Hydration Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <MacroOverview className="lg:col-span-2" />
-        <HydrationCard initialLiters={2.2} targetLiters={3.5} />
-      </div>
-
-      {/* 6. Schedule & Activity Log Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ScheduleTimeline />
-        <ActivityFeed />
-      </div>
-
-      {/* 7. Achievements Carousel */}
-      <AchievementsCarousel />
-    </PageContainer>
-  );
-});
-
-DashboardGrid.displayName = 'DashboardGrid';
+DashboardGrid.displayName = "DashboardGrid";

@@ -1,9 +1,9 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { Award, Flame, Sparkles, ArrowRight } from '../icons';
+import { Award, Flame, ArrowRight } from '../icons';
 
 export interface CelebrationModalProps {
   isOpen: boolean;

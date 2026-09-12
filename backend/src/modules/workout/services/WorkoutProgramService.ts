@@ -1,5 +1,5 @@
 import { WorkoutProgramRepository } from '../repositories/WorkoutProgramRepository';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { CreateProgramDTO } from '../domain/WorkoutSchemas';
 

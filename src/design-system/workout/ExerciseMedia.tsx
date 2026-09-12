@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dumbbell, Activity } from '../icons';
+import { Dumbbell } from '../icons';
 import { cn } from '../tokens';
 
 export interface ExerciseMediaProps {

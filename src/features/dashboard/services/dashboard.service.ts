@@ -1,4 +1,4 @@
-import { httpClient } from '../../../api/httpClient';
+import { httpClient } from "../../../api/httpClient";
 import {
   ChartData,
   WeeklySummary,
@@ -6,7 +6,7 @@ import {
   ActivityItem,
   WaterSummary,
   WaterLog,
-} from '../types/dashboard.types';
+} from "../types/dashboard.types";
 
 /**
  * Dashboard service — all calls go through httpClient (Axios).
@@ -14,8 +14,11 @@ import {
  * All endpoints hit /api/v1/* on the v2 backend.
  */
 export const dashboardService = {
-  async fetchWeeklyProgress(): Promise<{ chartData: ChartData[]; summary: WeeklySummary }> {
-    let chartData: ChartData[] = [];
+  async fetchWeeklyProgress(): Promise<{
+    chartData: ChartData[];
+    summary: WeeklySummary;
+  }> {
+    const chartData: ChartData[] = [];
     let summary: WeeklySummary = {
       total_calories: 0,
       total_workouts: 0,
@@ -25,7 +28,7 @@ export const dashboardService = {
 
     try {
       // v2 endpoint: /api/v1/progress/statistics
-      const data = await httpClient.get('/progress/statistics') as any;
+      const data = (await httpClient.get("/progress/statistics")) as any;
       if (data?.data) {
         summary = {
           total_calories: data.data.lifetime_volume_kg ?? 0,
@@ -43,7 +46,7 @@ export const dashboardService = {
 
   async fetchDashboardData(): Promise<DashboardData | null> {
     try {
-      const data = await httpClient.get('/progress/statistics') as any;
+      const data = (await httpClient.get("/progress/statistics")) as any;
       if (!data) return null;
       // Shape the v2 statistics response into DashboardData format
       return {
@@ -59,7 +62,7 @@ export const dashboardService = {
     }
   },
 
-  async fetchActivities(limit: number = 10): Promise<ActivityItem[]> {
+  async fetchActivities(_limit: number = 10): Promise<ActivityItem[]> {
     try {
       // v2 does not have an /activity/recent endpoint yet.
       // Return empty array — ActivitySection will show empty state.
@@ -69,10 +72,13 @@ export const dashboardService = {
     }
   },
 
-  async fetchTodayWater(): Promise<{ summary: WaterSummary; logs: WaterLog[] } | null> {
+  async fetchTodayWater(): Promise<{
+    summary: WaterSummary;
+    logs: WaterLog[];
+  } | null> {
     try {
       // Water tracking now lives in intelligence/context in v2.
-      const data = await httpClient.get('/intelligence/context') as any;
+      const data = (await httpClient.get("/intelligence/context")) as any;
       const nutritionCtx = data?.data?.nutrition;
       if (!nutritionCtx) return null;
       return {
@@ -81,7 +87,11 @@ export const dashboardService = {
           daily_goal: nutritionCtx.water_goal ?? 2000,
           completion_percentage: Math.min(
             100,
-            Math.round(((nutritionCtx.water_ml ?? 0) / (nutritionCtx.water_goal ?? 2000)) * 100)
+            Math.round(
+              ((nutritionCtx.water_ml ?? 0) /
+                (nutritionCtx.water_goal ?? 2000)) *
+                100,
+            ),
           ),
         },
         logs: [],
@@ -91,18 +101,26 @@ export const dashboardService = {
     }
   },
 
-  async addWater(amount: number, source: string = 'manual'): Promise<boolean> {
+  async addWater(amount: number, source: string = "manual"): Promise<boolean> {
     try {
-      await httpClient.post('/intelligence/nutrition/log', { water_ml: amount, source });
+      await httpClient.post("/intelligence/nutrition/log", {
+        water_ml: amount,
+        source,
+      });
       return true;
     } catch {
       return false;
     }
   },
 
-  async updateWaterGoal(goal: number, _isAI: boolean = false): Promise<boolean> {
+  async updateWaterGoal(
+    goal: number,
+    _isAI: boolean = false,
+  ): Promise<boolean> {
     try {
-      await httpClient.post('/intelligence/nutrition/log', { water_goal: goal });
+      await httpClient.post("/intelligence/nutrition/log", {
+        water_goal: goal,
+      });
       return true;
     } catch {
       return false;
@@ -116,7 +134,9 @@ export const dashboardService = {
 
   async fetchLatestPlan(): Promise<any | null> {
     try {
-      const data = await httpClient.get('/workouts/programs?latest=true') as any;
+      const data = (await httpClient.get(
+        "/workouts/programs?latest=true",
+      )) as any;
       return data?.data ?? null;
     } catch {
       return null;
@@ -125,19 +145,26 @@ export const dashboardService = {
 
   async fetchPlanHistory(): Promise<any[]> {
     try {
-      const data = await httpClient.get('/workouts/programs') as any;
+      const data = (await httpClient.get("/workouts/programs")) as any;
       return Array.isArray(data?.data) ? data.data : [];
     } catch {
       return [];
     }
   },
 
-  async savePlan(_planForm: { workout_plan: string; diet_plan: string; date: string }): Promise<boolean> {
+  async savePlan(_planForm: {
+    workout_plan: string;
+    diet_plan: string;
+    date: string;
+  }): Promise<boolean> {
     // No v2 endpoint for saving custom plans yet
     return false;
   },
 
-  async togglePlanComplete(_id: number, _currentStatus: boolean): Promise<boolean> {
+  async togglePlanComplete(
+    _id: number,
+    _currentStatus: boolean,
+  ): Promise<boolean> {
     // No v2 endpoint for toggling plan completion yet
     return false;
   },

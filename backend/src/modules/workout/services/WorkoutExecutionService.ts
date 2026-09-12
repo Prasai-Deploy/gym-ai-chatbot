@@ -1,5 +1,5 @@
 import { IWorkoutSessionRepository } from '../repositories/IWorkoutSessionRepository';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result, fail } from '@shared/core/Result';
 import { AppError, ValidationError } from '@errors/AppError';
 import { StateTransitionDTO, CompleteSetDTO, WorkoutSession } from '../domain/WorkoutSchemas';
 import { eventBus } from '@shared/core/EventBus';

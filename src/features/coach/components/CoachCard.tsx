@@ -1,6 +1,6 @@
 import React from 'react';
 import { CoachCardProps } from '../types/coach.types';
-import { Check, X, HelpCircle, Save } from 'lucide-react';
+import { Check, X, HelpCircle } from 'lucide-react';
 
 export const CoachCard: React.FC<CoachCardProps> = ({
   type, title, reason, confidence, suggestedAction, onAccept, onDismiss

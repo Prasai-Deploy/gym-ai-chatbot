@@ -1,5 +1,5 @@
 import { RecoveryRepository } from '../repositories/RecoveryRepository';
-import { Result, ok, fail } from '@shared/core/Result';
+import { Result, ok } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
 import { LogRecoveryDTO, RecoveryContextDTO } from '../domain/IntelligenceSchemas';
 import { eventBus } from '@shared/core/EventBus';

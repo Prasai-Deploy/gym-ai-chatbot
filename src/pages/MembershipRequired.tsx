@@ -10,8 +10,7 @@ import {
   Crown, 
   X, 
   Star, 
-  ShieldCheck, 
-  ChevronRight 
+  ShieldCheck
 } from 'lucide-react';
 import { motion } from 'motion/react';
 

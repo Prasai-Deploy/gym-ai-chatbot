@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '../../../lib/utils';
-import { motion, HTMLMotionProps } from 'motion/react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
