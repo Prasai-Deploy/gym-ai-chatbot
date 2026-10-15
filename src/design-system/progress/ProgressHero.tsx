@@ -1,23 +1,27 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp } from '../icons';
+import { TrendingUp, Flame, Dumbbell, Clock } from '../icons';
 import { cn } from '../tokens';
 
 export interface ProgressHeroProps {
-  overallProgressPct?: number;
-  strengthGainPct?: number;
-  consistencyGainPct?: number;
-  bodyChangePct?: number;
+  workoutCount?: number;
+  totalVolumeKg?: number;
+  currentStreakDays?: number;
+  trainingTimeHours?: number;
   headline?: string;
+  hasHistory?: boolean;
+  onStartWorkout?: () => void;
   className?: string;
 }
 
 export const ProgressHero: React.FC<ProgressHeroProps> = React.memo(({
-  overallProgressPct = 12,
-  strengthGainPct = 14,
-  consistencyGainPct = 9,
-  bodyChangePct = -2,
-  headline = "You're moving in the right direction.",
+  workoutCount = 0,
+  totalVolumeKg = 0,
+  currentStreakDays = 0,
+  trainingTimeHours = 0,
+  headline,
+  hasHistory = false,
+  onStartWorkout,
   className,
 }) => {
   return (
@@ -28,8 +32,8 @@ export const ProgressHero: React.FC<ProgressHeroProps> = React.memo(({
       )}
     >
       {/* Top Tag */}
-      <span className="text-[11px] font-bold text-orange-400 uppercase tracking-[0.14em] font-sans flex items-center gap-1.5">
-        <TrendingUp className="w-3.5 h-3.5" />
+      <span className="text-xs font-bold text-lime-400 uppercase tracking-wider font-sans flex items-center gap-1.5">
+        <TrendingUp className="w-4 h-4" />
         YOUR PROGRESS
       </span>
 
@@ -41,41 +45,61 @@ export const ProgressHero: React.FC<ProgressHeroProps> = React.memo(({
           transition={{ duration: 0.4 }}
           className="text-5xl sm:text-6xl font-extrabold text-white font-display tracking-tight leading-none"
         >
-          +{overallProgressPct}%
+          {workoutCount}
         </motion.span>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mt-1.5 font-sans">
-          Overall Progress
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1.5 font-sans">
+          Total Workouts Completed
         </span>
       </div>
 
       {/* Main Headline */}
       <p className="text-base sm:text-lg font-semibold text-white tracking-tight leading-snug max-w-sm">
-        {headline}
+        {headline || (hasHistory ? "Consistent effort builds strength and health." : "No workout history recorded yet.")}
       </p>
 
-      {/* 3 Supporting Metrics: Strength, Consistency, Body */}
+      {/* Supporting 3 Metrics */}
       <div className="grid grid-cols-3 gap-2 sm:gap-6 w-full max-w-lg pt-5 border-t border-white/[0.06]">
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-xs text-slate-400 font-medium">Strength</span>
+          <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+            <Dumbbell className="w-3.5 h-3.5 text-slate-400" />
+            Volume
+          </span>
           <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
-            +{strengthGainPct}%
+            {hasHistory ? `${totalVolumeKg.toLocaleString()} kg` : '--'}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-0.5 border-x border-white/[0.06]">
-          <span className="text-xs text-slate-400 font-medium">Consistency</span>
+          <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+            <Flame className="w-3.5 h-3.5 text-orange-400" />
+            Streak
+          </span>
           <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
-            +{consistencyGainPct}%
+            {hasHistory ? `${currentStreakDays}d` : '--'}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-xs text-slate-400 font-medium">Body Comp</span>
-          <span className="text-lg sm:text-xl font-bold text-emerald-400 font-display tabular-nums">
-            {bodyChangePct}%
+          <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            Time
+          </span>
+          <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
+            {hasHistory ? `${trainingTimeHours}h` : '--'}
           </span>
         </div>
       </div>
+
+      {!hasHistory && onStartWorkout && (
+        <button
+          type="button"
+          onClick={onStartWorkout}
+          className="mt-2 min-h-[48px] px-6 py-3 rounded-xl bg-lime-500 hover:bg-lime-400 text-black text-sm font-bold flex items-center gap-2 shadow-md shadow-lime-500/20 transition-all cursor-pointer"
+        >
+          <Flame className="w-4 h-4 fill-current" />
+          <span>Start First Workout</span>
+        </button>
+      )}
     </div>
   );
 });

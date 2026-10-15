@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Check, Edit2, Shield, LogOut, History, Dumbbell, Utensils } from 'lucide-react';
+import { Plus, Check, Edit2, Shield, LogOut, History, Dumbbell, Utensils, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -10,6 +10,8 @@ interface DashboardDialogsProps {
   formData: any;
   setFormData: (data: any) => void;
   onSubmitProgress: (e: React.FormEvent) => void;
+  logError?: string | null;
+  isSubmitting?: boolean;
 
   showPlanForm: boolean;
   setShowPlanForm: (show: boolean) => void;
@@ -34,6 +36,7 @@ interface DashboardDialogsProps {
 
 export const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
   showForm, setShowForm, formData, setFormData, onSubmitProgress,
+  logError, isSubmitting,
   showPlanForm, setShowPlanForm, planForm, setPlanForm, onSavePlan,
   showHistory, setShowHistory, planHistory,
   showProfile, setShowProfile, user, isEditingProfile, setIsEditingProfile, editName, setEditName, onSaveProfile, onLogout
@@ -120,11 +123,20 @@ export const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
                       placeholder="0"
                     />
                   </div>
+
+                  {logError && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-medium">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                      <span>{logError}</span>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    className="w-full btn-primary py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4"
+                    disabled={isSubmitting}
+                    className="w-full btn-primary py-5 rounded-2xl transition-all active:scale-95 shadow-xl mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Entry
+                    {isSubmitting ? 'Saving Entry...' : 'Save Entry'}
                   </button>
                 </form>
               </div>

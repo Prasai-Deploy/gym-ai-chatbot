@@ -7,7 +7,9 @@ import {
   UpdatePreferencesDTO,
   Profile,
   FitnessProfile,
-  UserPreferences
+  UserPreferences,
+  MemberSettings,
+  UpdateMemberSettingsDTO
 } from '../domain/IdentitySchemas';
 import { logger } from '@logger/index';
 
@@ -65,6 +67,23 @@ export class IdentityService {
     
     // Future: Publish PreferencesUpdatedEvent here
     logger.info({ userId }, 'Preferences updated');
+    return result;
+  }
+
+  public async getSettings(userId: string): Promise<Result<MemberSettings, AppError>> {
+    const result = await this.repository.findSettings(userId);
+    if (result.isFailure()) return result as Result<any, AppError>;
+    
+    if (!result.value) return ok({ id: userId, theme: 'system', start_of_week: 1 });
+    
+    return ok(result.value);
+  }
+
+  public async updateSettings(userId: string, dto: UpdateMemberSettingsDTO): Promise<Result<MemberSettings, AppError>> {
+    const result = await this.repository.updateSettings(userId, dto);
+    if (result.isFailure()) return result;
+    
+    logger.info({ userId }, 'Settings updated');
     return result;
   }
 

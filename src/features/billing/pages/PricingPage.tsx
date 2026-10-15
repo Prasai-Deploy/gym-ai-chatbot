@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { billingApi } from '../../../api/billingApi';
-import { Check, Zap, Crown, ShieldCheck, ArrowLeft, CreditCard } from 'lucide-react';
+import { useEntitlement } from '../../../hooks/useEntitlement';
+import { Check, ArrowLeft, ShieldCheck, CreditCard, Sparkles, AlertCircle } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -11,31 +12,26 @@ declare global {
 
 export const PricingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly');
-  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const { isTrial, isActive, isExpired, daysRemaining } = useEntitlement();
+  const [interval, setInterval] = useState<'monthly' | 'yearly'>('yearly');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSelectTier = async (tier: 'free' | 'pro' | 'elite') => {
-    if (tier === 'free') {
-      navigate('/dashboard');
-      return;
-    }
-
+  const handleCheckout = async () => {
     try {
-      setLoadingTier(tier);
+      setIsLoading(true);
       setError(null);
 
-      // Create Razorpay Subscription Checkout Order
-      const res = await billingApi.createRazorpayCheckout(tier, interval);
+      // Create Razorpay Subscription Checkout Order with server-authoritative pricing
+      const res = await billingApi.createRazorpayCheckout(interval);
 
       if (res && res.subscriptionId) {
-        // Prepare Razorpay Modal Configuration using server-provided public Key ID
         const options = {
           key: res.keyId,
           amount: res.amount,
           currency: res.currency || 'INR',
-          name: 'STRIVA Fitness Engine',
-          description: `STRIVA ${tier.toUpperCase()} Membership (${interval})`,
+          name: 'STRIVA Fitness Operating System',
+          description: `STRIVA Membership (${interval === 'yearly' ? 'Annual' : 'Monthly'})`,
           subscription_id: res.subscriptionId,
           handler: async (response: any) => {
             try {
@@ -47,198 +43,243 @@ export const PricingPage: React.FC = () => {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_subscription_id: response.razorpay_subscription_id || res.subscriptionId,
                 razorpay_signature: response.razorpay_signature,
-                tier,
-                interval
+                interval,
               });
-              navigate(`/checkout/success?tier=${tier}&interval=${interval}`);
+              navigate(`/checkout/success?interval=${interval}`);
             } catch (vErr: any) {
               setError(vErr?.message || 'Payment signature verification failed.');
             }
           },
           prefill: {
-            name: 'Member User',
-            email: 'member@striva.fit'
+            name: 'STRIVA Athlete',
           },
           theme: {
-            color: '#F97316'
-          }
+            color: '#F97316',
+          },
         };
 
         if (window.Razorpay) {
           const rzp = new window.Razorpay(options);
           rzp.on('payment.failed', function (response: any) {
-            setError(`Payment failed: ${response?.error?.description || 'Transaction declined'}`);
+            setError(`Payment declined: ${response?.error?.description || 'Transaction unsuccessful'}`);
           });
           rzp.open();
         } else {
-          setError('Razorpay Checkout SDK failed to load. Please disable ad-blockers and try again.');
+          setError('Razorpay Checkout SDK is unavailable. Please check your connection or ad-blocker settings.');
         }
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to initiate Razorpay checkout');
+      setError(err?.message || 'Failed to initiate checkout. Please try again.');
     } finally {
-      setLoadingTier(null);
+      setIsLoading(false);
     }
   };
 
+  const ctaLabel = isLoading
+    ? 'Preparing Checkout...'
+    : isActive
+    ? 'Active Membership'
+    : isExpired
+    ? 'Continue with STRIVA'
+    : isTrial
+    ? `Continue with STRIVA (${daysRemaining}d left in trial)`
+    : 'Start with 14 Days Free';
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#050608] text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-orange-500/30 selection:text-white">
+      <div className="max-w-3xl mx-auto space-y-8">
         
-        {/* Header */}
-        <div className="flex flex-col items-center text-center space-y-4">
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
           <button 
-            onClick={() => navigate('/dashboard')} 
-            className="self-start flex items-center text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            onClick={() => navigate('/v3/billing')} 
+            className="inline-flex items-center text-xs font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Billing
           </button>
           
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-semibold uppercase tracking-wider">
-            <CreditCard className="w-3.5 h-3.5" /> Razorpay Powered • INR & Global Cards
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 text-[11px] font-medium">
+            <CreditCard className="w-3.5 h-3.5 text-orange-400" />
+            <span>Secure Razorpay Checkout</span>
           </div>
-          
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Upgrade Your STRIVA Engine
-          </h1>
-          <p className="text-slate-400 max-w-2xl text-sm sm:text-base">
-            Accelerate your transformation with AI Coaching, advanced analytics, and personal trainer guidance.
-          </p>
+        </div>
 
-          {/* Billing Interval Toggle */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl">
+        {/* Header */}
+        <div className="text-center space-y-3 pt-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>14-Day Free Trial Included</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white font-display">
+            STRIVA
+          </h1>
+          <p className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto font-sans leading-relaxed">
+            Your AI-powered fitness operating system. Start with 14 days free. Continue with STRIVA for ₹799/month or ₹6,999/year.
+          </p>
+        </div>
+
+        {/* Billing Interval Selector */}
+        <div className="flex justify-center">
+          <div 
+            role="radiogroup" 
+            aria-label="Billing Interval"
+            className="inline-flex items-center bg-[#090B10] border border-slate-800 p-1 rounded-2xl"
+          >
             <button
+              type="button"
+              role="radio"
+              aria-checked={interval === 'monthly'}
               onClick={() => setInterval('monthly')}
-              className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all ${
-                interval === 'monthly' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+              className={`px-5 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                interval === 'monthly'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Monthly Billing
+              Monthly · ₹799/mo
             </button>
             <button
+              type="button"
+              role="radio"
+              aria-checked={interval === 'yearly'}
               onClick={() => setInterval('yearly')}
-              className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                interval === 'yearly' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+              className={`px-5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                interval === 'yearly'
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Yearly Billing
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full">
-                Save 20%
+              <span>Annual · ₹6,999/yr</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                interval === 'yearly'
+                  ? 'bg-black/30 text-white'
+                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+              }`}>
+                Save ~27%
               </span>
             </button>
           </div>
         </div>
 
+        {/* Error Alert */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-4 rounded-xl text-center">
-            {error}
+          <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs sm:text-sm p-4 rounded-2xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          
-          {/* FREE TIER */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all">
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white">Free Starter</h3>
-              <p className="text-slate-400 text-xs">Essential tracking for casual fitness enthusiasts.</p>
-              <div className="flex items-baseline text-white">
-                <span className="text-4xl font-extrabold">₹0</span>
-                <span className="text-slate-500 text-xs ml-1">/ forever</span>
-              </div>
+        {/* Single Canonical Plan Card */}
+        <div className="bg-[#0C0E14] border border-slate-800/80 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+          {interval === 'yearly' && (
+            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-2xl shadow-sm">
+              Best Value
+            </div>
+          )}
 
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-4 border-t border-slate-800">
-                <li className="flex items-center"><Check className="w-4 h-4 text-emerald-400 mr-2 shrink-0" /> Unlimited Workout Logging</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-emerald-400 mr-2 shrink-0" /> Full Exercise Library Access</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-emerald-400 mr-2 shrink-0" /> 5 AI Coach Queries / day</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-emerald-400 mr-2 shrink-0" /> 1 AI Plan Generation / mo</li>
-                <li className="flex items-center text-slate-500"><Check className="w-4 h-4 text-slate-600 mr-2 shrink-0" /> 7-Day History Tracking</li>
-              </ul>
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 border-b border-slate-800/80 pb-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                STRIVA Membership
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Full access to the complete STRIVA intelligence and execution suite.
+              </p>
             </div>
 
-            <button
-              onClick={() => handleSelectTier('free')}
-              className="mt-8 w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
-            >
-              Current Plan
-            </button>
+            <div className="text-left sm:text-right">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                  {interval === 'yearly' ? '₹6,999' : '₹799'}
+                </span>
+                <span className="text-xs sm:text-sm text-slate-400 font-medium">
+                  {interval === 'yearly' ? '/ year' : '/ month'}
+                </span>
+              </div>
+              {interval === 'yearly' ? (
+                <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                  Equivalent to ~₹583/month · Save ~27%
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Billed monthly · Cancel anytime
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* PRO TIER */}
-          <div className="bg-gradient-to-b from-slate-900 to-slate-900/80 border-2 border-orange-500/80 rounded-2xl p-6 flex flex-col justify-between relative shadow-2xl shadow-orange-500/10 transform hover:-translate-y-1 transition-all">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-md">
-              Most Popular
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                STRIVA Pro <Zap className="w-4 h-4 text-orange-400 fill-orange-400" />
-              </h3>
-              <p className="text-slate-400 text-xs">For dedicated athletes seeking maximum results.</p>
-              <div className="flex items-baseline text-white">
-                <span className="text-4xl font-extrabold">{interval === 'monthly' ? '₹1,499' : '₹1,249'}</span>
-                <span className="text-slate-400 text-xs ml-1">/ month</span>
-              </div>
-              {interval === 'yearly' && <p className="text-[11px] text-emerald-400 font-medium">Billed annually (₹14,990/yr)</p>}
-
-              <ul className="space-y-2.5 text-xs text-slate-200 pt-4 border-t border-slate-800">
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> Everything in Free</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 100 AI Coach Queries / day</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 10 AI Workout & Diet Plans / mo</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> 1-Year Historical Analytics</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-orange-400 mr-2 shrink-0" /> Priority Email Support</li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleSelectTier('pro')}
-              disabled={loadingTier === 'pro'}
-              className="mt-8 w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center"
-            >
-              {loadingTier === 'pro' ? 'Initializing Razorpay...' : 'Pay with Razorpay'}
-            </button>
+          {/* Included Features List */}
+          <div className="py-6 space-y-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Everything included in STRIVA:
+            </span>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300 pt-1">
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>TRINETRA AI Coach</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Personalized workouts</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Nutrition guidance</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Progress tracking</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Hydration tracking</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Personalized fitness memory</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>AI recommendations</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Workout logging</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Nutrition logging</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-orange-400 shrink-0" />
+                <span>Biometric insights</span>
+              </li>
+            </ul>
           </div>
 
-          {/* ELITE TIER */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-indigo-500/50 transition-all">
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                STRIVA Elite <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
-              </h3>
-              <p className="text-slate-400 text-xs">Unrestricted power with 1-on-1 Personal Trainer guidance.</p>
-              <div className="flex items-baseline text-white">
-                <span className="text-4xl font-extrabold">{interval === 'monthly' ? '₹3,999' : '₹3,332'}</span>
-                <span className="text-slate-400 text-xs ml-1">/ month</span>
-              </div>
-              {interval === 'yearly' && <p className="text-[11px] text-emerald-400 font-medium">Billed annually (₹39,990/yr)</p>}
-
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-4 border-t border-slate-800">
-                <li className="flex items-center"><Check className="w-4 h-4 text-indigo-400 mr-2 shrink-0" /> Everything in Pro</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-indigo-400 mr-2 shrink-0" /> <strong>Unlimited AI Coach Queries</strong></li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-indigo-400 mr-2 shrink-0" /> <strong>Unlimited AI Plan Generations</strong></li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-indigo-400 mr-2 shrink-0" /> 1-on-1 PT Assignment Included</li>
-                <li className="flex items-center"><Check className="w-4 h-4 text-indigo-400 mr-2 shrink-0" /> 24/7 VIP Priority Support</li>
-              </ul>
-            </div>
-
+          {/* CTA & Actions */}
+          <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center gap-4">
             <button
-              onClick={() => handleSelectTier('elite')}
-              disabled={loadingTier === 'elite'}
-              className="mt-8 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center"
+              onClick={handleCheckout}
+              disabled={isLoading || isActive}
+              className="w-full sm:flex-1 py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              {loadingTier === 'elite' ? 'Initializing Razorpay...' : 'Get Elite with Razorpay'}
+              <span>{ctaLabel}</span>
             </button>
           </div>
-
         </div>
 
-        <div className="flex items-center justify-center gap-6 text-slate-500 text-xs pt-8 border-t border-slate-900">
-          <span className="flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-emerald-500" /> Cancel anytime</span>
+        {/* Footer Guarantees */}
+        <div className="flex flex-wrap items-center justify-center gap-6 text-slate-500 text-xs pt-4 border-t border-slate-900 text-center">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>Cancel anytime</span>
+          </span>
           <span>•</span>
           <span>Razorpay HMAC Encrypted</span>
           <span>•</span>
-          <span>UPI, Cards, NetBanking</span>
+          <span>UPI, RuPay, Cards & NetBanking</span>
         </div>
 
       </div>

@@ -27,10 +27,10 @@ export const CheckoutCancelPage: React.FC = () => {
             <RefreshCw className="w-3.5 h-3.5" /> Try Again
           </button>
           <button
-            onClick={() => navigate('/dashboard')}
-            className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+            onClick={() => navigate('/v3/billing')}
+            className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Billing
           </button>
         </div>
       </div>

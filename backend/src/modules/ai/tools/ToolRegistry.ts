@@ -4,9 +4,6 @@ export class ToolRegistry {
   private tools: Map<string, BaseTool<any, any>> = new Map();
 
   public register(tool: BaseTool<any, any>): void {
-    if (this.tools.has(tool.name)) {
-      throw new Error(`Tool ${tool.name} is already registered.`);
-    }
     this.tools.set(tool.name, tool);
   }
 
@@ -14,10 +11,21 @@ export class ToolRegistry {
     return this.tools.get(name);
   }
 
+  public hasTool(name: string): boolean {
+    return this.tools.has(name);
+  }
+
+  public listTools(): BaseTool<any, any>[] {
+    return Array.from(this.tools.values());
+  }
+
   public getAllDefinitions(): any[] {
-    return Array.from(this.tools.values()).map(tool => tool.getDefinition());
+    return Array.from(this.tools.values()).map((tool) => tool.getDefinition());
+  }
+
+  public clear(): void {
+    this.tools.clear();
   }
 }
 
-// Singleton registry for the runtime
 export const toolRegistry = new ToolRegistry();

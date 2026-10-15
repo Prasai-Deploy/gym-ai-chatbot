@@ -30,13 +30,13 @@ export const AccountSettingsSection: React.FC<AccountSettingsSectionProps> = Rea
         <button
           type="button"
           onClick={onNavigateBilling}
-          className="w-full flex items-center justify-between py-3 min-h-[44px] text-left hover:text-white transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+          className="w-full flex items-center justify-between py-3 min-h-[44px] text-left hover:text-white transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 rounded cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
-            <CreditCard className="w-4 h-4 text-orange-400" />
+            <CreditCard className="w-4 h-4 text-lime-400" />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-white">Subscription & Plan</span>
-              <span className="text-[11px] text-slate-400">PRO Membership • Active</span>
+              <span className="text-xs text-slate-400">STRIVA Membership • Active</span>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
@@ -46,13 +46,13 @@ export const AccountSettingsSection: React.FC<AccountSettingsSectionProps> = Rea
         <button
           type="button"
           onClick={onNavigateSecurity}
-          className="w-full flex items-center justify-between py-3 min-h-[44px] text-left hover:text-white transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+          className="w-full flex items-center justify-between py-3 min-h-[44px] text-left hover:text-white transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 rounded cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             <Lock className="w-4 h-4 text-indigo-400" />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-white">Security & Passwords</span>
-              <span className="text-[11px] text-slate-400">2-Factor Authentication & session tokens</span>
+              <span className="text-xs text-slate-400">Password, 2-factor authentication & session security</span>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
@@ -62,7 +62,7 @@ export const AccountSettingsSection: React.FC<AccountSettingsSectionProps> = Rea
       {/* Sign Out Button */}
       <div className="pt-2">
         <Button
-          variant="destructive"
+          variant="danger"
           size="md"
           className="w-full font-bold"
           leftIcon={<LogOut className="w-4 h-4" />}

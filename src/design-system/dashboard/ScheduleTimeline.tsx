@@ -20,7 +20,7 @@ export interface ScheduleTimelineProps {
 export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = React.memo(({
   events = [
     { id: '1', time: '08:00 AM', title: 'Hydration & Pre-Workout Meal', type: 'nutrition', status: 'completed' },
-    { id: '2', time: '05:30 PM', title: 'Hypertrophy Chest & Triceps Blast', trainer: 'Coach Trinity AI', type: 'workout', status: 'in-progress' },
+    { id: '2', time: '05:30 PM', title: 'Hypertrophy Chest & Triceps Blast', trainer: 'Coach TRINETRA AI', type: 'workout', status: 'in-progress' },
     { id: '3', time: '08:30 PM', title: 'Post-Workout Anabolic Meal & Mobility Work', type: 'recovery', status: 'upcoming' },
   ],
   className,

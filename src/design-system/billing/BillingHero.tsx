@@ -33,7 +33,7 @@ export const BillingHero: React.FC<BillingHeroProps> = React.memo(({
             REVENUE OPERATING SYSTEM
           </Badge>
           <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY FINANCIAL ADVISOR
+            TRINETRA FINANCIAL ADVISOR
           </Badge>
         </div>
 

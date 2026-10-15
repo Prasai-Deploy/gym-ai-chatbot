@@ -15,7 +15,7 @@ export interface ProfileMenuProps {
 }
 
 export const ProfileMenu: React.FC<ProfileMenuProps> = React.memo(({
-  user = { name: 'Gym Member', email: 'member@striva.app', role: 'PRO Member' },
+  user = { name: 'Gym Member', email: 'member@striva.app', role: 'STRIVA Member' },
   onNavigate,
   onLogout,
 }) => {

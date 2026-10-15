@@ -10,10 +10,11 @@ export type AgentId =
 
 export interface AgentContext {
   userId: string;
-  organizationId: string;
+  organizationId?: string | null;
   conversationId: string;
   userRole: string;
   agentId: AgentId;
+  scope?: 'consumer' | 'organization_advisor';
   memoryContext?: string;
   toolResults?: Record<string, any>;
 }
@@ -63,7 +64,7 @@ export interface MemoryRecord {
 export interface UsageAnalytics {
   id?: string;
   agentId: AgentId | string;
-  organizationId: string;
+  organizationId?: string | null;
   userId: string;
   sessionId?: string;
   provider: string;
@@ -80,3 +81,29 @@ export interface UsageAnalytics {
   createdAt?: string;
   tokensUsed?: number;
 }
+
+export interface ConsumerUsageItem {
+  id: string;
+  agentId: string;
+  model: string;
+  provider: string;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  durationMs: number;
+  success: boolean;
+  errorCategory: string | null;
+  createdAt: string;
+}
+
+export interface ConsumerAnalyticsSummary {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalTokens: number;
+  averageDurationMs: number;
+  recentUsage: ConsumerUsageItem[];
+}
+

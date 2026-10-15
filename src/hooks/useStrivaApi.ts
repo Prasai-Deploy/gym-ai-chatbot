@@ -4,26 +4,14 @@ import { supabase } from '../lib/supabase';
 import { useEffect } from 'react';
 
 // ==========================================
-// 1. Dashboard API Hook
+// 1. Dashboard API Hook (Canonical Identity & Today Endpoint)
 // ==========================================
 export function useDashboardData() {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      try {
-        const data = await httpClient.get('/identity/profile');
-        return data;
-      } catch (err) {
-        return {
-          recoveryScore: 88,
-          dailyMission: 'Hypertrophy Upper Body Push & Core Focus',
-          coachRecommendation: 'Perform 4 sets of Bench Press at 85% 1RM. Maintain 90s rest.',
-          caloriesTarget: 2650,
-          caloriesLogged: 1940,
-          hydrationMl: 2500,
-          weeklyStreak: 5,
-        };
-      }
+      const data: any = await httpClient.get('/identity/me');
+      return data?.data || data;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -38,25 +26,15 @@ export function useCoachData() {
   const query = useQuery({
     queryKey: ['coach', 'history'],
     queryFn: async () => {
-      try {
-        const res: any = await httpClient.get('/ai/insights');
-        return res?.insights || [];
-      } catch (err) {
-        return [
-          { id: '1', role: 'assistant', content: "Hello! I'm Coach Trinity. Ready to crush today's upper body workout?", timestamp: '10:00 AM' },
-        ];
-      }
+      const res: any = await httpClient.get('/ai/insights');
+      return res?.insights || res?.data || [];
     },
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string) => {
-      try {
-        const res = await httpClient.post('/ai/chat', { prompt: messageText });
-        return res;
-      } catch (err) {
-        return { reply: `Coach Trinity: I analyzed your workout history. Great momentum!` };
-      }
+      const res = await httpClient.post('/ai/chat', { prompt: messageText });
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coach', 'history'] });
@@ -67,46 +45,85 @@ export function useCoachData() {
 }
 
 // ==========================================
-// 3. Workout Engine API Hook
+// 3. Workout Engine API Hook (Canonical V2 Workouts Endpoint)
 // ==========================================
+export interface LogSetPayload {
+  sessionId: string;
+  exercise_id?: string;
+  exerciseId?: string; // backwards compatibility alias
+  weight_kg?: number;
+  weightKg?: number; // backwards compatibility alias
+  reps?: number;
+  rpe?: number;
+}
+
 export function useWorkoutData() {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['workout', 'current'],
+    queryKey: ['workout', 'today'],
     queryFn: async () => {
-      try {
-        const data = await httpClient.get('/workouts/current');
-        return data;
-      } catch (err) {
-        return {
-          workoutTitle: 'Hypertrophy Upper Body Push',
-          durationMinutes: 45,
-          totalVolumeKg: 12450,
-          exercisesCount: 5,
-        };
-      }
+      const res: any = await httpClient.get('/workouts/today');
+      return res?.data || res;
+    },
+  });
+
+  const startSessionMutation = useMutation({
+    mutationFn: async (payload?: { planId?: string; title?: string }) => {
+      const res: any = await httpClient.post('/workouts/sessions/start', payload || {});
+      return res?.data || res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout', 'today'] });
     },
   });
 
   const logSetMutation = useMutation({
-    mutationFn: async (setPayload: { exerciseId: string; weightKg: number; reps: number; rpe: number }) => {
-      try {
-        return await httpClient.post('/workouts/sets', setPayload);
-      } catch (err) {
-        return { success: true };
-      }
+    mutationFn: async (setPayload: LogSetPayload) => {
+      const rawExerciseId = setPayload.exercise_id || setPayload.exerciseId;
+      const isUuid = rawExerciseId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawExerciseId.trim());
+      const normalizedExerciseId = isUuid ? rawExerciseId.trim() : null;
+
+      const backendPayload = {
+        sessionId: setPayload.sessionId,
+        exercise_id: normalizedExerciseId,
+        weight_kg: setPayload.weight_kg ?? setPayload.weightKg ?? 0,
+        reps: setPayload.reps ?? 0,
+        rpe: setPayload.rpe,
+      };
+      const res: any = await httpClient.post('/workouts/sets', backendPayload);
+      return res?.data || res;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workout', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['workout', 'today'] });
     },
   });
 
-  return { ...query, logSet: logSetMutation.mutateAsync, isLoggingSet: logSetMutation.isPending };
+  const completeSessionMutation = useMutation({
+    mutationFn: async ({ sessionId, notes }: { sessionId: string; notes?: string }) => {
+      const res: any = await httpClient.post(`/workouts/sessions/${sessionId}/complete`, { notes });
+      return res?.data || res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout', 'today'] });
+    },
+  });
+
+  return {
+    ...query,
+    activeSession: query.data?.activeSession ?? null,
+    latestPlan: query.data?.latestPlan ?? null,
+    startSession: startSessionMutation.mutateAsync,
+    isStartingSession: startSessionMutation.isPending,
+    logSet: logSetMutation.mutateAsync,
+    isLoggingSet: logSetMutation.isPending,
+    completeSession: completeSessionMutation.mutateAsync,
+    isCompletingSession: completeSessionMutation.isPending,
+  };
 }
 
 // ==========================================
-// 4. Nutrition & Recovery API Hook
+// 4. Nutrition & Recovery API Hook (Canonical V2 Nutrition Endpoint)
 // ==========================================
 export function useNutritionData() {
   const queryClient = useQueryClient();
@@ -114,28 +131,15 @@ export function useNutritionData() {
   const query = useQuery({
     queryKey: ['nutrition', 'daily'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/progress/nutrition');
-      } catch (err) {
-        return {
-          targetCalories: 2650,
-          consumedCalories: 1940,
-          proteinG: 180,
-          carbsG: 220,
-          fatsG: 65,
-          hydrationMl: 2500,
-        };
-      }
+      const res: any = await httpClient.get('/nutrition/daily');
+      return res?.data || res;
     },
+    retry: false,
   });
 
   const logWaterMutation = useMutation({
     mutationFn: async (amountMl: number) => {
-      try {
-        return await httpClient.post('/progress/water', { amountMl });
-      } catch (err) {
-        return { success: true };
-      }
+      return await httpClient.post('/nutrition/water', { amount_ml: amountMl });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'daily'] });
@@ -146,22 +150,14 @@ export function useNutritionData() {
 }
 
 // ==========================================
-// 5. Progress Analytics API Hook
+// 5. Progress Analytics API Hook (Canonical V2 Progress Endpoint)
 // ==========================================
 export function useProgressData() {
   return useQuery({
-    queryKey: ['progress', 'analytics'],
+    queryKey: ['progress', 'statistics'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/progress/summary');
-      } catch (err) {
-        return {
-          healthScore: 92,
-          currentStreak: 14,
-          weightChangeKg: -1.8,
-          strengthGrowthPct: 14.5,
-        };
-      }
+      const res: any = await httpClient.get('/progress/statistics');
+      return res?.data || res;
     },
   });
 }
@@ -173,16 +169,8 @@ export function useOwnerData() {
   return useQuery({
     queryKey: ['owner', 'dashboard'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/admin/business');
-      } catch (err) {
-        return {
-          mrr: 48250,
-          activeMembers: 1240,
-          todayAttendance: 680,
-          activeTrainers: 12,
-        };
-      }
+      const res: any = await httpClient.get('/analytics/executive');
+      return res?.data || res;
     },
   });
 }
@@ -194,15 +182,8 @@ export function useTrainerData() {
   return useQuery({
     queryKey: ['trainer', 'workspace'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/admin/trainer/clients');
-      } catch (err) {
-        return {
-          activeClientsCount: 24,
-          pendingCheckInsCount: 3,
-          sessionsTodayCount: 5,
-        };
-      }
+      const res: any = await httpClient.get('/analytics/trainers');
+      return res?.data || res;
     },
   });
 }
@@ -214,21 +195,14 @@ export function useMembersData(search?: string, filter?: string) {
   return useQuery({
     queryKey: ['members', search, filter],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/admin/members', { params: { search, filter } });
-      } catch (err) {
-        return {
-          totalCount: 1240,
-          avgHealthScore: 88,
-          churnRiskCount: 14,
-        };
-      }
+      const res: any = await httpClient.get('/analytics/members', { params: { search, filter } });
+      return res?.data || res;
     },
   });
 }
 
 // ==========================================
-// 9. Attendance & Access Control API Hook (With Realtime)
+// 9. Attendance & Access Control API Hook
 // ==========================================
 export function useAttendanceData() {
   const queryClient = useQueryClient();
@@ -236,22 +210,15 @@ export function useAttendanceData() {
   const query = useQuery({
     queryKey: ['attendance', 'live'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/admin/attendance');
-      } catch (err) {
-        return {
-          occupancyCount: 142,
-          maxCapacity: 200,
-          totalCheckinsToday: 680,
-        };
-      }
+      const res: any = await httpClient.get('/analytics/attendance');
+      return res?.data || res;
     },
   });
 
   useEffect(() => {
     const channel = supabase
       .channel('attendance-turnstile-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'organization_audit_logs' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance_logs' }, () => {
         queryClient.invalidateQueries({ queryKey: ['attendance', 'live'] });
       })
       .subscribe();
@@ -271,16 +238,42 @@ export function useBillingData() {
   return useQuery({
     queryKey: ['billing', 'metrics'],
     queryFn: async () => {
-      try {
-        return await httpClient.get('/billing/subscriptions');
-      } catch (err) {
-        return {
-          mrr: 48250,
-          arr: 579000,
-          ltv: 1840,
-          forecast90Days: 158000,
-        };
-      }
+      const res: any = await httpClient.get('/billing/subscriptions');
+      return res?.data || res;
     },
   });
+}
+
+// ==========================================
+// 11. Canonical Member Home Composite API Hook
+// ==========================================
+export function useMemberHomeData() {
+  const userQuery = useDashboardData();
+  const workoutQuery = useWorkoutData();
+  const nutritionQuery = useNutritionData();
+  const progressQuery = useProgressData();
+
+  const isLoading = userQuery.isLoading;
+  const isError = userQuery.isError || workoutQuery.isError || nutritionQuery.isError || progressQuery.isError;
+  const error = userQuery.error || workoutQuery.error || nutritionQuery.error || progressQuery.error;
+
+  const refetchAll = () => {
+    userQuery.refetch();
+    workoutQuery.refetch();
+    nutritionQuery.refetch();
+    progressQuery.refetch();
+  };
+
+  return {
+    userData: userQuery.data,
+    workoutData: workoutQuery.data,
+    nutritionData: nutritionQuery.data,
+    progressData: progressQuery.data,
+    logWater: nutritionQuery.logWater,
+    isLoggingWater: nutritionQuery.isLoggingWater,
+    isLoading,
+    isError,
+    error,
+    refetchAll,
+  };
 }

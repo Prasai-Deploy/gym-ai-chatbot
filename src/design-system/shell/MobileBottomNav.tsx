@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Dumbbell, Bot, Flame, PieChart, User } from '../icons';
+import { Dumbbell, Bot, Flame, PieChart, TrendingUp, User } from '../icons';
 import { cn } from '../tokens';
 
 export interface MobileBottomNavProps {
@@ -14,9 +14,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = React.memo(({
 }) => {
   const items = [
     { id: 'dashboard', label: 'Home', path: '/v3/dashboard', icon: <Dumbbell className="w-4 h-4" /> },
-    { id: 'coach', label: 'Trinity', path: '/v3/coach', icon: <Bot className="w-4 h-4" /> },
+    { id: 'coach', label: 'Coach', path: '/v3/coach', icon: <Bot className="w-4 h-4" /> },
     { id: 'workout', label: 'Workout', path: '/v3/workout', icon: <Flame className="w-4 h-4" /> },
     { id: 'nutrition', label: 'Nutrition', path: '/v3/nutrition', icon: <PieChart className="w-4 h-4" /> },
+    { id: 'progress', label: 'Progress', path: '/v3/progress', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'profile', label: 'Profile', path: '/v3/profile', icon: <User className="w-4 h-4" /> },
   ];
 
@@ -27,6 +28,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = React.memo(({
     >
       {items.map((item) => {
         const isActive = currentPath === item.path || (item.path !== '/v3/dashboard' && currentPath.startsWith(item.path));
+        const isCoach = item.id === 'coach';
+
         return (
           <button
             key={item.id}
@@ -34,20 +37,34 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = React.memo(({
             onClick={() => onNavigate(item.path)}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'relative flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[56px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
-              isActive ? 'text-orange-400 font-bold' : 'text-slate-400 font-medium hover:text-white'
+              'relative flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[56px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090B10]',
+              isCoach ? 'focus-visible:ring-indigo-500' : 'focus-visible:ring-lime-500',
+              isActive
+                ? isCoach
+                  ? 'text-indigo-300 font-bold'
+                  : 'text-lime-400 font-bold'
+                : 'text-slate-400 font-medium hover:text-white'
             )}
           >
             {isActive && (
               <motion.div
                 layoutId="mobileNavPill"
-                className="absolute inset-0 bg-orange-500/[0.08] rounded-xl border border-orange-500/20 shadow-sm"
+                className={cn(
+                  'absolute inset-0 rounded-xl border shadow-sm',
+                  isCoach
+                    ? 'bg-indigo-500/[0.12] border-indigo-500/30 shadow-indigo-500/10'
+                    : 'bg-lime-500/[0.10] border-lime-500/25 shadow-lime-500/10'
+                )}
                 transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               />
             )}
 
-            <span className={cn('relative z-10', isActive && 'text-orange-400')}>{item.icon}</span>
-            <span className="relative z-10 text-[10px] font-bold tracking-tight uppercase">{item.label}</span>
+            <span className={cn('relative z-10', isActive && (isCoach ? 'text-indigo-300' : 'text-lime-400'))}>
+              {item.icon}
+            </span>
+            <span className="relative z-10 text-[10px] font-bold tracking-tight uppercase font-sans">
+              {item.label}
+            </span>
           </button>
         );
       })}

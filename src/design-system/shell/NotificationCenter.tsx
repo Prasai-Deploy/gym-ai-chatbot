@@ -26,8 +26,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = React.memo(
     {
       id: '1',
       type: 'ai',
-      title: 'Trinity Plan Updated',
-      message: 'Trinity AI generated your new hypertrophy leg cycle for tomorrow.',
+      title: 'TRINETRA Plan Updated',
+      message: 'TRINETRA AI generated your new hypertrophy leg cycle for tomorrow.',
       time: '10m ago',
       unread: true,
     },

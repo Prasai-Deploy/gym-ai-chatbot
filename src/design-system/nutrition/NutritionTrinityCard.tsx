@@ -30,7 +30,7 @@ export const NutritionTrinityCard: React.FC<NutritionTrinityCardProps> = React.m
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-indigo-400" />
             <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-300 font-sans">
-              TRINITY
+              TRINETRA
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed font-sans">
@@ -40,7 +40,7 @@ export const NutritionTrinityCard: React.FC<NutritionTrinityCardProps> = React.m
       </div>
 
       <div className="flex items-center gap-1 text-xs font-semibold text-indigo-400 group-hover:text-indigo-300 shrink-0 transition-colors self-end sm:self-center">
-        <span>Ask Trinity</span>
+        <span>Ask TRINETRA</span>
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
       </div>
     </div>

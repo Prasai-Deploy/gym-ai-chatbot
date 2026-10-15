@@ -23,7 +23,7 @@ export class NutritionService {
     let totalCals = 0;
     
     logs.forEach(log => {
-      totalCals += (log.calories_consumed || 0);
+      totalCals += (log.calories ?? log.calories_consumed ?? 0);
     });
 
     const averageCalories = logs.length > 0 ? Math.round(totalCals / logs.length) : 0;

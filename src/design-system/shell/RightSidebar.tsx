@@ -37,12 +37,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
         </div>
       </Card>
 
-      {/* 2. Trinity Recommendation */}
+      {/* 2. TRINETRA Recommendation */}
       <div className="p-4 rounded-xl bg-indigo-500/[0.05] border border-indigo-500/20 flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-indigo-400" />
-            <span className="text-xs font-bold text-white tracking-tight">Trinity AI Coach</span>
+            <span className="text-xs font-bold text-white tracking-tight">TRINETRA AI Coach</span>
           </div>
           <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
             INSIGHT
@@ -52,7 +52,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           "Recovery readiness is at 84%. Focus on explosive tempos for squats and maintain 180g protein goal."
         </p>
         <Button variant="premium" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5" />} onClick={onOpenCoach}>
-          Consult Trinity
+          Consult TRINETRA
         </Button>
       </div>
 

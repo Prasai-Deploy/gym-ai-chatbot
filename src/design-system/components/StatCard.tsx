@@ -11,7 +11,7 @@ export interface StatCardProps {
     isPositive?: boolean;
   };
   icon?: React.ReactNode;
-  variant?: 'default' | 'primary' | 'ai';
+  variant?: 'default' | 'primary' | 'ai' | 'action' | 'lime';
   className?: string;
 }
 
@@ -28,6 +28,16 @@ export const StatCard: React.FC<StatCardProps> = ({
     default: 'bg-[#11141D] border-white/[0.07] hover:border-white/[0.14]',
     primary: 'bg-orange-500/[0.05] border-orange-500/20 hover:border-orange-500/35',
     ai: 'bg-indigo-500/[0.05] border-indigo-500/20 hover:border-indigo-500/35',
+    action: 'bg-lime-500/[0.05] border-lime-500/20 hover:border-lime-500/35',
+    lime: 'bg-lime-500/[0.05] border-lime-500/20 hover:border-lime-500/35',
+  };
+
+  const iconColors = {
+    default: 'text-slate-300',
+    primary: 'text-orange-400',
+    ai: 'text-indigo-400',
+    action: 'text-lime-400',
+    lime: 'text-lime-400',
   };
 
   return (
@@ -41,14 +51,14 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 font-sans">{title}</span>
         {icon && (
-          <div className="p-2 rounded-xl bg-white/[0.04] text-orange-400 group-hover:scale-105 transition-transform">
+          <div className={cn('p-2 rounded-xl bg-white/[0.04] group-hover:scale-105 transition-transform', iconColors[variant])}>
             {icon}
           </div>
         )}
       </div>
 
       <div className="flex items-baseline gap-1.5">
-        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">{value}</span>
+        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display tabular-nums">{value}</span>
         {unit && <span className="text-xs font-medium text-slate-400">{unit}</span>}
       </div>
 

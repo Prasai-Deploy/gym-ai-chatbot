@@ -32,7 +32,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
           key={idx}
           style={{ width, height }}
           className={cn(
-            'animate-pulse bg-slate-800/80 border border-white/5 shadow-inner',
+            'animate-pulse bg-[#181C28]/80 border border-white/[0.06] shadow-inner',
             variantStyles[variant],
             className
           )}

@@ -18,13 +18,13 @@ export const MinimalCompletionView: React.FC<MinimalCompletionViewProps> = React
   routineTitle,
   durationSeconds,
   totalExercises,
-  totalVolumeKg = 4820,
-  caloriesBurned = 520,
+  totalVolumeKg,
+  caloriesBurned,
   onDone,
   onViewProgress,
   className,
 }) => {
-  const durationMin = Math.floor(durationSeconds / 60);
+  const durationMin = Math.max(1, Math.floor(durationSeconds / 60));
 
   return (
     <div className={cn('w-full max-w-lg mx-auto flex flex-col items-center text-center gap-6 select-none py-6', className)}>
@@ -35,14 +35,14 @@ export const MinimalCompletionView: React.FC<MinimalCompletionViewProps> = React
 
       {/* 2. Completion Title & Routine Context */}
       <div className="flex flex-col gap-1.5 max-w-md">
-        <span className="text-[11px] font-bold text-orange-400 uppercase tracking-[0.16em]">
+        <span className="text-xs font-bold text-[#84CC16] uppercase tracking-wider">
           Workout Complete
         </span>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">
           {routineTitle}
         </h1>
-        <span className="text-xs text-slate-400 font-medium">
-          {totalExercises} / {totalExercises} exercises completed
+        <span className="text-xs text-slate-300 font-medium">
+          {totalExercises} of {totalExercises} exercises completed
         </span>
       </div>
 
@@ -50,27 +50,27 @@ export const MinimalCompletionView: React.FC<MinimalCompletionViewProps> = React
       <div className="grid grid-cols-3 gap-3 w-full rounded-2xl bg-[#11141D] border border-white/[0.07] p-5 shadow-sm">
         <div className="flex flex-col items-center gap-1">
           <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
-            <Dumbbell className="w-3 h-3 text-slate-400" />
+            <Dumbbell className="w-3.5 h-3.5 text-slate-400" />
             Volume
           </span>
           <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
-            {totalVolumeKg.toLocaleString()} kg
+            {totalVolumeKg ? `${totalVolumeKg.toLocaleString()} kg` : '—'}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-1 border-x border-white/[0.06]">
           <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
-            <Flame className="w-3 h-3 text-slate-400" />
+            <Flame className="w-3.5 h-3.5 text-slate-400" />
             Calories
           </span>
           <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
-            {caloriesBurned} kcal
+            {caloriesBurned ? `${caloriesBurned} kcal` : '—'}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-1">
           <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
-            <Clock className="w-3 h-3 text-slate-400" />
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
             Duration
           </span>
           <span className="text-lg sm:text-xl font-bold text-white font-display tabular-nums">
@@ -82,9 +82,9 @@ export const MinimalCompletionView: React.FC<MinimalCompletionViewProps> = React
       {/* 4. Action Buttons */}
       <div className="flex flex-col gap-3 w-full sm:w-72 mt-2">
         <Button
-          variant="primary"
+          variant="lime"
           size="lg"
-          className="w-full font-bold shadow-md shadow-orange-500/20"
+          className="w-full font-bold shadow-lg shadow-[#84CC16]/20"
           onClick={onDone}
         >
           Done

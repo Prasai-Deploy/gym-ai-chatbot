@@ -10,17 +10,21 @@ export const workoutApi = {
   // -- Workout Programs (v2) --
   getPrograms: async (params?: any) => httpClient.get('/workouts/programs', { params }),
 
-  // -- Legacy-compatible aliases used by dashboard hooks --
-  // These are no longer backed by a v2 endpoint. The dashboard hooks will be
-  // migrated to use getSession/transitionState instead.
-  // Kept here to prevent 'not a function' crashes while migration is in progress.
-  getTodayWorkout: async () => httpClient.get('/workouts/programs'),
-  startWorkout: async (data: any) => httpClient.post('/workouts/sessions/start', data),
-  logProgress: async (data: any) => httpClient.post('/workouts/sessions/log', data),
-  completeWorkout: async (data: any) => httpClient.post('/workouts/sessions/complete', data),
-  getRecentActivity: async (limit: number) => httpClient.get(`/workouts/programs?limit=${limit}`),
-  getLatestPlan: async () => httpClient.get('/workouts/programs?latest=true'),
-  getHistory: async () => httpClient.get('/workouts/programs'),
-  getPlans: async (params: any) => httpClient.get('/workouts/programs', { params }),
-  completePlan: async (id: string, data: any) => httpClient.post(`/workouts/programs/${id}/complete`, data),
+  // -- Canonical V2 Workout Endpoints --
+  getTodayWorkout: async () => httpClient.get('/workouts/today'),
+  getHistory: async () => httpClient.get('/workouts/history'),
+  getPlans: async (params?: any) => httpClient.get('/workouts/plans', { params }),
+  startWorkout: async (data?: any) => httpClient.post('/workouts/sessions/start', data || {}),
+  completeWorkout: async (sessionIdOrData: any, data?: any) => {
+    const sessionId = typeof sessionIdOrData === 'string' ? sessionIdOrData : sessionIdOrData?.sessionId;
+    if (sessionId) {
+      return httpClient.post(`/workouts/sessions/${sessionId}/complete`, typeof sessionIdOrData === 'object' ? sessionIdOrData : data);
+    }
+    return httpClient.post('/workouts/sessions/complete', sessionIdOrData);
+  },
+  logSet: async (data: any) => httpClient.post('/workouts/sets', data),
+  logProgress: async (data: any) => httpClient.post('/workouts/sets', data),
+  getRecentActivity: async (limit: number = 20) => httpClient.get(`/workouts/history?limit=${limit}`),
+  getLatestPlan: async () => httpClient.get('/workouts/plans'),
+  completePlan: async (id: string, data?: any) => httpClient.patch(`/workouts/plans/${id}`, data),
 };

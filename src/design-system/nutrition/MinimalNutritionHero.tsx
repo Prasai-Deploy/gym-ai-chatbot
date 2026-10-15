@@ -11,16 +11,18 @@ export interface MinimalNutritionHeroProps {
   proteinLoggedGrams?: number;
   proteinTargetGrams?: number;
   headline?: string;
+  isTelemetryOffline?: boolean;
   className?: string;
 }
 
 export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.memo(({
   nutritionScore = 88,
-  caloriesLogged = 2240,
+  caloriesLogged,
   caloriesTarget = 2650,
-  proteinLoggedGrams = 148,
+  proteinLoggedGrams,
   proteinTargetGrams = 180,
-  headline = "You're on track today.",
+  headline,
+  isTelemetryOffline = false,
   className,
 }) => {
   // Circular arc gauge parameters
@@ -28,8 +30,12 @@ export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.m
   const strokeWidth = 9;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const percentage = Math.min(Math.max(nutritionScore, 0), 100);
+  const percentage = isTelemetryOffline ? 0 : Math.min(Math.max(nutritionScore, 0), 100);
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const displayHeadline = headline || (isTelemetryOffline
+    ? 'Meal and hydration data is currently unavailable.'
+    : "You're on track today.");
 
   const caloriePct = Math.min(Math.round((caloriesLogged / (caloriesTarget || 1)) * 100), 100);
   const proteinPct = Math.min(Math.round((proteinLoggedGrams / (proteinTargetGrams || 1)) * 100), 100);
@@ -58,7 +64,7 @@ export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.m
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#10B981"
+            stroke={isTelemetryOffline ? 'rgba(255, 255, 255, 0.12)' : '#10B981'}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
@@ -72,17 +78,17 @@ export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.m
         {/* Center Display Metric */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           <span className="text-4xl sm:text-5xl font-extrabold text-white font-display tracking-tight leading-none tabular-nums">
-            {nutritionScore}
+            {isTelemetryOffline ? '--' : nutritionScore}
           </span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mt-1 font-sans">
-            Nutrition Score
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1 font-sans">
+            {isTelemetryOffline ? 'Data Offline' : 'Nutrition Score'}
           </span>
         </div>
       </div>
 
       {/* Main Headline */}
       <p className="text-base sm:text-lg font-semibold text-white tracking-tight leading-snug max-w-sm">
-        {headline}
+        {displayHeadline}
       </p>
 
       {/* Two Supporting Primary Bars: Calories & Protein */}
@@ -92,10 +98,11 @@ export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.m
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Calories</span>
             <span className="text-white font-bold tabular-nums font-display">
-              {caloriesLogged.toLocaleString()} <span className="text-slate-400 font-normal font-sans">/ {caloriesTarget.toLocaleString()} kcal</span>
+              {isTelemetryOffline || caloriesLogged === undefined ? '--' : caloriesLogged.toLocaleString()}{' '}
+              <span className="text-slate-400 font-normal font-sans">/ {caloriesTarget.toLocaleString()} kcal</span>
             </span>
           </div>
-          <Progress value={caloriesLogged} max={caloriesTarget} variant="success" size="sm" />
+          <Progress value={isTelemetryOffline ? 0 : (caloriesLogged || 0)} max={caloriesTarget} variant="success" size="sm" />
         </div>
 
         {/* Protein */}
@@ -103,10 +110,11 @@ export const MinimalNutritionHero: React.FC<MinimalNutritionHeroProps> = React.m
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Protein</span>
             <span className="text-emerald-400 font-bold tabular-nums font-display">
-              {proteinLoggedGrams}g <span className="text-slate-400 font-normal font-sans">/ {proteinTargetGrams}g</span>
+              {isTelemetryOffline || proteinLoggedGrams === undefined ? '--' : `${proteinLoggedGrams}g`}{' '}
+              <span className="text-slate-400 font-normal font-sans">/ {proteinTargetGrams}g</span>
             </span>
           </div>
-          <Progress value={proteinLoggedGrams} max={proteinTargetGrams} variant="primary" size="sm" />
+          <Progress value={isTelemetryOffline ? 0 : (proteinLoggedGrams || 0)} max={proteinTargetGrams} variant="primary" size="sm" />
         </div>
       </div>
     </div>

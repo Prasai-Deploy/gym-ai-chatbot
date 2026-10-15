@@ -1,8 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProgressHero } from './ProgressHero';
 import { ProgressTrend } from './ProgressTrend';
-import { ProgressHighlights } from './ProgressHighlights';
-import { GoalProgress } from './GoalProgress';
 import { ProgressTrinityCard } from './ProgressTrinityCard';
 import { SecondaryProgressDetails } from './SecondaryProgressDetails';
 import { useProgressData } from '../../hooks/useStrivaApi';
@@ -19,10 +18,18 @@ export const ProgressLayout: React.FC<ProgressLayoutProps> = React.memo(({
   onNavigateCoach = () => console.log('Open Coach'),
   className,
 }) => {
-  const { data: progressData } = useProgressData();
+  const navigate = useNavigate();
+  const { data: progressData, isLoading, isError } = useProgressData();
 
-  const strengthGain = progressData?.strengthGrowthPct || 14.5;
-  const weightChange = progressData?.weightChangeKg || -1.8;
+  const workoutCount = progressData?.workout_count || 0;
+  const lifetimeVolume = progressData?.lifetime_volume_kg || 0;
+  const currentStreak = progressData?.current_streak || 0;
+  const longestStreak = progressData?.longest_streak || 0;
+  const trainingHours = progressData?.total_training_time_seconds
+    ? Math.round((progressData.total_training_time_seconds / 3600) * 10) / 10
+    : 0;
+
+  const hasHistory = workoutCount > 0;
 
   const formattedDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -42,40 +49,40 @@ export const ProgressLayout: React.FC<ProgressLayoutProps> = React.memo(({
         </h1>
       </div>
 
-      {/* 2. Primary Progress Hero */}
+      {/* 2. Primary Progress Hero with Real Statistics */}
       <ProgressHero
-        overallProgressPct={12}
-        strengthGainPct={Math.round(strengthGain)}
-        consistencyGainPct={9}
-        bodyChangePct={weightChange}
-        headline="You're moving in the right direction."
+        workoutCount={workoutCount}
+        totalVolumeKg={lifetimeVolume}
+        currentStreakDays={currentStreak}
+        trainingTimeHours={trainingHours}
+        hasHistory={hasHistory}
+        headline={hasHistory ? "Consistent effort builds elite conditioning." : "No training history recorded yet."}
+        onStartWorkout={() => navigate('/v3/workout')}
       />
 
-      {/* 3. Primary 12-Week Trend Line Chart */}
-      <ProgressTrend />
-
-      {/* 4. What's Improving Highlights */}
-      <ProgressHighlights />
-
-      {/* 5. Main Goal Milestone Progress */}
-      <GoalProgress
-        goalTitle="Hypertrophy & Strength Build"
-        progressPct={72}
-        totalWeeks={12}
-        completedWeeks={8}
-        projectionText="At your current pace, you're projected to reach your target in approximately 4 weeks."
+      {/* 3. Longitudinal Volume & Overload Trend Chart */}
+      <ProgressTrend
+        hasHistory={hasHistory}
+        trendPoints={hasHistory ? [lifetimeVolume] : []}
       />
 
-      {/* 6. Quiet Trinity AI Coach Consultation */}
+      {/* 4. TRINETRA AI Progress Coach Consultation */}
       <ProgressTrinityCard
-        insightText="Your strength is increasing consistently. Keep your current training frequency for the next 3 weeks."
+        insightText={
+          hasHistory
+            ? `You have logged ${workoutCount} workouts with ${lifetimeVolume.toLocaleString()} kg total volume. Maintain your training cadence to build compound endurance.`
+            : "TRINETRA AI is calibrated and ready. Record your first workout session to receive personalized volume and recovery intelligence."
+        }
         onAskTrinity={onNavigateCoach}
       />
 
-      {/* 7. Secondary Details & Personal Records */}
+      {/* 5. Secondary Details & Benchmark Milestones */}
       <SecondaryProgressDetails
-        totalVolumeKg={12450}
-        totalWorkouts={142}
+        totalVolumeKg={lifetimeVolume}
+        totalWorkouts={workoutCount}
+        longestStreak={longestStreak}
+        lastWorkoutDate={progressData?.last_workout_date}
+        personalRecords={[]}
       />
     </div>
   );

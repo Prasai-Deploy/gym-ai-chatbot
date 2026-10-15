@@ -10,10 +10,10 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
-    "dev:backend": "cd backend && npm run dev",
+    "dev:backend": "npm --workspace backend run dev",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "vite build",
-    "build:backend": "cd backend && npm install && npm run build",
+    "build:backend": "npm --workspace backend run build",
     "start": "node backend/dist/server.js",
     "deploy": "npm run build && npm run start"
   },
@@ -25,11 +25,11 @@
     "@tanstack/react-query": "^5.101.2",
     "@types/node-cron": "^3.0.11",
     "@vitejs/plugin-react": "^5.0.4",
-    "axios": "^1.16.0",
+    "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
-    "compression": "^1.7.4",
+    "compression": "^1.8.2",
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
@@ -86,18 +86,31 @@
   "overrides": {
     "form-data": "^4.0.6",
     "esbuild": "^0.28.1",
-    "js-yaml": "^4.2.0",
-    "qs": "^6.15.2",
-    "brace-expansion": "5.0.8",
+    "js-yaml": "^4.3.2",
+    "qs": "^6.16.0",
+    "brace-expansion": "5.0.12",
     "minimatch": {
-      "brace-expansion": "5.0.8"
+      "brace-expansion": "5.0.12"
     },
     "postcss": "^8.5.18",
     "@babel/core": "^7.29.6",
-    "vitest": "^3.2.6",
+    "vitest": "^4.1.11",
     "vite": "^6.4.3",
-    "fast-uri": "^4.1.1",
-    "shell-quote": "^1.10.0",
-    "react-router": "8.3.0"
+    "fast-uri": "^4.2.1",
+    "shell-quote": "^1.12.0",
+    "react-router": "8.3.0",
+    "proxy-addr": "^2.0.8",
+    "tinypool": "2.2.0",
+    "braces": "^3.0.3",
+    "body-parser": "^1.20.8",
+    "compression": "^1.8.2",
+    "source-map-js": "^1.2.2",
+    "fast-copy": "^3.0.3",
+    "axios": "^1.20.0",
+    "nanoid": "^3.3.18",
+    "browserslist": "^4.29.3",
+    "baseline-browser-mapping": "^2.11.28",
+    "postcss-selector-parser": "^7.1.6",
+    "@vitest/mocker": "^4.1.11"
   }
 }

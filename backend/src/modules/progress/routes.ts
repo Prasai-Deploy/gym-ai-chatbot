@@ -5,14 +5,15 @@ import { AchievementService } from './services/AchievementService';
 import { ProgressRepository } from './repositories/ProgressRepository';
 import { AchievementRepository } from './repositories/AchievementRepository';
 import { WorkoutEventSubscriber } from './subscribers/WorkoutEventSubscriber';
-import { supabase } from '@database/supabase';
+import { supabaseAdmin } from '@database/supabase';
 import { requireAuth } from '@middleware/auth';
+import { requireActiveEntitlement } from '@middleware/entitlement.middleware';
 
 const router = Router();
 
 // DI wiring
-const progressRepository = new ProgressRepository(supabase);
-const achievementRepository = new AchievementRepository(supabase);
+const progressRepository = new ProgressRepository(supabaseAdmin);
+const achievementRepository = new AchievementRepository(supabaseAdmin);
 
 const analyticsService = new ProgressAnalyticsService(progressRepository);
 const achievementService = new AchievementService(achievementRepository);
@@ -24,7 +25,13 @@ const eventSubscriber = new WorkoutEventSubscriber(analyticsService, achievement
 eventSubscriber.subscribe();
 
 // -- ROUTES --
-router.get('/statistics', requireAuth, controller.getStatistics);
+router.use(requireAuth);
+router.use(requireActiveEntitlement({ feature: 'progress' }));
+
+router.get('/statistics', controller.getStatistics);
+router.get('/summary', requireAuth, controller.getStatistics);
+router.get('/snapshots', requireAuth, controller.getSnapshots);
+router.get('/history', requireAuth, controller.getHistory);
 router.get('/achievements', requireAuth, controller.getAchievements);
 
 export const progressRouter = router;

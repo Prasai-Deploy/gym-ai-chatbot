@@ -30,14 +30,14 @@ export const ProfileGoals: React.FC<ProfileGoalsProps> = React.memo(({
     <div className={cn('w-full rounded-2xl bg-[#11141D] border border-white/[0.07] p-5 sm:p-6 flex flex-col gap-4 select-none shadow-sm', className)}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.12em] font-sans flex items-center gap-1.5">
-          <Target className="w-3.5 h-3.5 text-orange-400" />
+          <Target className="w-3.5 h-3.5 text-lime-400" />
           YOUR GOALS
         </span>
 
         <button
           type="button"
           onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-          className="text-xs font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+          className="text-xs font-semibold text-lime-400 hover:text-lime-300 flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 rounded"
         >
           {isEditing ? (
             <>
@@ -61,7 +61,7 @@ export const ProfileGoals: React.FC<ProfileGoalsProps> = React.memo(({
               type="text"
               value={primary}
               onChange={(e) => setPrimary(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -70,7 +70,7 @@ export const ProfileGoals: React.FC<ProfileGoalsProps> = React.memo(({
               type="text"
               value={secondary}
               onChange={(e) => setSecondary(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
             />
           </div>
         </div>

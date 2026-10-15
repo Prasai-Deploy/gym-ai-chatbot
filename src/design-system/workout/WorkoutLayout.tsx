@@ -26,12 +26,23 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
     { id: 'ex-3', name: 'Overhead Dumbbell Press', muscleGroup: 'Anterior Deltoids', targetSets: 4, completedSets: 0, status: 'upcoming' },
     { id: 'ex-4', name: 'Cable Tricep Pushdowns', muscleGroup: 'Triceps Lateral', targetSets: 4, completedSets: 0, status: 'upcoming' },
     { id: 'ex-5', name: 'Hanging Leg Raises', muscleGroup: 'Core & Abs', targetSets: 3, completedSets: 0, status: 'upcoming' },
-  ],
+  ] as QueueExercise[],
   onFinishWorkoutComplete = () => console.log('Workout finished'),
   onOpenCoach = () => console.log('Open Coach'),
   className,
 }) => {
-  const { logSet } = useWorkoutData();
+  const { activeSession, startSession, isStartingSession, logSet, isLoggingSet, completeSession } = useWorkoutData();
+
+  // Active Database Session State
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
+
+  // Sync active session from server if available
+  useEffect(() => {
+    if (activeSession?.id && !sessionId) {
+      setSessionId(activeSession.id);
+    }
+  }, [activeSession?.id, sessionId]);
 
   // Workflow State: 'preview' | 'active' | 'rest' | 'complete'
   const [workflowState, setWorkflowState] = useState<'preview' | 'active' | 'rest' | 'complete'>('preview');
@@ -68,51 +79,122 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
 
   const currentExercise = exercises[activeExIdx] || exercises[0];
 
-  const handleStartWorkout = useCallback(() => {
-    setWorkflowState('active');
-    setElapsedSec(0);
-  }, []);
+  const handleStartWorkout = useCallback(async () => {
+    setPersistenceError(null);
+    try {
+      let currentId = sessionId || activeSession?.id;
+      if (!currentId) {
+        const sessionRes = await startSession({ title: routineTitle });
+        currentId = sessionRes?.id;
+        if (currentId) {
+          setSessionId(currentId);
+        }
+      }
+      setWorkflowState('active');
+      setElapsedSec(0);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to start workout session on server';
+      setPersistenceError(`Session Initialization Error: ${msg}`);
+      // Still allow entering active view so user can retry upon set submission
+      setWorkflowState('active');
+      setElapsedSec(0);
+    }
+  }, [sessionId, activeSession?.id, startSession, routineTitle]);
 
   const handleCompleteSet = useCallback(async () => {
-    // Fire real API mutation asynchronously
-    try {
-      if (logSet) {
-        await logSet({
-          exerciseId: currentExercise.id || `ex-${activeExIdx + 1}`,
-          weightKg: currentWeightKg,
-          reps: currentReps,
-          rpe: 8,
-        });
+    setPersistenceError(null);
+
+    // 1. In-flight guard: prevent duplicate submissions
+    if (isLoggingSet) return;
+
+    // 2. Resolve active session ID, starting one if needed
+    let targetSessionId = sessionId || activeSession?.id;
+    if (!targetSessionId) {
+      try {
+        const started = await startSession({ title: routineTitle });
+        targetSessionId = started?.id;
+        if (targetSessionId) {
+          setSessionId(targetSessionId);
+        }
+      } catch (sessErr: any) {
+        const msg = sessErr?.response?.data?.message || sessErr?.message || 'Unable to establish active workout session';
+        setPersistenceError(`Session Error: ${msg}. Set was not saved.`);
+        return; // STOP: do not advance UI
       }
-    } catch {
-      // Graceful local progression
     }
 
-    const totalSetsForEx = currentExercise.targetSets || 4;
+    if (!targetSessionId) {
+      setPersistenceError('Active workout session required. Set was not saved to database.');
+      return; // STOP: do not advance UI
+    }
 
-    if (currentSetNumber < totalSetsForEx) {
-      // Move to next set with rest
-      setCurrentSetNumber((prev) => prev + 1);
-      setRestSec(90);
-      setWorkflowState('rest');
-    } else {
-      // Move to next exercise if available
-      if (activeExIdx < exercises.length - 1) {
-        setActiveExIdx((prev) => prev + 1);
-        setCurrentSetNumber(1);
+    // 3. Persist set to database
+    try {
+      const isUuid = currentExercise.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentExercise.id);
+      const exerciseIdToLog = isUuid ? currentExercise.id : undefined;
+
+      await logSet({
+        sessionId: targetSessionId,
+        exercise_id: exerciseIdToLog,
+        weight_kg: currentWeightKg,
+        reps: currentReps,
+        rpe: 8,
+      });
+
+      // 4. Advance UI strictly on confirmed server persistence
+      const totalSetsForEx = currentExercise.targetSets || 4;
+
+      if (currentSetNumber < totalSetsForEx) {
+        // Move to next set with rest
+        setCurrentSetNumber((prev) => prev + 1);
         setRestSec(90);
         setWorkflowState('rest');
       } else {
-        // Last exercise completed -> finish workout
-        setWorkflowState('complete');
+        // Move to next exercise if available
+        if (activeExIdx < exercises.length - 1) {
+          setActiveExIdx((prev) => prev + 1);
+          setCurrentSetNumber(1);
+          setRestSec(90);
+          setWorkflowState('rest');
+        } else {
+          // Last exercise completed -> finish workout and mark completed on server
+          if (targetSessionId) {
+            try {
+              await completeSession({ sessionId: targetSessionId });
+            } catch (compErr) {
+              console.warn('[WorkoutLayout] completeSession server error:', compErr);
+            }
+          }
+          setWorkflowState('complete');
+        }
       }
+    } catch (err: any) {
+      // 5. On persistence failure: do not advance UI, keep set retryable
+      const msg = err?.response?.data?.message || err?.message || 'Database error: Failed to save exercise set';
+      setPersistenceError(`Failed to save set: ${msg}. Please retry.`);
     }
-  }, [logSet, currentExercise, activeExIdx, exercises.length, currentSetNumber, currentWeightKg, currentReps]);
+  }, [
+    isLoggingSet,
+    sessionId,
+    activeSession?.id,
+    startSession,
+    routineTitle,
+    logSet,
+    currentExercise.id,
+    currentExercise.targetSets,
+    currentWeightKg,
+    currentReps,
+    currentSetNumber,
+    activeExIdx,
+    exercises.length,
+    completeSession
+  ]);
 
   const handlePrevExercise = useCallback(() => {
     if (activeExIdx > 0) {
       setActiveExIdx((prev) => prev - 1);
       setCurrentSetNumber(1);
+      setPersistenceError(null);
     }
   }, [activeExIdx]);
 
@@ -120,6 +202,7 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
     if (activeExIdx < exercises.length - 1) {
       setActiveExIdx((prev) => prev + 1);
       setCurrentSetNumber(1);
+      setPersistenceError(null);
     }
   }, [activeExIdx, exercises.length]);
 
@@ -148,13 +231,20 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
           currentReps={currentReps}
           previousBest={`${currentWeightKg - 2.5} kg × 10`}
           targetRange="8–10 reps"
+          isSavingSet={isLoggingSet || isStartingSession}
+          persistenceError={persistenceError}
           onWeightChange={setCurrentWeightKg}
           onRepsChange={setCurrentReps}
           onCompleteSet={handleCompleteSet}
           onPrevExercise={handlePrevExercise}
           onNextExercise={handleNextExercise}
-          onFinishWorkout={() => setWorkflowState('complete')}
-          onAskTrinity={onOpenCoach}
+          onFinishWorkout={() => {
+            if (sessionId) {
+              completeSession({ sessionId }).catch((e) => console.warn(e));
+            }
+            setWorkflowState('complete');
+          }}
+          onAskTrinetra={onOpenCoach}
           hasPrevExercise={activeExIdx > 0}
           hasNextExercise={activeExIdx < exercises.length - 1}
         />
@@ -174,10 +264,10 @@ export const WorkoutLayout: React.FC<WorkoutLayoutProps> = React.memo(({
       {workflowState === 'complete' && (
         <MinimalCompletionView
           routineTitle={routineTitle}
-          durationSeconds={elapsedSec || 3120}
+          durationSeconds={elapsedSec || 1800}
           totalExercises={exercises.length}
-          totalVolumeKg={4820}
-          caloriesBurned={520}
+          totalVolumeKg={undefined}
+          caloriesBurned={undefined}
           onDone={onFinishWorkoutComplete}
           onViewProgress={() => onFinishWorkoutComplete()}
         />

@@ -31,7 +31,7 @@ export const NutritionHero: React.FC<NutritionHeroProps> = React.memo(({
             DIET ADHERENCE: {nutritionScore}%
           </Badge>
           <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY DIET ENGINE
+            TRINETRA DIET ENGINE
           </Badge>
         </div>
 
@@ -39,7 +39,7 @@ export const NutritionHero: React.FC<NutritionHeroProps> = React.memo(({
           Nutrition & Recovery, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400">{userName}</span> 🥗
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-          You have achieved <span className="text-white font-bold">{nutritionScore}% of your macronutrient targets</span> today. Trinity AI has optimized your post-workout anabolic window.
+          You have achieved <span className="text-white font-bold">{nutritionScore}% of your macronutrient targets</span> today. TRINETRA AI has optimized your post-workout anabolic window.
         </p>
       </div>
 

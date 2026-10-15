@@ -31,7 +31,7 @@ export const MemberHero: React.FC<MemberHeroProps> = React.memo(({
             CUSTOMER SUCCESS PLATFORM
           </Badge>
           <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY RETENTION ENGINE
+            TRINETRA RETENTION ENGINE
           </Badge>
         </div>
 

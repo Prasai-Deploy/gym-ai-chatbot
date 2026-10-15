@@ -39,4 +39,34 @@ export class ProgressRepository extends BaseRepository<ProgressStatistics> {
       return fail(new AppError(err.message, 500));
     }
   }
+
+  public async getSnapshotsByUserId(userId: string): Promise<Result<any[], AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('progress_snapshots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('recorded_at', { ascending: false });
+
+      if (error) throw error;
+      return ok(data || []);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
+
+  public async getHistoryByUserId(userId: string): Promise<Result<any[], AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('progress_snapshots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('recorded_at', { ascending: false });
+
+      if (error) throw error;
+      return ok(data || []);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
 }

@@ -1,5 +1,29 @@
 import { z } from 'zod';
 
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(val: unknown): val is string {
+  return typeof val === 'string' && UUID_REGEX.test(val.trim());
+}
+
+/**
+ * Normalizes an optional exercise ID.
+ * If provided value is a valid UUID, preserves it.
+ * If provided value is null, undefined, or a non-UUID placeholder (e.g. 'ex-1', 'placeholder', 'none'),
+ * normalizes to null since exercise association is optional in exercise_sets.
+ */
+export function normalizeOptionalExerciseId(val: unknown): string | null {
+  if (!val) return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (UUID_REGEX.test(trimmed)) {
+      return trimmed;
+    }
+    return null;
+  }
+  return null;
+}
+
 export const WorkoutStateSchema = z.enum([
   'planned', 'ready', 'started', 'paused', 'completed', 'abandoned', 'cancelled'
 ]);

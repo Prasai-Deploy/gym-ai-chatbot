@@ -2,13 +2,13 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopNavigation } from './TopNavigation';
 import { MobileBottomNav } from './MobileBottomNav';
-import { FloatingActionButton } from './FloatingActionButton';
 import { RightSidebar } from './RightSidebar';
 import { NotificationCenter } from './NotificationCenter';
 import { CommandPalette } from './CommandPalette';
 import { ToastProvider } from '../components/Toast';
 import { ThemeProvider } from '../ThemeProvider';
 import { cn } from '../tokens';
+import { TrialCountdownBanner } from '../billing/TrialCountdownBanner';
 
 export interface AppShellProps {
   currentPath?: string;
@@ -46,17 +46,17 @@ export const AppShell: React.FC<AppShellProps> = ({
   }, [onNavigate]);
 
   const currentPageTitle = useMemo(() => {
-    if (currentPath.includes('/v3/coach')) return 'TRINITY AI INTELLIGENCE';
-    if (currentPath.includes('/v3/workout')) return 'WORKOUT EXECUTION';
-    if (currentPath.includes('/v3/nutrition')) return 'NUTRITION & METABOLISM';
-    if (currentPath.includes('/v3/progress')) return 'PROGRESS & BIOMETRICS';
-    if (currentPath.includes('/v3/billing')) return 'MEMBERSHIP & REVENUE';
-    if (currentPath.includes('/v3/profile')) return 'MEMBER PROFILE';
-    if (currentPath.includes('/v3/members')) return 'MEMBER DIRECTORY';
-    if (currentPath.includes('/v3/trainers')) return 'TRAINER ROSTER';
-    if (currentPath.includes('/v3/attendance')) return 'ACCESS & ATTENDANCE';
-    if (currentPath.includes('/admin')) return 'MANAGEMENT CONSOLE';
-    return 'DASHBOARD TELEMETRY';
+    if (currentPath.includes('/v3/coach')) return 'TRINETRA COACH';
+    if (currentPath.includes('/v3/workout')) return 'WORKOUT';
+    if (currentPath.includes('/v3/nutrition')) return 'NUTRITION';
+    if (currentPath.includes('/v3/progress')) return 'PROGRESS';
+    if (currentPath.includes('/v3/billing')) return 'MEMBERSHIP';
+    if (currentPath.includes('/v3/profile')) return 'PROFILE';
+    if (currentPath.includes('/v3/members')) return 'MEMBERS';
+    if (currentPath.includes('/v3/trainers')) return 'TRAINERS';
+    if (currentPath.includes('/v3/attendance')) return 'ATTENDANCE';
+    if (currentPath.includes('/admin')) return 'ADMIN CONSOLE';
+    return 'HOME';
   }, [currentPath]);
 
   return (
@@ -80,7 +80,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0 bg-[#090B10]">
+            <div className={cn("flex-1 flex flex-col min-w-0 bg-[#090B10]", currentPath.includes('/v3/coach') ? "h-screen overflow-hidden pb-20 md:pb-0" : "pb-20 md:pb-0")}>
               {/* Sticky Top Header System Status Layer */}
               <TopNavigation
                 user={user}
@@ -91,9 +91,12 @@ export const AppShell: React.FC<AppShellProps> = ({
                 currentPageTitle={currentPageTitle}
               />
 
+              {/* Sub-Header Trial & Billing Status Notification Layer */}
+              <TrialCountdownBanner />
+
               {/* Page Content & Right Context Panel */}
-              <div className="flex-1 flex min-w-0">
-                <main className="flex-1 min-w-0">{children}</main>
+              <div className={cn("flex-1 flex min-w-0", currentPath.includes('/v3/coach') && "h-full overflow-hidden")}>
+                <main className={cn("flex-1 min-w-0", currentPath.includes('/v3/coach') && "h-full flex flex-col overflow-hidden")}>{children}</main>
 
                 {/* Right Contextual Intelligence Panel */}
                 {showRightSidebar && (
@@ -105,9 +108,6 @@ export const AppShell: React.FC<AppShellProps> = ({
 
           {/* Mobile Dock Navigation */}
           <MobileBottomNav currentPath={currentPath} onNavigate={onNavigate} />
-
-          {/* Mobile Quick Action Control */}
-          <FloatingActionButton onQuickAction={handleQuickAction} />
 
           {/* Modals & Overlays */}
           <NotificationCenter

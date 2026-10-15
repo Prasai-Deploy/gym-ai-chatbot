@@ -51,7 +51,7 @@ export const MinimalChatExperience: React.FC<MinimalChatExperienceProps> = React
                 <div className="flex items-center gap-1.5 mb-1 px-1">
                   <Sparkles className="w-3 h-3 text-indigo-400" />
                   <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider font-sans">
-                    TRINITY
+                    TRINETRA
                   </span>
                 </div>
               )}
@@ -77,7 +77,7 @@ export const MinimalChatExperience: React.FC<MinimalChatExperienceProps> = React
             <div className="flex items-center gap-1.5 mb-1 px-1">
               <Sparkles className="w-3 h-3 text-indigo-400" />
               <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider font-sans">
-                TRINITY
+                TRINETRA
               </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-[#11141D] border border-white/[0.06] flex items-center gap-1.5 text-xs text-slate-400">

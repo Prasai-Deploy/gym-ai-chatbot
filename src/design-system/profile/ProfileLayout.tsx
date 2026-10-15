@@ -12,6 +12,17 @@ export interface ProfileLayoutProps {
   email?: string;
   role?: string;
   avatarUrl?: string;
+  primaryGoal?: string;
+  primaryFrequency?: string;
+  initialHeightCm?: number;
+  initialWeightKg?: number;
+  initialAge?: number;
+  initialExperience?: string;
+  initialUnitSystem?: 'metric' | 'imperial';
+  initialNotifications?: boolean;
+  onSaveGoals?: (primary: string, secondary: string) => void;
+  onSaveFitnessProfile?: (data: { height: number; weight: number; age: number; experience: string; frequency: string }) => void;
+  onSavePreferences?: (unit: 'metric' | 'imperial', notifs: boolean) => void;
   onNavigateBilling?: () => void;
   onLogout?: () => void;
   className?: string;
@@ -20,8 +31,19 @@ export interface ProfileLayoutProps {
 export const ProfileLayout: React.FC<ProfileLayoutProps> = React.memo(({
   userName = 'Athlete',
   email = 'athlete@striva.app',
-  role = 'PRO Member',
+  role = 'STRIVA Member',
   avatarUrl,
+  primaryGoal,
+  primaryFrequency,
+  initialHeightCm,
+  initialWeightKg,
+  initialAge,
+  initialExperience,
+  initialUnitSystem = 'metric',
+  initialNotifications = true,
+  onSaveGoals,
+  onSaveFitnessProfile,
+  onSavePreferences,
   onNavigateBilling = () => console.log('Navigate billing'),
   onLogout = () => console.log('Logout'),
   className,
@@ -40,7 +62,7 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = React.memo(({
           {formattedDate}
         </span>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">
-          Athlete Profile & System Setup
+          Profile & Settings
         </h1>
       </div>
 
@@ -54,13 +76,27 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = React.memo(({
       />
 
       {/* 3. Goals Section */}
-      <ProfileGoals />
+      <ProfileGoals
+        primaryGoal={primaryGoal}
+        primaryFrequency={primaryFrequency}
+        onSaveGoals={onSaveGoals}
+      />
 
       {/* 4. Fitness Profile Information */}
-      <FitnessProfileSection />
+      <FitnessProfileSection
+        initialHeightCm={initialHeightCm}
+        initialWeightKg={initialWeightKg}
+        initialAge={initialAge}
+        initialExperience={initialExperience}
+        onSaveProfile={onSaveFitnessProfile}
+      />
 
       {/* 5. Preferences & Settings */}
-      <ProfilePreferences />
+      <ProfilePreferences
+        initialUnitSystem={initialUnitSystem}
+        initialNotifications={initialNotifications}
+        onSavePreferences={onSavePreferences}
+      />
 
       {/* 6. Connected Wearables & Integrations */}
       <ConnectedDevicesSection />

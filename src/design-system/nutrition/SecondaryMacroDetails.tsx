@@ -9,16 +9,18 @@ export interface SecondaryMacroDetailsProps {
   carbsTarget?: number;
   fatGrams?: number;
   fatTarget?: number;
+  isTelemetryOffline?: boolean;
   className?: string;
 }
 
 export const SecondaryMacroDetails: React.FC<SecondaryMacroDetailsProps> = React.memo(({
-  proteinGrams = 148,
+  proteinGrams,
   proteinTarget = 180,
-  carbsGrams = 210,
+  carbsGrams,
   carbsTarget = 280,
-  fatGrams = 62,
+  fatGrams,
   fatTarget = 75,
+  isTelemetryOffline = false,
   className,
 }) => {
   return (
@@ -35,10 +37,11 @@ export const SecondaryMacroDetails: React.FC<SecondaryMacroDetailsProps> = React
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Protein</span>
             <span className="text-emerald-400 font-bold tabular-nums font-display">
-              {proteinGrams}g <span className="text-slate-400 font-normal font-sans">/ {proteinTarget}g</span>
+              {isTelemetryOffline || proteinGrams === undefined ? '--' : `${proteinGrams}g`}{' '}
+              <span className="text-slate-400 font-normal font-sans">/ {proteinTarget}g</span>
             </span>
           </div>
-          <Progress value={proteinGrams} max={proteinTarget} variant="success" size="sm" />
+          <Progress value={isTelemetryOffline ? 0 : (proteinGrams || 0)} max={proteinTarget} variant="success" size="sm" />
         </div>
 
         {/* Carbs */}
@@ -46,10 +49,11 @@ export const SecondaryMacroDetails: React.FC<SecondaryMacroDetailsProps> = React
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Carbs</span>
             <span className="text-amber-400 font-bold tabular-nums font-display">
-              {carbsGrams}g <span className="text-slate-400 font-normal font-sans">/ {carbsTarget}g</span>
+              {isTelemetryOffline || carbsGrams === undefined ? '--' : `${carbsGrams}g`}{' '}
+              <span className="text-slate-400 font-normal font-sans">/ {carbsTarget}g</span>
             </span>
           </div>
-          <Progress value={carbsGrams} max={carbsTarget} variant="warning" size="sm" />
+          <Progress value={isTelemetryOffline ? 0 : (carbsGrams || 0)} max={carbsTarget} variant="warning" size="sm" />
         </div>
 
         {/* Fat */}
@@ -57,10 +61,11 @@ export const SecondaryMacroDetails: React.FC<SecondaryMacroDetailsProps> = React
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Fat</span>
             <span className="text-orange-400 font-bold tabular-nums font-display">
-              {fatGrams}g <span className="text-slate-400 font-normal font-sans">/ {fatTarget}g</span>
+              {isTelemetryOffline || fatGrams === undefined ? '--' : `${fatGrams}g`}{' '}
+              <span className="text-slate-400 font-normal font-sans">/ {fatTarget}g</span>
             </span>
           </div>
-          <Progress value={fatGrams} max={fatTarget} variant="primary" size="sm" />
+          <Progress value={isTelemetryOffline ? 0 : (fatGrams || 0)} max={fatTarget} variant="primary" size="sm" />
         </div>
       </div>
     </div>

@@ -12,12 +12,30 @@ import {
 export class AdminRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  public async getDashboardStats(): Promise<Result<AdminDashboardStats, AppError>> {
+  public async getDashboardStats(organizationId?: string): Promise<Result<AdminDashboardStats, AppError>> {
     try {
-      // Aggregate stats from profiles and workout tables
+      if (organizationId) {
+        // Tenant-scoped stats: only profiles and workouts belonging to this organization
+        const [membersRes, workoutsRes, exercisesRes] = await Promise.all([
+          this.supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
+          this.supabase.from('v2_workout_plans').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
+          this.supabase.from('exercises').select('id', { count: 'exact', head: true }),
+        ]);
+
+        const stats: AdminDashboardStats = {
+          total_members: membersRes.count ?? 0,
+          active_members: membersRes.count ?? 0,
+          total_workouts: workoutsRes.count ?? 0,
+          total_exercises: exercisesRes.count ?? 0,
+        };
+
+        return ok(stats);
+      }
+
+      // Platform-wide stats (strictly for Platform Super Admin)
       const [membersRes, workoutsRes, exercisesRes] = await Promise.all([
         this.supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        this.supabase.from('workout_sessions').select('id', { count: 'exact', head: true }),
+        this.supabase.from('v2_workout_sessions').select('id', { count: 'exact', head: true }),
         this.supabase.from('exercises').select('id', { count: 'exact', head: true }),
       ]);
 
@@ -35,7 +53,7 @@ export class AdminRepository {
     }
   }
 
-  public async getMembers(limit = 50, offset = 0, search?: string): Promise<Result<Member[], AppError>> {
+  public async getMembers(limit = 50, offset = 0, search?: string, organizationId?: string): Promise<Result<Member[], AppError>> {
     try {
       let query = this.supabase
         .from('profiles')
@@ -43,9 +61,14 @@ export class AdminRepository {
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+
       if (search) {
         query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
       }
+
 
       const { data, error } = await query;
       if (error) throw error;

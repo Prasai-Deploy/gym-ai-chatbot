@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.0",
-    "compression": "^1.7.4",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -42,7 +42,7 @@
     "tsc-alias": "^1.8.10",
     "tsx": "^4.9.3",
     "typescript": "^6.0.3",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.11"
   },
   "lint-staged": {
     "src/**/*.ts": [
@@ -51,6 +51,7 @@
     ]
   },
   "overrides": {
-    "brace-expansion": "5.0.8"
+    "braces": "3.0.3",
+    "tinypool": "2.2.0"
   }
 }

@@ -3,7 +3,8 @@ import { IdentityService } from '../services/IdentityService';
 import { 
   UpdateProfileSchema, 
   UpdateFitnessProfileSchema, 
-  UpdatePreferencesSchema 
+  UpdatePreferencesSchema,
+  UpdateMemberSettingsSchema
 } from '../domain/IdentitySchemas';
 import { ValidationError } from '@errors/AppError';
 
@@ -95,6 +96,37 @@ export class IdentityController {
       }
 
       const result = await this.service.updatePreferences(userId, parsed.data);
+      if (result.isFailure()) throw result.error;
+
+      return res.status(200).json({ success: true, data: result.value });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public getSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user.id;
+      const result = await this.service.getSettings(userId);
+      
+      if (result.isFailure()) throw result.error;
+      
+      return res.status(200).json({ success: true, data: result.value });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public updateSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user.id;
+      const parsed = UpdateMemberSettingsSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        throw new ValidationError('Invalid settings data', parsed.error.format());
+      }
+
+      const result = await this.service.updateSettings(userId, parsed.data);
       if (result.isFailure()) throw result.error;
 
       return res.status(200).json({ success: true, data: result.value });

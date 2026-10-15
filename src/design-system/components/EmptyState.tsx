@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from './Button';
+import { Button, ButtonVariant } from './Button';
 import { HelpCircle } from '../icons';
 import { cn } from '../tokens';
 
@@ -8,6 +8,7 @@ export interface EmptyStateProps {
   description: string;
   icon?: React.ReactNode;
   actionLabel?: string;
+  actionVariant?: ButtonVariant;
   onAction?: () => void;
   className?: string;
 }
@@ -17,17 +18,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   icon = <HelpCircle className="w-10 h-10 text-slate-500" />,
   actionLabel,
+  actionVariant = 'primary',
   onAction,
   className,
 }) => {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center p-8 text-center rounded-3xl bg-slate-900/50 border border-dashed border-white/10 gap-4 max-w-md mx-auto my-6 select-none',
+        'flex flex-col items-center justify-center p-8 text-center rounded-3xl bg-[#11141D]/50 border border-dashed border-white/[0.09] gap-4 max-w-md mx-auto my-6 select-none',
         className
       )}
     >
-      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+      <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
         {icon}
       </div>
 
@@ -37,7 +39,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       {actionLabel && onAction && (
-        <Button variant="primary" size="sm" onClick={onAction} className="mt-1">
+        <Button variant={actionVariant} size="sm" onClick={onAction} className="mt-1">
           {actionLabel}
         </Button>
       )}

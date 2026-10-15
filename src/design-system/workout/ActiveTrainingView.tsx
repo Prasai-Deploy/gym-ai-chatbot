@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Button } from '../components/Button';
 import { Progress } from '../components/Progress';
-import { Minus, Plus, Check, ChevronLeft, ChevronRight, Bot, Sparkles } from '../icons';
+import { Minus, Plus, Check, ChevronLeft, ChevronRight, Bot, Sparkles, AlertCircle } from '../icons';
 import { SetData } from './SetRow';
 import { cn } from '../tokens';
 
@@ -18,13 +18,15 @@ export interface ActiveTrainingViewProps {
   previousBest?: string;
   targetRange?: string;
   rpe?: number;
+  isSavingSet?: boolean;
+  persistenceError?: string | null;
   onWeightChange: (newWeight: number) => void;
   onRepsChange: (newReps: number) => void;
   onCompleteSet: () => void;
   onPrevExercise?: () => void;
   onNextExercise?: () => void;
   onFinishWorkout?: () => void;
-  onAskTrinity?: () => void;
+  onAskTrinetra?: () => void;
   hasPrevExercise: boolean;
   hasNextExercise: boolean;
   className?: string;
@@ -42,13 +44,15 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
   previousBest = '75 kg × 10',
   targetRange = '8–10 reps',
   rpe,
+  isSavingSet = false,
+  persistenceError = null,
   onWeightChange,
   onRepsChange,
   onCompleteSet,
   onPrevExercise,
   onNextExercise,
   onFinishWorkout,
-  onAskTrinity,
+  onAskTrinetra,
   hasPrevExercise,
   hasNextExercise,
   className,
@@ -65,7 +69,7 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
           </span>
           <span className="text-slate-400 tabular-nums font-mono">{percentComplete}% complete</span>
         </div>
-        <Progress value={percentComplete} max={100} variant="primary" size="sm" />
+        <Progress value={percentComplete} max={100} variant="lime" size="sm" />
       </div>
 
       {/* 2. Exercise Title & Target */}
@@ -83,7 +87,7 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
       <div className="rounded-2xl bg-[#11141D] border border-white/[0.08] p-6 sm:p-7 flex flex-col gap-6 shadow-sm">
         {/* Set Header */}
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-          <span className="text-xs font-bold text-orange-400 uppercase tracking-[0.14em] font-sans">
+          <span className="text-xs font-bold text-[#84CC16] uppercase tracking-[0.14em] font-sans">
             SET {currentSetNumber} OF {totalSets}
           </span>
           {previousBest && (
@@ -97,7 +101,7 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
         <div className="grid grid-cols-2 gap-4 sm:gap-6">
           {/* Weight Control */}
           <div className="flex flex-col items-center gap-2 p-3.5 rounded-xl bg-[#181C28]/80 border border-white/[0.05]">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Weight</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Weight</span>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl sm:text-4xl font-extrabold text-white font-display tabular-nums">
                 {currentWeightKg}
@@ -108,25 +112,25 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
               <button
                 type="button"
                 onClick={() => onWeightChange(Math.max(0, currentWeightKg - 2.5))}
-                className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 cursor-pointer"
                 aria-label="Decrease weight by 2.5 kg"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-5 h-5" />
               </button>
               <button
                 type="button"
                 onClick={() => onWeightChange(currentWeightKg + 2.5)}
-                className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 cursor-pointer"
                 aria-label="Increase weight by 2.5 kg"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* Reps Control */}
           <div className="flex flex-col items-center gap-2 p-3.5 rounded-xl bg-[#181C28]/80 border border-white/[0.05]">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reps</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reps</span>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl sm:text-4xl font-extrabold text-white font-display tabular-nums">
                 {currentReps}
@@ -137,47 +141,56 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
               <button
                 type="button"
                 onClick={() => onRepsChange(Math.max(1, currentReps - 1))}
-                className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 cursor-pointer"
                 aria-label="Decrease reps"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-5 h-5" />
               </button>
               <button
                 type="button"
                 onClick={() => onRepsChange(currentReps + 1)}
-                className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] text-white flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 cursor-pointer"
                 aria-label="Increase reps"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
+        {persistenceError && (
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-medium">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <span>{persistenceError}</span>
+          </div>
+        )}
+
         {/* Primary Dominant Action: COMPLETE SET */}
         <Button
-          variant="primary"
+          variant="lime"
           size="lg"
-          className="w-full font-bold text-base py-3.5 shadow-md shadow-orange-500/25"
+          className="w-full font-bold text-base min-h-[52px] py-3.5 shadow-lg shadow-[#84CC16]/20"
           leftIcon={<Check className="w-5 h-5 stroke-[2.5]" />}
           onClick={onCompleteSet}
+          isLoading={isSavingSet}
+          disabled={isSavingSet}
         >
-          Complete Set
+          {isSavingSet ? 'Saving Set...' : 'Complete Set'}
         </Button>
       </div>
 
-      {/* 4. Quiet Contextual AI Coach Prompt */}
-      {onAskTrinity && (
+      {/* 4. Contextual TRINETRA Guidance Prompt */}
+      {onAskTrinetra && (
         <button
           type="button"
-          onClick={onAskTrinity}
-          className="flex items-center justify-between p-3.5 rounded-xl bg-indigo-500/[0.06] border border-indigo-500/20 hover:border-indigo-500/35 text-xs text-indigo-300 transition-all select-none group"
+          onClick={onAskTrinetra}
+          className="flex items-center justify-between p-3.5 min-h-[44px] rounded-xl bg-indigo-500/[0.06] border border-indigo-500/20 hover:border-indigo-500/35 text-xs text-indigo-300 transition-all select-none group cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-indigo-400 group-hover:scale-105 transition-transform" />
             <span className="font-medium text-slate-300">Need form or pacing guidance?</span>
           </div>
-          <span className="font-bold text-indigo-400 group-hover:text-indigo-300">Ask Trinity →</span>
+          <span className="font-bold text-indigo-400 group-hover:text-indigo-300">Ask TRINETRA →</span>
         </button>
       )}
 
@@ -186,7 +199,8 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
         {hasPrevExercise ? (
           <Button
             variant="ghost"
-            size="sm"
+            size="md"
+            className="min-h-[44px]"
             leftIcon={<ChevronLeft className="w-4 h-4" />}
             onClick={onPrevExercise}
           >
@@ -199,7 +213,8 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
         {hasNextExercise ? (
           <Button
             variant="secondary"
-            size="sm"
+            size="md"
+            className="min-h-[44px]"
             rightIcon={<ChevronRight className="w-4 h-4" />}
             onClick={onNextExercise}
           >
@@ -208,7 +223,8 @@ export const ActiveTrainingView: React.FC<ActiveTrainingViewProps> = React.memo(
         ) : (
           <Button
             variant="secondary"
-            size="sm"
+            size="md"
+            className="min-h-[44px]"
             onClick={onFinishWorkout}
           >
             Finish Workout

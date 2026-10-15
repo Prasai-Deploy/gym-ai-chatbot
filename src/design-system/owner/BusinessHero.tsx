@@ -37,7 +37,7 @@ export const BusinessHero: React.FC<BusinessHeroProps> = React.memo(({
             BUSINESS OS ACTIVE
           </Badge>
           <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY BUSINESS INTELLIGENCE
+            TRINETRA BUSINESS INTELLIGENCE
           </Badge>
         </div>
 

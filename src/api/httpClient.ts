@@ -30,7 +30,12 @@ httpClient.interceptors.response.use(
     }
     
     // Format error message to be more friendly
-    const message = error.response?.data?.message || error.message || 'An unexpected error occurred';
-    return Promise.reject(new Error(message));
+    const message = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'An unexpected error occurred';
+    const customError = new Error(message) as any;
+    customError.status = error.response?.status;
+    customError.code = error.response?.data?.error?.code || error.response?.data?.code;
+    customError.data = error.response?.data;
+    customError.response = error.response;
+    return Promise.reject(customError);
   }
 );

@@ -5,6 +5,11 @@ import { AppError } from '@errors/AppError';
 import { WorkoutSession, WorkoutState, CompleteSetDTO } from '../domain/WorkoutSchemas';
 import { IWorkoutSessionRepository } from './IWorkoutSessionRepository';
 
+/**
+ * @deprecated STRIVA V2 - This repository is legacy and unreferenced in active V2 routing.
+ * Canonical V2 workout session lifecycle is managed by V2WorkoutSessionRepository targeting v2_workout_sessions.
+ * Retained for reference and legacy test compatibility. Do NOT use in new code.
+ */
 export class LegacyWorkoutSessionRepository extends BaseRepository<WorkoutSession> implements IWorkoutSessionRepository {
   constructor(supabase: SupabaseClient) {
     super(supabase, 'workout_sessions');

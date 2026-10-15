@@ -49,6 +49,13 @@ export * from './components/Card';
 export * from './components/GlassCard';
 export * from './components/NavigationItem';
 export * from './components/SearchBar';
+export * from './components/Table';
+
+// Component Categories
+export * as atoms from './atoms';
+export * as molecules from './molecules';
+export * as organisms from './organisms';
+export * as navigation from './navigation';
 
 // Application Shell & Layout
 export * from './shell';

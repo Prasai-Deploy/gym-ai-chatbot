@@ -1,0 +1,602 @@
+{
+  "timestamp": "2026-10-15T09:16:12.313Z",
+  "targetHost": "db.ymrblyiwohvxptiqjfsi.supabase.co",
+  "projectRef": "ymrblyiwohvxptiqjfsi",
+  "pgVersion": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+  "baseline": 28,
+  "phase13bRecorded": false,
+  "collisions": [],
+  "tableStats": [
+    {
+      "table_name": "organization_members",
+      "live_tuples": "0",
+      "total_size": "136 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "128 kB",
+      "raw_bytes": "139264"
+    },
+    {
+      "table_name": "organization_invoices",
+      "live_tuples": "0",
+      "total_size": "56 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "48 kB",
+      "raw_bytes": "57344"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "live_tuples": "0",
+      "total_size": "56 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "48 kB",
+      "raw_bytes": "57344"
+    },
+    {
+      "table_name": "v2_workout_sessions",
+      "live_tuples": "0",
+      "total_size": "48 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "40 kB",
+      "raw_bytes": "49152"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "live_tuples": "0",
+      "total_size": "40 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "raw_bytes": "40960"
+    },
+    {
+      "table_name": "invoices",
+      "live_tuples": "0",
+      "total_size": "40 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "raw_bytes": "40960"
+    },
+    {
+      "table_name": "ai_messages",
+      "live_tuples": "11",
+      "total_size": "32 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "raw_bytes": "32768"
+    },
+    {
+      "table_name": "organization_locations",
+      "live_tuples": "1",
+      "total_size": "32 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "raw_bytes": "32768"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "live_tuples": "0",
+      "total_size": "32 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "raw_bytes": "32768"
+    },
+    {
+      "table_name": "attendance_logs",
+      "live_tuples": "0",
+      "total_size": "24 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "24 kB",
+      "raw_bytes": "24576"
+    },
+    {
+      "table_name": "organization_staff",
+      "live_tuples": "0",
+      "total_size": "16 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "16 kB",
+      "raw_bytes": "16384"
+    },
+    {
+      "table_name": "ai_tool_executions",
+      "live_tuples": "0",
+      "total_size": "16 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "8192 bytes",
+      "raw_bytes": "16384"
+    },
+    {
+      "table_name": "organization_roles",
+      "live_tuples": "0",
+      "total_size": "16 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "8192 bytes",
+      "raw_bytes": "16384"
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "live_tuples": "0",
+      "total_size": "16 kB",
+      "table_size": "0 bytes",
+      "indexes_size": "8192 bytes",
+      "raw_bytes": "16384"
+    }
+  ],
+  "existingIndexes": [
+    {
+      "tablename": "ai_agent_memories",
+      "indexname": "ai_agent_memories_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ai_agent_memories_pkey ON public.ai_agent_memories USING btree (id)"
+    },
+    {
+      "tablename": "ai_agent_memories",
+      "indexname": "idx_ai_agent_memories_expires",
+      "indexdef": "CREATE INDEX idx_ai_agent_memories_expires ON public.ai_agent_memories USING btree (expires_at)"
+    },
+    {
+      "tablename": "ai_agent_memories",
+      "indexname": "idx_ai_agent_memories_lookup",
+      "indexdef": "CREATE INDEX idx_ai_agent_memories_lookup ON public.ai_agent_memories USING btree (user_id, organization_id, agent_id)"
+    },
+    {
+      "tablename": "ai_agent_memories",
+      "indexname": "uq_ai_agent_memories_key",
+      "indexdef": "CREATE UNIQUE INDEX uq_ai_agent_memories_key ON public.ai_agent_memories USING btree (user_id, organization_id, agent_id, memory_key)"
+    },
+    {
+      "tablename": "ai_messages",
+      "indexname": "ai_messages_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ai_messages_pkey ON public.ai_messages USING btree (id)"
+    },
+    {
+      "tablename": "ai_tool_executions",
+      "indexname": "ai_tool_executions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ai_tool_executions_pkey ON public.ai_tool_executions USING btree (id)"
+    },
+    {
+      "tablename": "attendance_logs",
+      "indexname": "attendance_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX attendance_logs_pkey ON public.attendance_logs USING btree (id)"
+    },
+    {
+      "tablename": "attendance_logs",
+      "indexname": "idx_attendance_logs_org_checkin",
+      "indexdef": "CREATE INDEX idx_attendance_logs_org_checkin ON public.attendance_logs USING btree (organization_id, check_in_time)"
+    },
+    {
+      "tablename": "attendance_logs",
+      "indexname": "idx_attendance_logs_user",
+      "indexdef": "CREATE INDEX idx_attendance_logs_user ON public.attendance_logs USING btree (user_id, check_in_time)"
+    },
+    {
+      "tablename": "invoices",
+      "indexname": "idx_invoices_user_id",
+      "indexdef": "CREATE INDEX idx_invoices_user_id ON public.invoices USING btree (user_id)"
+    },
+    {
+      "tablename": "invoices",
+      "indexname": "idx_invoices_user_status",
+      "indexdef": "CREATE INDEX idx_invoices_user_status ON public.invoices USING btree (user_id, status, paid_at)"
+    },
+    {
+      "tablename": "invoices",
+      "indexname": "invoices_pkey",
+      "indexdef": "CREATE UNIQUE INDEX invoices_pkey ON public.invoices USING btree (id)"
+    },
+    {
+      "tablename": "invoices",
+      "indexname": "invoices_stripe_invoice_id_key",
+      "indexdef": "CREATE UNIQUE INDEX invoices_stripe_invoice_id_key ON public.invoices USING btree (stripe_invoice_id)"
+    },
+    {
+      "tablename": "organization_audit_logs",
+      "indexname": "organization_audit_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_audit_logs_pkey ON public.organization_audit_logs USING btree (id)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "idx_org_invoices_issued",
+      "indexdef": "CREATE INDEX idx_org_invoices_issued ON public.organization_invoices USING btree (issued_at)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "idx_org_invoices_number",
+      "indexdef": "CREATE INDEX idx_org_invoices_number ON public.organization_invoices USING btree (invoice_number)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "idx_org_invoices_org",
+      "indexdef": "CREATE INDEX idx_org_invoices_org ON public.organization_invoices USING btree (organization_id)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "idx_org_invoices_status",
+      "indexdef": "CREATE INDEX idx_org_invoices_status ON public.organization_invoices USING btree (status)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "organization_invoices_invoice_number_key",
+      "indexdef": "CREATE UNIQUE INDEX organization_invoices_invoice_number_key ON public.organization_invoices USING btree (invoice_number)"
+    },
+    {
+      "tablename": "organization_invoices",
+      "indexname": "organization_invoices_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_invoices_pkey ON public.organization_invoices USING btree (id)"
+    },
+    {
+      "tablename": "organization_locations",
+      "indexname": "organization_locations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_locations_pkey ON public.organization_locations USING btree (id)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_org_created",
+      "indexdef": "CREATE INDEX idx_org_members_org_created ON public.organization_members USING btree (organization_id, created_at DESC)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_org_role",
+      "indexdef": "CREATE INDEX idx_org_members_org_role ON public.organization_members USING btree (organization_id, role)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_org_role_created",
+      "indexdef": "CREATE INDEX idx_org_members_org_role_created ON public.organization_members USING btree (organization_id, role, created_at DESC)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_org_status",
+      "indexdef": "CREATE INDEX idx_org_members_org_status ON public.organization_members USING btree (organization_id, status)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_org_user",
+      "indexdef": "CREATE INDEX idx_org_members_org_user ON public.organization_members USING btree (organization_id, user_id)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "idx_org_members_user_role",
+      "indexdef": "CREATE INDEX idx_org_members_user_role ON public.organization_members USING btree (user_id, role)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "uq_organization_members_org_user",
+      "indexdef": "CREATE UNIQUE INDEX uq_organization_members_org_user ON public.organization_members USING btree (organization_id, user_id)"
+    },
+    {
+      "tablename": "organization_roles",
+      "indexname": "organization_roles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_roles_pkey ON public.organization_roles USING btree (id)"
+    },
+    {
+      "tablename": "organization_staff",
+      "indexname": "idx_organization_staff_org_role",
+      "indexdef": "CREATE INDEX idx_organization_staff_org_role ON public.organization_staff USING btree (organization_id, role_key)"
+    },
+    {
+      "tablename": "organization_staff",
+      "indexname": "organization_staff_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_staff_pkey ON public.organization_staff USING btree (id)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "idx_org_subs_org",
+      "indexdef": "CREATE INDEX idx_org_subs_org ON public.organization_subscriptions USING btree (organization_id)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "idx_org_subs_razorpay_sub_id",
+      "indexdef": "CREATE INDEX idx_org_subs_razorpay_sub_id ON public.organization_subscriptions USING btree (razorpay_subscription_id)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "idx_org_subs_status",
+      "indexdef": "CREATE INDEX idx_org_subs_status ON public.organization_subscriptions USING btree (status)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "organization_subscriptions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_subscriptions_pkey ON public.organization_subscriptions USING btree (id)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "organization_subscriptions_razorpay_subscription_id_key",
+      "indexdef": "CREATE UNIQUE INDEX organization_subscriptions_razorpay_subscription_id_key ON public.organization_subscriptions USING btree (razorpay_subscription_id)"
+    },
+    {
+      "tablename": "organization_subscriptions",
+      "indexname": "uq_org_subscriptions_org",
+      "indexdef": "CREATE UNIQUE INDEX uq_org_subscriptions_org ON public.organization_subscriptions USING btree (organization_id)"
+    },
+    {
+      "tablename": "trainer_member_assignments",
+      "indexname": "idx_trainer_assignments_org_member",
+      "indexdef": "CREATE INDEX idx_trainer_assignments_org_member ON public.trainer_member_assignments USING btree (organization_id, member_user_id, status)"
+    },
+    {
+      "tablename": "trainer_member_assignments",
+      "indexname": "idx_trainer_assignments_org_trainer",
+      "indexdef": "CREATE INDEX idx_trainer_assignments_org_trainer ON public.trainer_member_assignments USING btree (organization_id, trainer_user_id, status)"
+    },
+    {
+      "tablename": "trainer_member_assignments",
+      "indexname": "idx_unique_active_member_trainer_assignment",
+      "indexdef": "CREATE UNIQUE INDEX idx_unique_active_member_trainer_assignment ON public.trainer_member_assignments USING btree (organization_id, member_user_id) WHERE ((status)::text = 'active'::text)"
+    },
+    {
+      "tablename": "trainer_member_assignments",
+      "indexname": "trainer_member_assignments_pkey",
+      "indexdef": "CREATE UNIQUE INDEX trainer_member_assignments_pkey ON public.trainer_member_assignments USING btree (id)"
+    },
+    {
+      "tablename": "v2_workout_sessions",
+      "indexname": "idx_v2_workout_sessions_org",
+      "indexdef": "CREATE INDEX idx_v2_workout_sessions_org ON public.v2_workout_sessions USING btree (organization_id)"
+    },
+    {
+      "tablename": "v2_workout_sessions",
+      "indexname": "idx_v2_workout_sessions_single_active",
+      "indexdef": "CREATE UNIQUE INDEX idx_v2_workout_sessions_single_active ON public.v2_workout_sessions USING btree (user_id) WHERE ((state)::text = ANY ((ARRAY['started'::character varying, 'paused'::character varying])::text[]))"
+    },
+    {
+      "tablename": "v2_workout_sessions",
+      "indexname": "idx_v2_workout_sessions_started",
+      "indexdef": "CREATE INDEX idx_v2_workout_sessions_started ON public.v2_workout_sessions USING btree (user_id, started_at DESC)"
+    },
+    {
+      "tablename": "v2_workout_sessions",
+      "indexname": "idx_v2_workout_sessions_user_state",
+      "indexdef": "CREATE INDEX idx_v2_workout_sessions_user_state ON public.v2_workout_sessions USING btree (user_id, state)"
+    },
+    {
+      "tablename": "v2_workout_sessions",
+      "indexname": "v2_workout_sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX v2_workout_sessions_pkey ON public.v2_workout_sessions USING btree (id)"
+    }
+  ],
+  "fkConstraints": [
+    {
+      "table_name": "ai_agent_memories",
+      "column_name": "organization_id",
+      "constraint_name": "ai_agent_memories_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_messages",
+      "column_name": "conversation_id",
+      "constraint_name": "ai_messages_conversation_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "ai_conversations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_tool_executions",
+      "column_name": "conversation_id",
+      "constraint_name": "ai_tool_executions_conversation_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "ai_conversations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "attendance_logs",
+      "column_name": "location_id",
+      "constraint_name": "attendance_logs_location_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organization_locations",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "attendance_logs",
+      "column_name": "organization_id",
+      "constraint_name": "attendance_logs_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "invoices",
+      "column_name": "subscription_id",
+      "constraint_name": "invoices_subscription_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "subscriptions",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "column_name": "organization_id",
+      "constraint_name": "organization_audit_logs_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invoices",
+      "column_name": "organization_id",
+      "constraint_name": "organization_invoices_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invoices",
+      "column_name": "subscription_id",
+      "constraint_name": "organization_invoices_subscription_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organization_subscriptions",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_locations",
+      "column_name": "organization_id",
+      "constraint_name": "organization_locations_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "location_id",
+      "constraint_name": "organization_members_location_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organization_locations",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "organization_id",
+      "constraint_name": "organization_members_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "user_id",
+      "constraint_name": "fk_org_members_profile",
+      "ref_schema": "public",
+      "ref_table": "profiles",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_roles",
+      "column_name": "organization_id",
+      "constraint_name": "organization_roles_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_staff",
+      "column_name": "location_id",
+      "constraint_name": "organization_staff_location_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organization_locations",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_staff",
+      "column_name": "organization_id",
+      "constraint_name": "organization_staff_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "column_name": "organization_id",
+      "constraint_name": "organization_subscriptions_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "column_name": "plan_id",
+      "constraint_name": "organization_subscriptions_plan_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organization_subscription_plans",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "member_user_id",
+      "constraint_name": "trainer_member_assignments_member_user_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "profiles",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "organization_id",
+      "constraint_name": "trainer_member_assignments_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "trainer_user_id",
+      "constraint_name": "trainer_member_assignments_trainer_user_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "profiles",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "v2_workout_sessions",
+      "column_name": "organization_id",
+      "constraint_name": "v2_workout_sessions_organization_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "organizations",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "v2_workout_sessions",
+      "column_name": "plan_id",
+      "constraint_name": "v2_workout_sessions_plan_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "v2_workout_plans",
+      "ref_col": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "v2_workout_sessions",
+      "column_name": "user_id",
+      "constraint_name": "v2_workout_sessions_user_id_fkey",
+      "ref_schema": "public",
+      "ref_table": "profiles",
+      "ref_col": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    }
+  ]
+}

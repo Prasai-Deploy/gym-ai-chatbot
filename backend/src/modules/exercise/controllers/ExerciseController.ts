@@ -8,7 +8,11 @@ export class ExerciseController {
 
   public getExercise = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.service.getExercise(req.params.id);
+      const exerciseId = req.params.id;
+      if (!exerciseId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(exerciseId.trim())) {
+        throw new ValidationError('Invalid exercise ID: must be a valid UUID');
+      }
+      const result = await this.service.getExercise(exerciseId.trim());
       if (result.isFailure()) throw result.error;
       return res.status(200).json({ success: true, data: result.value });
     } catch (err) {

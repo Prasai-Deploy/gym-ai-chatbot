@@ -25,10 +25,12 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
     invoices: [] as any[],
     attendance_logs: [] as any[],
     workout_sessions: [] as any[],
+    v2_workout_sessions: [] as any[],
     exercise_sessions: [] as any[],
     exercise_sets: [] as any[],
     exercises: [] as any[],
     nutrition_logs: [] as any[],
+    v2_nutrition_logs: [] as any[],
     recovery_logs: [] as any[],
     organization_staff: [] as any[],
   };
@@ -90,10 +92,12 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
       invoices: [],
       attendance_logs: [],
       workout_sessions: [],
+      v2_workout_sessions: [],
       exercise_sessions: [],
       exercise_sets: [],
       exercises: [{ id: 'ex-1', name: 'Barbell Squat' }, { id: 'ex-2', name: 'Bench Press' }],
       nutrition_logs: [],
+      v2_nutrition_logs: [],
       recovery_logs: [],
       organization_staff: [],
     };
@@ -195,7 +199,7 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
 
   it('5. Workout KPI computes sessions, duration, and exercise volume accurately', async () => {
     db.profiles = [{ id: 'usr-1', organization_id: 'org-A' }];
-    db.workout_sessions = [
+    db.v2_workout_sessions = [
       {
         id: 'ws-1',
         user_id: 'usr-1',
@@ -205,10 +209,9 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
         created_at: '2026-08-10T10:00:00Z',
       },
     ];
-    db.exercise_sessions = [{ id: 'es-1', workout_session_id: 'ws-1', exercise_id: 'ex-1' }];
     db.exercise_sets = [
-      { id: 'set-1', exercise_session_id: 'es-1', weight_kg: 100, reps: 5, status: 'completed' }, // 500kg
-      { id: 'set-2', exercise_session_id: 'es-1', weight_kg: 100, reps: 5, status: 'completed' }, // 500kg
+      { id: 'set-1', session_id: 'ws-1', exercise_id: 'ex-1', weight_kg: 100, reps: 5, status: 'completed' }, // 500kg
+      { id: 'set-2', session_id: 'ws-1', exercise_id: 'ex-1', weight_kg: 100, reps: 5, status: 'completed' }, // 500kg
     ];
 
     const repo = new AnalyticsRepository(createMockSupabase());
@@ -223,9 +226,9 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
 
   it('6. Nutrition KPI calculates real calorie averages and adherence rates', async () => {
     db.profiles = [{ id: 'usr-1', organization_id: 'org-A' }];
-    db.nutrition_logs = [
-      { id: 'nl-1', user_id: 'usr-1', date: '2026-08-10', calories_consumed: 2200, protein_g: 140 },
-      { id: 'nl-2', user_id: 'usr-1', date: '2026-08-11', calories_consumed: 2000, protein_g: 140 },
+    db.v2_nutrition_logs = [
+      { id: 'nl-1', user_id: 'usr-1', date: '2026-08-10', calories: 2200, calories_consumed: 2200, protein_g: 140 },
+      { id: 'nl-2', user_id: 'usr-1', date: '2026-08-11', calories: 2000, calories_consumed: 2000, protein_g: 140 },
     ];
 
     const repo = new AnalyticsRepository(createMockSupabase());
@@ -235,6 +238,38 @@ describe('Real PostgreSQL Analytics & KPI Engine Suite', () => {
     expect(nutrition.avgCaloriesLogged).toBe(2100);
     expect(nutrition.avgProteinAdherencePct).toBe(100);
     expect(nutrition.membersLoggingDaily).toBe(1);
+  });
+
+  it('6b. Nutrition KPI computes canonical v2_nutrition_logs calories without calories_consumed field (DB12D-01 regression)', async () => {
+    db.profiles = [{ id: 'usr-1', organization_id: 'org-A' }];
+    // Canonical production schema fixture: strictly contains `calories: 2400` and omits `calories_consumed`
+    db.v2_nutrition_logs = [
+      { id: 'nl-canonical-1', user_id: 'usr-1', date: '2026-08-10', calories: 2400, protein_g: 140 },
+    ];
+
+    const repo = new AnalyticsRepository(createMockSupabase());
+    const nutritionEngine = new NutritionAnalyticsEngine(repo);
+    const nutrition = await nutritionEngine.compute('org-A', period);
+
+    expect(nutrition.avgCaloriesLogged).toBe(2400);
+    expect(nutrition.avgProteinAdherencePct).toBe(100);
+    expect(nutrition.membersLoggingDaily).toBe(1);
+    expect(nutrition.topDeficitDay).toBe('Monday');
+  });
+
+  it('6c. Nutrition KPI supports legacy calories_consumed fallback when canonical calories is absent', async () => {
+    db.profiles = [{ id: 'usr-1', organization_id: 'org-A' }];
+    // Legacy schema fallback fixture: only `calories_consumed` is populated
+    db.v2_nutrition_logs = [
+      { id: 'nl-legacy-1', user_id: 'usr-1', date: '2026-08-10', calories_consumed: 1800, protein_g: 140 },
+    ];
+
+    const repo = new AnalyticsRepository(createMockSupabase());
+    const nutritionEngine = new NutritionAnalyticsEngine(repo);
+    const nutrition = await nutritionEngine.compute('org-A', period);
+
+    expect(nutrition.avgCaloriesLogged).toBe(1800);
+    expect(nutrition.avgProteinAdherencePct).toBe(100);
   });
 
   it('7. Retention KPI computes real cohort retention and plan churn rates', async () => {

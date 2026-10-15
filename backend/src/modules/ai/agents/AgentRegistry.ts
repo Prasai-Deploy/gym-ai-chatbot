@@ -36,6 +36,9 @@ const getBusinessKpiTool: AgentTool = {
   parameters: {},
   execute: async (_args, ctx: AgentContext) => {
     const orgId = ctx.organizationId;
+    if (!orgId) {
+      return { error: 'Organization context required for gym KPIs' };
+    }
     const period = {
       from: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
       to: new Date().toISOString().split('T')[0],

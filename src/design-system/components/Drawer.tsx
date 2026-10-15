@@ -22,13 +22,19 @@ export const Drawer: React.FC<DrawerProps> = ({
   className,
 }) => {
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const sideVariants = {
     left: { initial: { x: '-100%' }, animate: { x: 0 }, exit: { x: '-100%' } },
@@ -48,6 +54,8 @@ export const Drawer: React.FC<DrawerProps> = ({
           />
 
           <motion.div
+            role="dialog"
+            aria-modal="true"
             initial={sideVariants[side].initial}
             animate={sideVariants[side].animate}
             exit={sideVariants[side].exit}

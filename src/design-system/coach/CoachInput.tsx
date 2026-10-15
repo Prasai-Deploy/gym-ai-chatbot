@@ -52,7 +52,7 @@ export const CoachInput: React.FC<CoachInputProps> = React.memo(({
             e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Trinity AI Coach (e.g. Adjust my bench press sets, audit my macros)..."
+          placeholder="Ask TRINETRA AI Coach (e.g. Adjust my bench press sets, audit my macros)..."
           rows={1}
           disabled={isLoading}
           className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none p-2 resize-none max-h-32"

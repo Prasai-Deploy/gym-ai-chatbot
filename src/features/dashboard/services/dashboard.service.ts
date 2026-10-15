@@ -71,18 +71,16 @@ export const dashboardService = {
 
   async fetchTodayWater(): Promise<{ summary: WaterSummary; logs: WaterLog[] } | null> {
     try {
-      // Water tracking now lives in intelligence/context in v2.
-      const data = await httpClient.get('/intelligence/context') as any;
-      const nutritionCtx = data?.data?.nutrition;
-      if (!nutritionCtx) return null;
+      const res = await httpClient.get('/nutrition/daily') as any;
+      const data = res?.data || res;
+      if (!data) return null;
+      const totalConsumed = data.totalWaterMl ?? 0;
+      const dailyGoal = 2000;
       return {
         summary: {
-          total_consumed: nutritionCtx.water_ml ?? 0,
-          daily_goal: nutritionCtx.water_goal ?? 2000,
-          completion_percentage: Math.min(
-            100,
-            Math.round(((nutritionCtx.water_ml ?? 0) / (nutritionCtx.water_goal ?? 2000)) * 100)
-          ),
+          total_consumed: totalConsumed,
+          daily_goal: dailyGoal,
+          completion_percentage: Math.min(100, Math.round((totalConsumed / dailyGoal) * 100)),
         },
         logs: [],
       };
@@ -91,9 +89,9 @@ export const dashboardService = {
     }
   },
 
-  async addWater(amount: number, source: string = 'manual'): Promise<boolean> {
+  async addWater(amount: number, _source: string = 'manual'): Promise<boolean> {
     try {
-      await httpClient.post('/intelligence/nutrition/log', { water_ml: amount, source });
+      await httpClient.post('/nutrition/water', { amount_ml: amount });
       return true;
     } catch {
       return false;

@@ -119,7 +119,11 @@ CREATE TABLE IF NOT EXISTS public.organization_audit_logs (
 
 -- 9. Additive organization_id columns on tenant-owned tables (Strangler Pattern)
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_id UUID DEFAULT '00000000-0000-0000-0000-000000000001';
-ALTER TABLE public.workouts ADD COLUMN IF NOT EXISTS organization_id UUID DEFAULT '00000000-0000-0000-0000-000000000001';
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'workouts') THEN
+        ALTER TABLE public.workouts ADD COLUMN IF NOT EXISTS organization_id UUID;
+    END IF;
+END $$;
 
 -- 10. Enable Row Level Security (RLS)
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;

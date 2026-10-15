@@ -51,24 +51,24 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   );
 
   const mainRoutes: SidebarNavRoute[] = [
-    { id: 'dashboard', label: 'Dashboard', path: '/v3/dashboard', icon: <Activity className="w-4 h-4" /> },
-    { id: 'coach', label: 'AI Coach', path: '/v3/coach', icon: <Bot className="w-4 h-4" />, badge: 'TRINITY' },
-    { id: 'workout', label: 'Workouts', path: '/v3/workout', icon: <Flame className="w-4 h-4" /> },
+    { id: 'dashboard', label: 'Home', path: '/v3/dashboard', icon: <Activity className="w-4 h-4" /> },
+    { id: 'coach', label: 'Coach', path: '/v3/coach', icon: <Bot className="w-4 h-4" />, badge: 'TRINETRA' },
+    { id: 'workout', label: 'Workout', path: '/v3/workout', icon: <Flame className="w-4 h-4" /> },
     { id: 'nutrition', label: 'Nutrition', path: '/v3/nutrition', icon: <PieChart className="w-4 h-4" /> },
     { id: 'progress', label: 'Progress', path: '/v3/progress', icon: <TrendingUp className="w-4 h-4" /> },
+    { id: 'profile', label: 'Profile', path: '/v3/profile', icon: <User className="w-4 h-4" /> },
   ];
 
   const businessRoutes: SidebarNavRoute[] = [
-    { id: 'overview', label: 'Overview', path: '/admin', icon: <Shield className="w-4 h-4" /> },
-    { id: 'members', label: 'Members', path: '/v3/members', icon: <Users className="w-4 h-4" /> },
-    { id: 'trainers', label: 'Trainers', path: '/v3/trainers', icon: <User className="w-4 h-4" /> },
-    { id: 'attendance', label: 'Attendance', path: '/v3/attendance', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'billing', label: 'Billing', path: '/v3/billing', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'overview', label: 'Overview', path: '/owner/dashboard', icon: <Shield className="w-4 h-4" /> },
+    { id: 'members', label: 'Members', path: '/owner/members', icon: <Users className="w-4 h-4" /> },
+    { id: 'trainers', label: 'Trainers', path: '/owner/trainers', icon: <User className="w-4 h-4" /> },
+    { id: 'attendance', label: 'Attendance', path: '/owner/attendance', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'billing', label: 'Billing', path: '/owner/billing', icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const systemRoutes: SidebarNavRoute[] = [
-    { id: 'profile', label: 'Profile', path: '/v3/profile', icon: <User className="w-4 h-4" /> },
-    { id: 'settings', label: 'Settings', path: '/settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'billing', label: 'Billing', path: '/v3/billing', icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const renderNavGroup = (title: string, routes: SidebarNavRoute[]) => (
@@ -80,6 +80,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       )}
       {routes.map((route) => {
         const isActive = currentPath === route.path || (route.path !== '/v3/dashboard' && route.path !== '/admin' && currentPath.startsWith(route.path));
+        const isCoach = route.id === 'coach';
+        const isFitness = ['dashboard', 'workout', 'nutrition', 'progress'].includes(route.id);
         
         const navButton = (
           <button
@@ -88,9 +90,17 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             onClick={() => onNavigate(route.path)}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 w-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+              'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 w-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090B10]',
+              isCoach ? 'focus-visible:ring-indigo-500' : isFitness ? 'focus-visible:ring-lime-500' : 'focus-visible:ring-orange-500',
               isActive
-                ? 'text-white bg-[#181C28] border border-orange-500/30 shadow-sm shadow-orange-500/10 font-bold'
+                ? cn(
+                    'text-white bg-[#181C28] font-bold shadow-sm',
+                    isCoach 
+                      ? 'border border-indigo-500/30 shadow-indigo-500/10'
+                      : isFitness
+                        ? 'border border-lime-500/30 shadow-lime-500/10'
+                        : 'border border-orange-500/30 shadow-orange-500/10'
+                  )
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent',
               collapsed && 'justify-center px-0'
             )}
@@ -98,12 +108,24 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             {isActive && (
               <motion.div
                 layoutId="activeSidebarIndicator"
-                className="absolute left-0 w-1 h-5 bg-orange-500 rounded-r-full shadow-[0_0_12px_rgba(249,115,22,0.6)]"
+                className={cn(
+                  'absolute left-0 w-1 h-5 rounded-r-full',
+                  isCoach
+                    ? 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]'
+                    : isFitness
+                      ? 'bg-[#84CC16] shadow-[0_0_12px_rgba(132,204,22,0.6)]'
+                      : 'bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.6)]'
+                )}
                 transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               />
             )}
 
-            <span className={cn('shrink-0 transition-colors', isActive ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200')}>
+            <span className={cn(
+              'shrink-0 transition-colors', 
+              isActive 
+                ? isCoach ? 'text-indigo-300' : isFitness ? 'text-lime-400' : 'text-orange-400'
+                : 'text-slate-400 group-hover:text-slate-200'
+            )}>
               {route.icon}
             </span>
 
@@ -115,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
               <span
                 className={cn(
                   'ml-auto px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded-md',
-                  route.badge === 'TRINITY'
+                  route.badge === 'TRINETRA'
                     ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
                     : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
                 )}
@@ -150,13 +172,13 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className={cn('flex items-center gap-3 px-1 py-1', collapsed && 'justify-center')}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white shadow-sm shadow-orange-500/25 shrink-0 border border-orange-400/30">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#84CC16] to-[#65A30D] flex items-center justify-center text-slate-950 shadow-sm shadow-[#84CC16]/20 shrink-0 border border-[#84CC16]/40">
             <Dumbbell className="w-4 h-4 stroke-[2.5]" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-black tracking-tight text-white font-display">STRIVA</span>
-              <span className="text-[9px] font-bold text-orange-400 uppercase tracking-[0.16em]">OS v4.0</span>
+              <span className="text-[9px] font-bold text-[#84CC16] uppercase tracking-[0.16em]">V2</span>
             </div>
           )}
         </div>

@@ -7,6 +7,7 @@ interface User {
   name: string;
   email: string;
   avatar: string;
+  role?: string;
   water_goal?: number;
   calorie_goal?: number;
   protein_goal?: number;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: sbUser.email || '',
       name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'User',
       avatar: sbUser.user_metadata?.avatar_url || '',
+      role: sbUser.user_metadata?.role || sbUser.app_metadata?.role || (sbUser.email === 'demo@sweatfix.com' ? 'Demo User' : 'Member'),
     };
   };
 

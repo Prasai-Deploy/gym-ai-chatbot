@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../tokens';
 
-export type BadgeVariant = 'primary' | 'ai' | 'success' | 'warning' | 'danger' | 'neutral' | 'outline';
+export type BadgeVariant = 'primary' | 'action' | 'brand' | 'ai' | 'lime' | 'success' | 'warning' | 'danger' | 'neutral' | 'outline';
 export type BadgeSize = 'sm' | 'md';
 
 export interface BadgeProps {
@@ -26,7 +26,10 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const variantStyles: Record<BadgeVariant, string> = {
     primary: 'bg-orange-500/[0.10] text-orange-400 border border-orange-500/25',
+    brand: 'bg-orange-500/[0.10] text-orange-400 border border-orange-500/25',
+    action: 'bg-lime-500/[0.10] text-lime-400 border border-lime-500/25',
     ai: 'bg-indigo-500/[0.10] text-indigo-300 border border-indigo-500/25',
+    lime: 'bg-lime-500/[0.10] text-lime-400 border border-lime-500/25',
     success: 'bg-emerald-500/[0.10] text-emerald-400 border border-emerald-500/25',
     warning: 'bg-amber-500/[0.10] text-amber-400 border border-amber-500/25',
     danger: 'bg-red-500/[0.10] text-red-400 border border-red-500/25',

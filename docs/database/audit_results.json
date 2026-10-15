@@ -1,0 +1,4068 @@
+{
+  "migrationTables": [
+    {
+      "table_schema": "auth",
+      "table_name": "schema_migrations"
+    },
+    {
+      "table_schema": "realtime",
+      "table_name": "schema_migrations"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "_migrations"
+    }
+  ],
+  "executedMigrations": [
+    {
+      "name": "002_create_fitness_profiles.sql",
+      "run_at": "2026-06-30T07:44:35.852Z"
+    },
+    {
+      "name": "003_create_ai_plan_tables.sql",
+      "run_at": "2026-06-30T07:44:36.054Z"
+    },
+    {
+      "name": "003_create_workout_tables.sql",
+      "run_at": "2026-06-30T07:44:36.205Z"
+    },
+    {
+      "name": "004_create_activity_tables.sql",
+      "run_at": "2026-06-30T07:44:36.364Z"
+    },
+    {
+      "name": "004_create_progress_dashboard.sql",
+      "run_at": "2026-06-30T07:44:36.515Z"
+    },
+    {
+      "name": "005_create_water_tables.sql",
+      "run_at": "2026-06-30T07:44:36.677Z"
+    },
+    {
+      "name": "005_nutrition_system.sql",
+      "run_at": "2026-06-30T07:44:36.826Z"
+    },
+    {
+      "name": "006_workout_tracker_redesign.sql",
+      "run_at": "2026-06-30T07:44:36.980Z"
+    },
+    {
+      "name": "007_create_progress_tables.sql",
+      "run_at": "2026-06-30T07:44:37.143Z"
+    },
+    {
+      "name": "008_add_macros_to_user_progress.sql",
+      "run_at": "2026-06-30T07:44:37.312Z"
+    },
+    {
+      "name": "008_multi_tenant_saas_foundation.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "009_ai_memory_and_usage.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "010_analytics_and_attendance.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_7b_trial_foundation.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8b_organization_staff_foundation.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8d_member_management.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8f_trainer_assignments.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8h_organization_billing.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8i_1_recipient_read_state.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8i_organization_notifications.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    },
+    {
+      "name": "phase_8j_b2b_trinetra.sql",
+      "run_at": "2026-10-10T06:45:29.082Z"
+    }
+  ],
+  "supabaseSchemaMigrationsError": "relation \"supabase_migrations.schema_migrations\" does not exist",
+  "publicTables": [
+    "_migrations",
+    "achievements",
+    "activity_logs",
+    "activity_tracking_state",
+    "admins",
+    "ai_agent_memories",
+    "ai_chat_logs",
+    "ai_conversations",
+    "ai_memory",
+    "ai_messages",
+    "ai_tool_executions",
+    "ai_usage_analytics",
+    "allowed_users",
+    "attendance_logs",
+    "chatbot_generated_diets",
+    "chatbot_generated_plans",
+    "chatbot_generated_workouts",
+    "daily_fitness_stats",
+    "daily_hydration_progress",
+    "daily_plans",
+    "equipment",
+    "exercise_alternatives",
+    "exercise_categories",
+    "exercise_equipment",
+    "exercise_muscles",
+    "exercise_tags",
+    "exercise_tags_map",
+    "exercise_types",
+    "exercise_variations",
+    "exercises",
+    "feature_usage",
+    "fitness_profiles",
+    "invoices",
+    "meal_plans",
+    "member_settings",
+    "membership_plans",
+    "memberships",
+    "movement_patterns",
+    "muscle_groups",
+    "nutrition_logs",
+    "organization_audit_logs",
+    "organization_billing_accounts",
+    "organization_branding",
+    "organization_invitations",
+    "organization_invoices",
+    "organization_locations",
+    "organization_members",
+    "organization_notification_reads",
+    "organization_notifications",
+    "organization_payment_events",
+    "organization_permissions",
+    "organization_roles",
+    "organization_settings",
+    "organization_staff",
+    "organization_subscription_plans",
+    "organization_subscriptions",
+    "organizations",
+    "payment_events",
+    "profiles",
+    "progress",
+    "progress_logs",
+    "progress_snapshots",
+    "progress_statistics",
+    "pt_assignments",
+    "push_subscriptions",
+    "recommendations",
+    "recovery_logs",
+    "session",
+    "subscriptions",
+    "template_diet_plans",
+    "template_workout_plans",
+    "trainer_member_assignments",
+    "user_achievements",
+    "user_badges",
+    "user_diet_assignments",
+    "user_fitness_plans",
+    "user_goals",
+    "user_meal_tracking",
+    "user_milestones",
+    "user_notification_settings",
+    "user_preferences",
+    "user_progress",
+    "user_stats",
+    "user_streaks",
+    "user_workout_assignments",
+    "users",
+    "v2_fitness_profiles",
+    "water_goals",
+    "water_logs",
+    "weekly_progress",
+    "workout_logs",
+    "workout_plans",
+    "workout_progress",
+    "workout_sessions"
+  ],
+  "keyTableColumns": {
+    "ai_agent_memories": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "agent_id",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "memory_key",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "memory_value",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "expires_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "ai_conversations": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "title",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "started_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "ended_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "text",
+        "nullable": true,
+        "default": "'ACTIVE'::text"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "scope",
+        "type": "text",
+        "nullable": true,
+        "default": "'consumer'::text"
+      }
+    ],
+    "ai_memory": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "category",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "key",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "value",
+        "type": "jsonb",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "is_active",
+        "type": "boolean",
+        "nullable": true,
+        "default": "true"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "ai_messages": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "conversation_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "role",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "content",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "tool_calls",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "tool_call_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "ai_usage_analytics": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "agent_id",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "session_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "provider",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "model",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "request_timestamp",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "duration_ms",
+        "type": "integer",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "column": "prompt_tokens",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "completion_tokens",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "total_tokens",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "tool_calls_count",
+        "type": "integer",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "column": "tools_called",
+        "type": "jsonb",
+        "nullable": true,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "column": "success",
+        "type": "boolean",
+        "nullable": false,
+        "default": "true"
+      },
+      {
+        "column": "error_category",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "attendance_logs": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "location_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "check_in_time",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "check_out_time",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "duration_minutes",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'completed'::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "daily_hydration_progress": [
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "total_consumed",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "daily_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "2000"
+      },
+      {
+        "column": "completion_percentage",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "last_updated",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "fitness_profiles": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('fitness_profiles_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "goal",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "weight_kg",
+        "type": "numeric",
+        "nullable": true,
+        "default": "NULL::numeric"
+      },
+      {
+        "column": "height_cm",
+        "type": "numeric",
+        "nullable": true,
+        "default": "NULL::numeric"
+      },
+      {
+        "column": "age",
+        "type": "smallint",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "diet_type",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "activity_level",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "workout_days",
+        "type": "smallint",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "meal_plans": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('meal_plans_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "calories_target",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "meals",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "nutrition_logs": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('nutrition_logs_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "food_item",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "calories",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "protein",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "protein_g",
+        "type": "numeric",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "carbs",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "carbs_g",
+        "type": "numeric",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "fats",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "fat_g",
+        "type": "numeric",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "logged_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "organization_members": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "role",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'Member'::character varying"
+      },
+      {
+        "column": "location_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'active'::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "organization_staff": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "location_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "role_key",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'Trainer'::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "organization_subscriptions": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "plan_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'none'::character varying"
+      },
+      {
+        "column": "billing_interval",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'monthly'::character varying"
+      },
+      {
+        "column": "currency",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'INR'::character varying"
+      },
+      {
+        "column": "amount_paise",
+        "type": "integer",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "column": "current_period_start",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "current_period_end",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "cancel_at_period_end",
+        "type": "boolean",
+        "nullable": false,
+        "default": "false"
+      },
+      {
+        "column": "cancelled_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "grace_period_ends_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_customer_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_subscription_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_order_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_payment_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "organizations": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "name",
+        "type": "character varying",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "slug",
+        "type": "character varying",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'active'::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "owner_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "profiles": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "email",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "full_name",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "avatar_url",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "timezone",
+        "type": "text",
+        "nullable": true,
+        "default": "'UTC'::text"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": "'00000000-0000-0000-0000-000000000001'::uuid"
+      }
+    ],
+    "subscriptions": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "tier",
+        "type": "subscription_tier",
+        "nullable": false,
+        "default": "'free'::subscription_tier"
+      },
+      {
+        "column": "interval",
+        "type": "billing_interval",
+        "nullable": false,
+        "default": "'monthly'::billing_interval"
+      },
+      {
+        "column": "status",
+        "type": "subscription_status",
+        "nullable": false,
+        "default": "'active'::subscription_status"
+      },
+      {
+        "column": "stripe_customer_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "stripe_subscription_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "current_period_start",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "current_period_end",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "(now() + '1 mon'::interval)"
+      },
+      {
+        "column": "cancel_at_period_end",
+        "type": "boolean",
+        "nullable": false,
+        "default": "false"
+      },
+      {
+        "column": "canceled_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "trial_started_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "trial_ends_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "provider",
+        "type": "text",
+        "nullable": false,
+        "default": "'razorpay'::text"
+      },
+      {
+        "column": "razorpay_customer_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_subscription_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "razorpay_payment_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "trainer_member_assignments": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "column": "organization_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "trainer_user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "member_user_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": false,
+        "default": "'active'::character varying"
+      },
+      {
+        "column": "assigned_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "timezone('utc'::text, now())"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "timezone('utc'::text, now())"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "timezone('utc'::text, now())"
+      }
+    ],
+    "users": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('users_id_seq'::regclass)"
+      },
+      {
+        "column": "google_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "name",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "email",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "avatar",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "profile_context",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "chat_id",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "password",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "phone",
+        "type": "character varying",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "water_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "2000"
+      },
+      {
+        "column": "calorie_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "protein_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "carb_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "fat_goal",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "column": "last_login",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "column": "is_admin",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      }
+    ],
+    "v2_fitness_profiles": [
+      {
+        "column": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "level",
+        "type": "fitness_level",
+        "nullable": true,
+        "default": "'beginner'::fitness_level"
+      },
+      {
+        "column": "height_cm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "target_weight_kg",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "primary_goal",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "medical_conditions",
+        "type": "ARRAY",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "water_goals": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('water_goals_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "daily_goal",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "generated_by_ai",
+        "type": "smallint",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "goal_reason",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "column": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "water_logs": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('water_logs_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "intake_amount",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "intake_type",
+        "type": "character varying",
+        "nullable": true,
+        "default": "'water'::character varying"
+      },
+      {
+        "column": "source",
+        "type": "character varying",
+        "nullable": true,
+        "default": "'manual'::character varying"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "workout_logs": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('workout_logs_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "plan_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "exercise_name",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "workout_name",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "sets_done",
+        "type": "smallint",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "reps_done",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "weight_used",
+        "type": "numeric",
+        "nullable": true,
+        "default": "NULL::numeric"
+      },
+      {
+        "column": "difficulty",
+        "type": "smallint",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "duration_minutes",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "logged_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "workout_plans": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('workout_plans_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "focus",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "duration",
+        "type": "character varying",
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "column": "exercises",
+        "type": "jsonb",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "calories_estimate",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "difficulty",
+        "type": "character varying",
+        "nullable": true,
+        "default": "'Moderate'::character varying"
+      },
+      {
+        "column": "raw_prompt",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "workout_sessions": [
+      {
+        "column": "id",
+        "type": "integer",
+        "nullable": false,
+        "default": "nextval('workout_sessions_id_seq'::regclass)"
+      },
+      {
+        "column": "user_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "plan_id",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "column": "status",
+        "type": "character varying",
+        "nullable": true,
+        "default": "'active'::character varying"
+      },
+      {
+        "column": "start_time",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "column": "end_time",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "completed_exercises",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "column": "progress_percentage",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "calories_burned",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "column": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ]
+  },
+  "constraints": [
+    {
+      "table_name": "ai_agent_memories",
+      "constraint_name": "ai_agent_memories_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "constraint_name": "uq_ai_agent_memories_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "constraint_name": "uq_ai_agent_memories_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "organization_id"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "constraint_name": "uq_ai_agent_memories_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "agent_id"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "constraint_name": "uq_ai_agent_memories_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "memory_key"
+    },
+    {
+      "table_name": "ai_conversations",
+      "constraint_name": "ai_conversations_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "ai_memory",
+      "constraint_name": "ai_memory_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "ai_memory",
+      "constraint_name": "ai_memory_user_id_category_key_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "ai_memory",
+      "constraint_name": "ai_memory_user_id_category_key_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "category"
+    },
+    {
+      "table_name": "ai_memory",
+      "constraint_name": "ai_memory_user_id_category_key_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "key"
+    },
+    {
+      "table_name": "ai_messages",
+      "constraint_name": "ai_messages_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "ai_usage_analytics",
+      "constraint_name": "ai_usage_analytics_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "attendance_logs",
+      "constraint_name": "attendance_logs_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "daily_hydration_progress",
+      "constraint_name": "daily_hydration_progress_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "daily_hydration_progress",
+      "constraint_name": "daily_hydration_progress_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "date"
+    },
+    {
+      "table_name": "fitness_profiles",
+      "constraint_name": "fitness_profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "fitness_profiles",
+      "constraint_name": "fitness_profiles_user_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "meal_plans",
+      "constraint_name": "meal_plans_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "meal_plans",
+      "constraint_name": "meal_plans_user_id_date_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "meal_plans",
+      "constraint_name": "meal_plans_user_id_date_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "date"
+    },
+    {
+      "table_name": "nutrition_logs",
+      "constraint_name": "nutrition_logs_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "organization_members",
+      "constraint_name": "organization_members_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "organization_members",
+      "constraint_name": "uq_organization_members_org_user",
+      "constraint_type": "UNIQUE",
+      "column_name": "organization_id"
+    },
+    {
+      "table_name": "organization_members",
+      "constraint_name": "uq_organization_members_org_user",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "organization_staff",
+      "constraint_name": "organization_staff_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "constraint_name": "organization_subscriptions_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "constraint_name": "organization_subscriptions_razorpay_subscription_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "razorpay_subscription_id"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "constraint_name": "uq_org_subscriptions_org",
+      "constraint_type": "UNIQUE",
+      "column_name": "organization_id"
+    },
+    {
+      "table_name": "organizations",
+      "constraint_name": "organizations_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "organizations",
+      "constraint_name": "organizations_slug_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "slug"
+    },
+    {
+      "table_name": "profiles",
+      "constraint_name": "profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "constraint_name": "profiles_email_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "email"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_razorpay_customer_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "razorpay_customer_id"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_razorpay_subscription_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "razorpay_subscription_id"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_stripe_customer_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "stripe_customer_id"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_stripe_subscription_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "stripe_subscription_id"
+    },
+    {
+      "table_name": "subscriptions",
+      "constraint_name": "subscriptions_user_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "constraint_name": "trainer_member_assignments_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_google_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "google_id"
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_phone_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "phone"
+    },
+    {
+      "table_name": "v2_fitness_profiles",
+      "constraint_name": "v2_fitness_profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "water_goals",
+      "constraint_name": "water_goals_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "water_logs",
+      "constraint_name": "water_logs_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "workout_logs",
+      "constraint_name": "workout_logs_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "workout_plans",
+      "constraint_name": "workout_plans_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    },
+    {
+      "table_name": "workout_plans",
+      "constraint_name": "workout_plans_user_id_date_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "workout_plans",
+      "constraint_name": "workout_plans_user_id_date_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "date"
+    },
+    {
+      "table_name": "workout_sessions",
+      "constraint_name": "workout_sessions_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    }
+  ],
+  "foreignKeys": [
+    {
+      "table_name": "activity_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "activity_tracking_state",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_chat_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_conversations",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_messages",
+      "column_name": "conversation_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "ai_conversations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_tool_executions",
+      "column_name": "conversation_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "ai_conversations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "ai_usage_analytics",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "attendance_logs",
+      "column_name": "location_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_locations",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "attendance_logs",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "chatbot_generated_diets",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "chatbot_generated_plans",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "chatbot_generated_workouts",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "daily_fitness_stats",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "daily_hydration_progress",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "daily_plans",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_alternatives",
+      "column_name": "alternative_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_alternatives",
+      "column_name": "exercise_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_equipment",
+      "column_name": "equipment_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "equipment",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_equipment",
+      "column_name": "exercise_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_muscles",
+      "column_name": "exercise_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_muscles",
+      "column_name": "muscle_group_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "muscle_groups",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_tags_map",
+      "column_name": "exercise_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_tags_map",
+      "column_name": "tag_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercise_tags",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_variations",
+      "column_name": "exercise_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercise_variations",
+      "column_name": "variation_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercises",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercises",
+      "column_name": "category_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercise_categories",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercises",
+      "column_name": "exercise_type_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "exercise_types",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "exercises",
+      "column_name": "movement_pattern_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "movement_patterns",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "fitness_profiles",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "invoices",
+      "column_name": "subscription_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "subscriptions",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "meal_plans",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "member_settings",
+      "column_name": "id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "memberships",
+      "column_name": "assigned_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "memberships",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "membership_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "memberships",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "nutrition_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_billing_accounts",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_branding",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invitations",
+      "column_name": "location_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_locations",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invitations",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invoices",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_invoices",
+      "column_name": "subscription_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_subscriptions",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_locations",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "location_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_locations",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_members",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_notification_reads",
+      "column_name": "notification_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_notifications",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_notification_reads",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_notifications",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_payment_events",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_roles",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_settings",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_staff",
+      "column_name": "location_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_locations",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_staff",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organization_subscription_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "progress",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "progress_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "pt_assignments",
+      "column_name": "assigned_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "pt_assignments",
+      "column_name": "client_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "pt_assignments",
+      "column_name": "trainer_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "push_subscriptions",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "template_diet_plans",
+      "column_name": "created_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "template_workout_plans",
+      "column_name": "created_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "member_user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "organization_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "organizations",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "column_name": "trainer_user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_achievements",
+      "column_name": "achievement_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "achievements",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_badges",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_diet_assignments",
+      "column_name": "assigned_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_diet_assignments",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "template_diet_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_diet_assignments",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_fitness_plans",
+      "column_name": "diet_plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "chatbot_generated_diets",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_fitness_plans",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_fitness_plans",
+      "column_name": "workout_plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "chatbot_generated_workouts",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_meal_tracking",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_notification_settings",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_preferences",
+      "column_name": "id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_progress",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_stats",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_streaks",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_workout_assignments",
+      "column_name": "assigned_by",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "admins",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_workout_assignments",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "template_workout_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "user_workout_assignments",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "v2_fitness_profiles",
+      "column_name": "id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "water_goals",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "water_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "weekly_progress",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_logs",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "workout_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "SET NULL",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_logs",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_plans",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_progress",
+      "column_name": "session_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "workout_sessions",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_sessions",
+      "column_name": "plan_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "workout_plans",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    },
+    {
+      "table_name": "workout_sessions",
+      "column_name": "user_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "delete_rule": "CASCADE",
+      "update_rule": "NO ACTION"
+    }
+  ],
+  "rlsStatus": [
+    {
+      "table_name": "_migrations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "achievements",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "activity_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "activity_tracking_state",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "admins",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_chat_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_conversations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_memory",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_messages",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_tool_executions",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "ai_usage_analytics",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "allowed_users",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "attendance_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "chatbot_generated_diets",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "chatbot_generated_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "chatbot_generated_workouts",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "daily_fitness_stats",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "daily_hydration_progress",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "daily_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "equipment",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_alternatives",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_categories",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_equipment",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_muscles",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_tags",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_tags_map",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_types",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercise_variations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "exercises",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "feature_usage",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "fitness_profiles",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "invoices",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "meal_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "member_settings",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "membership_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "memberships",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "movement_patterns",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "muscle_groups",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "nutrition_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_billing_accounts",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_branding",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_invitations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_invoices",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_locations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_members",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_notification_reads",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_notifications",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_payment_events",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_permissions",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_roles",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_settings",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_staff",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_subscription_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "organizations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "payment_events",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "profiles",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "progress",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "progress_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "progress_snapshots",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "progress_statistics",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "pt_assignments",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "push_subscriptions",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "recommendations",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "recovery_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "session",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "subscriptions",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "template_diet_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "template_workout_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_achievements",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_badges",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_diet_assignments",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_fitness_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_goals",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_meal_tracking",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_milestones",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_notification_settings",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_preferences",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_progress",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_stats",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_streaks",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "user_workout_assignments",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "users",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "v2_fitness_profiles",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "water_goals",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "water_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "weekly_progress",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "workout_logs",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "workout_plans",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "workout_progress",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table_name": "workout_sessions",
+      "rls_enabled": true,
+      "rls_forced": false
+    }
+  ],
+  "policies": [
+    {
+      "table_name": "achievements",
+      "policy_name": "Public Read Achievements",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "table_name": "admins",
+      "policy_name": "Users can check own admin status",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((email)::text = (auth.jwt() ->> 'email'::text))",
+      "with_check": null
+    },
+    {
+      "table_name": "ai_agent_memories",
+      "policy_name": "Tenant AI agent memories access policy",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)",
+      "with_check": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)"
+    },
+    {
+      "table_name": "ai_conversations",
+      "policy_name": "Authorized staff manage organization advisor conversations",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((auth.uid() = user_id) AND (scope = 'organization_advisor'::text) AND (organization_id IS NOT NULL) AND ((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = ai_conversations.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organization_staff os\n  WHERE ((os.organization_id = ai_conversations.organization_id) AND (os.user_id = auth.uid()) AND ((os.role_key)::text = ANY ((ARRAY['owner'::character varying, 'gym_manager'::character varying, 'manager'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM auth.users u\n  WHERE ((u.id = auth.uid()) AND (((u.raw_app_meta_data ->> 'role'::text) = 'Platform Super Admin'::text) OR ((u.raw_user_meta_data ->> 'role'::text) = 'Platform Super Admin'::text)))))))",
+      "with_check": "((auth.uid() = user_id) AND (scope = 'organization_advisor'::text) AND (organization_id IS NOT NULL))"
+    },
+    {
+      "table_name": "ai_conversations",
+      "policy_name": "Users manage own consumer conversations",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((auth.uid() = user_id) AND ((scope = 'consumer'::text) OR (scope IS NULL)))",
+      "with_check": "((auth.uid() = user_id) AND ((scope = 'consumer'::text) OR (scope IS NULL)))"
+    },
+    {
+      "table_name": "ai_memory",
+      "policy_name": "Members manage own memory",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "ai_messages",
+      "policy_name": "Members manage own messages",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(conversation_id IN ( SELECT ai_conversations.id\n   FROM ai_conversations\n  WHERE (ai_conversations.user_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "table_name": "ai_tool_executions",
+      "policy_name": "Members read own tool executions",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "ai_usage_analytics",
+      "policy_name": "Tenant AI usage analytics insert policy",
+      "command": "a",
+      "roles": [
+        "-"
+      ],
+      "using_qual": null,
+      "with_check": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)"
+    },
+    {
+      "table_name": "ai_usage_analytics",
+      "policy_name": "Tenant AI usage analytics select policy",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)",
+      "with_check": null
+    },
+    {
+      "table_name": "attendance_logs",
+      "policy_name": "Tenant attendance logs access policy",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)",
+      "with_check": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)"
+    },
+    {
+      "table_name": "cron.job",
+      "policy_name": "cron_job_policy",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(username = CURRENT_USER)",
+      "with_check": null
+    },
+    {
+      "table_name": "cron.job_run_details",
+      "policy_name": "cron_job_run_details_policy",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(username = CURRENT_USER)",
+      "with_check": null
+    },
+    {
+      "table_name": "equipment",
+      "policy_name": "Public read access to equipment",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_alternatives",
+      "policy_name": "Public read access to exercise_alternatives",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_categories",
+      "policy_name": "Public read access to exercise categories",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_equipment",
+      "policy_name": "Public read access to exercise_equipment",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_muscles",
+      "policy_name": "Public read access to exercise_muscles",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_tags",
+      "policy_name": "Public read access to exercise tags",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_tags_map",
+      "policy_name": "Public read access to exercise_tags_map",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_types",
+      "policy_name": "Public read access to exercise types",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercise_variations",
+      "policy_name": "Public read access to exercise_variations",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "exercises",
+      "policy_name": "Public read access to exercises",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "feature_usage",
+      "policy_name": "Users read own feature usage",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "invoices",
+      "policy_name": "Users read own invoices",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "member_settings",
+      "policy_name": "Users can read own settings",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "member_settings",
+      "policy_name": "Users can update own settings",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "movement_patterns",
+      "policy_name": "Public read access to movement patterns",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "muscle_groups",
+      "policy_name": "Public read access to muscle groups",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "policy_name": "Managers view organization audit logs",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_audit_logs.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_audit_logs.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_audit_logs",
+      "policy_name": "System insert audit logs",
+      "command": "a",
+      "roles": [
+        "-"
+      ],
+      "using_qual": null,
+      "with_check": "is_org_member(organization_id)"
+    },
+    {
+      "table_name": "organization_billing_accounts",
+      "policy_name": "Owners view organization billing account",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_billing_accounts.organization_id) AND (o.owner_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_billing_accounts.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Platform Super Admin'::character varying])::text[]))))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_branding",
+      "policy_name": "Managers update organization branding",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_branding.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_branding.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_branding",
+      "policy_name": "Members view organization branding",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_invitations",
+      "policy_name": "Managers manage organization invitations",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_invitations.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_invitations.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_invitations",
+      "policy_name": "Staff view organization invitations",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_invoices",
+      "policy_name": "Owners and managers view organization invoices",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_invoices.organization_id) AND (o.owner_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_invoices.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_locations",
+      "policy_name": "Managers manage organization locations",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_locations.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_locations.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_locations.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_locations.organization_id) AND (o.owner_id = auth.uid())))))"
+    },
+    {
+      "table_name": "organization_locations",
+      "policy_name": "Members view organization locations",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_members",
+      "policy_name": "Members view tenant memberships",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_members",
+      "policy_name": "Staff managers manage organization members",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_members.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_members.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_members.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_members.organization_id) AND (o.owner_id = auth.uid())))))"
+    },
+    {
+      "table_name": "organization_notification_reads",
+      "policy_name": "Users mark notifications read for themselves",
+      "command": "a",
+      "roles": [
+        "-"
+      ],
+      "using_qual": null,
+      "with_check": "((auth.uid() = user_id) AND (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_notification_reads.organization_id) AND (om.user_id = auth.uid())))))"
+    },
+    {
+      "table_name": "organization_notification_reads",
+      "policy_name": "Users view own notification read state",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((auth.uid() = user_id) AND (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_notification_reads.organization_id) AND (om.user_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_notifications",
+      "policy_name": "Authorized tenant members read organization notifications",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_notifications.organization_id) AND (o.owner_id = auth.uid())))) OR (recipient_user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_notifications.organization_id) AND (om.user_id = auth.uid()) AND (((om.role)::text = 'Platform Super Admin'::text) OR ((om.role)::text = 'Organization Owner'::text) OR (((om.role)::text = 'Gym Manager'::text) AND ((organization_notifications.type)::text !~~ 'billing_%'::text)) OR (((om.role)::text = (organization_notifications.recipient_role)::text) AND ((organization_notifications.type)::text !~~ 'billing_%'::text)))))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_notifications",
+      "policy_name": "Recipients update read state of organization notifications",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_notifications.organization_id) AND (o.owner_id = auth.uid())))) OR (recipient_user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_notifications.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Platform Super Admin'::character varying, 'Organization Owner'::character varying, 'Gym Manager'::character varying])::text[]))))))",
+      "with_check": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_notifications.organization_id) AND (o.owner_id = auth.uid())))) OR (recipient_user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_notifications.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Platform Super Admin'::character varying, 'Organization Owner'::character varying, 'Gym Manager'::character varying])::text[]))))))"
+    },
+    {
+      "table_name": "organization_payment_events",
+      "policy_name": "Super admins view organization payment events",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.user_id = auth.uid()) AND ((om.role)::text = 'Platform Super Admin'::text))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_permissions",
+      "policy_name": "Tenant permissions access policy",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "true",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_roles",
+      "policy_name": "Tenant roles access policy",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((organization_id IS NULL) OR (organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid))",
+      "with_check": "(organization_id = (NULLIF(current_setting('app.current_organization_id'::text, true), ''::text))::uuid)"
+    },
+    {
+      "table_name": "organization_settings",
+      "policy_name": "Owners update organization settings",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_settings.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_settings.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_settings",
+      "policy_name": "Staff view organization settings",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_subscription_plans",
+      "policy_name": "Authenticated users view subscription plans",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() IS NOT NULL)",
+      "with_check": null
+    },
+    {
+      "table_name": "organization_subscriptions",
+      "policy_name": "Owners view organization subscription",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = organization_subscriptions.organization_id) AND (o.owner_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = organization_subscriptions.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Platform Super Admin'::character varying])::text[]))))))",
+      "with_check": null
+    },
+    {
+      "table_name": "organizations",
+      "policy_name": "Members view assigned organization",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(is_org_member(id) OR (owner_id = auth.uid()))",
+      "with_check": null
+    },
+    {
+      "table_name": "organizations",
+      "policy_name": "Owners update organization",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((owner_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members\n  WHERE ((organization_members.organization_id = organization_members.id) AND (organization_members.user_id = auth.uid()) AND ((organization_members.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Platform Super Admin'::character varying])::text[]))))))",
+      "with_check": "((owner_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members\n  WHERE ((organization_members.organization_id = organization_members.id) AND (organization_members.user_id = auth.uid()) AND ((organization_members.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Platform Super Admin'::character varying])::text[]))))))"
+    },
+    {
+      "table_name": "profiles",
+      "policy_name": "Users can read own profile",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "profiles",
+      "policy_name": "Users can update own profile",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "progress_snapshots",
+      "policy_name": "Members Read Own Snapshots",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "progress_statistics",
+      "policy_name": "Members Read Own Stats",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "recommendations",
+      "policy_name": "Members read own recommendations",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "recovery_logs",
+      "policy_name": "Members manage own recovery",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "subscriptions",
+      "policy_name": "Users read own subscription",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "policy_name": "Manage organization trainer assignments",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = trainer_member_assignments.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = trainer_member_assignments.organization_id) AND (o.owner_id = auth.uid())))))",
+      "with_check": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = trainer_member_assignments.organization_id) AND (om.user_id = auth.uid()) AND ((om.role)::text = ANY ((ARRAY['Organization Owner'::character varying, 'Gym Manager'::character varying, 'Platform Super Admin'::character varying])::text[]))))) OR (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = trainer_member_assignments.organization_id) AND (o.owner_id = auth.uid())))))"
+    },
+    {
+      "table_name": "trainer_member_assignments",
+      "policy_name": "View organization trainer assignments",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "is_org_member(organization_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "user_achievements",
+      "policy_name": "Members Read Own Unlocked Achievements",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "user_goals",
+      "policy_name": "Members manage own goals",
+      "command": "*",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "user_milestones",
+      "policy_name": "Members Read Own Milestones",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "table_name": "user_preferences",
+      "policy_name": "Users can read own preferences",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "user_preferences",
+      "policy_name": "Users can update own preferences",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "v2_fitness_profiles",
+      "policy_name": "Users can read own fitness profile",
+      "command": "r",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "table_name": "v2_fitness_profiles",
+      "policy_name": "Users can update own fitness profile",
+      "command": "w",
+      "roles": [
+        "-"
+      ],
+      "using_qual": "(auth.uid() = id)",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "function_name": "handle_new_user",
+      "definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n    -- 1. Identity, fitness profile, preferences, and settings provisioning\n    INSERT INTO public.profiles (id, email, full_name, avatar_url)\n    VALUES (\n        NEW.id,\n        NEW.email,\n        NEW.raw_user_meta_data->>'full_name',\n        NEW.raw_user_meta_data->>'avatar_url'\n    ) ON CONFLICT (id) DO NOTHING;\n    \n    INSERT INTO public.v2_fitness_profiles (id) VALUES (NEW.id) ON CONFLICT (id) DO NOTHING;\n    INSERT INTO public.user_preferences (id) VALUES (NEW.id) ON CONFLICT (id) DO NOTHING;\n    INSERT INTO public.member_settings (id) VALUES (NEW.id) ON CONFLICT (id) DO NOTHING;\n\n    -- 2. Subscription & Trial Provisioning\n    -- Sandbox Isolation: Demo user (demo@sweatfix.com) receives permanent sandbox access without a commercial trial\n    IF NEW.email = 'demo@sweatfix.com' THEN\n        INSERT INTO public.subscriptions (\n            user_id,\n            tier,\n            interval,\n            status,\n            provider,\n            trial_started_at,\n            trial_ends_at,\n            current_period_start,\n            current_period_end,\n            cancel_at_period_end\n        ) VALUES (\n            NEW.id,\n            'free',\n            'monthly',\n            'active',\n            'razorpay',\n            NULL,\n            NULL,\n            NOW(),\n            NOW() + INTERVAL '100 years',\n            FALSE\n        ) ON CONFLICT (user_id) DO NOTHING;\n    ELSE\n        -- Real New User: Exactly one 14-day free trial in 'trialing' state\n        -- ON CONFLICT (user_id) DO NOTHING guarantees that re-logins or trigger re-runs NEVER reset the trial\n        INSERT INTO public.subscriptions (\n            user_id,\n            tier,\n            interval,\n            status,\n            provider,\n            trial_started_at,\n            trial_ends_at,\n            current_period_start,\n            current_period_end,\n            cancel_at_period_end\n        ) VALUES (\n            NEW.id,\n            'pro',\n            'monthly',\n            'trialing',\n            'razorpay',\n            NOW(),\n            NOW() + INTERVAL '14 days',\n            NOW(),\n            NOW() + INTERVAL '14 days',\n            FALSE\n        ) ON CONFLICT (user_id) DO NOTHING;\n    END IF;\n\n    RETURN NEW;\nEND;\n$function$\n",
+      "is_security_definer": true
+    },
+    {
+      "function_name": "is_org_member",
+      "definition": "CREATE OR REPLACE FUNCTION public.is_org_member(target_org_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n    IF auth.uid() IS NULL OR target_org_id IS NULL THEN\n        RETURN FALSE;\n    END IF;\n\n    RETURN EXISTS (\n        SELECT 1\n        FROM public.organization_members om\n        WHERE om.organization_id = target_org_id\n          AND om.user_id = auth.uid()\n    ) OR EXISTS (\n        SELECT 1\n        FROM public.organizations o\n        WHERE o.id = target_org_id\n          AND o.owner_id = auth.uid()\n    );\nEND;\n$function$\n",
+      "is_security_definer": true
+    }
+  ],
+  "rowCounts": {
+    "users": 7,
+    "profiles": 5,
+    "v2_fitness_profiles": 4,
+    "fitness_profiles": 0,
+    "nutrition_logs": 0,
+    "water_logs": 13,
+    "workout_logs": 0,
+    "workout_plans": 0,
+    "organizations": 1,
+    "organization_members": 0,
+    "organization_staff": 0,
+    "attendance_logs": 0,
+    "subscriptions": 4
+  },
+  "usersTableTypes": [
+    {
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying"
+    }
+  ]
+}

@@ -1,323 +1,598 @@
 [
   {
-    "table_name": "session",
-    "column_name": "expire",
-    "data_type": "timestamp without time zone"
-  },
-  {
-    "table_name": "chatbot_generated_diets",
-    "column_name": "fats",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "chatbot_generated_diets",
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone"
-  },
-  {
-    "table_name": "chatbot_generated_diets",
+    "table_name": "feature_usage",
     "column_name": "updated_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "user_fitness_plans",
-    "column_name": "id",
+    "table_name": "progress_statistics",
+    "column_name": "longest_streak",
     "data_type": "integer"
   },
   {
-    "table_name": "user_fitness_plans",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_fitness_plans",
-    "column_name": "workout_plan_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_fitness_plans",
-    "column_name": "diet_plan_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_fitness_plans",
-    "column_name": "active",
-    "data_type": "smallint"
-  },
-  {
-    "table_name": "user_fitness_plans",
-    "column_name": "created_at",
+    "table_name": "progress_statistics",
+    "column_name": "last_workout_date",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "user_fitness_plans",
+    "table_name": "progress_statistics",
     "column_name": "updated_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "user_meal_tracking",
+    "table_name": "exercise_categories",
     "column_name": "id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "user_meal_tracking",
+    "table_name": "exercise_categories",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "muscle_groups",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "muscle_groups",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "equipment",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "equipment",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "movement_patterns",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "movement_patterns",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercise_types",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_types",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercise_tags",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_tags",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "difficulty",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "category_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "movement_pattern_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "exercise_type_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "is_verified",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "created_by",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercise_muscles",
+    "column_name": "exercise_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_muscles",
+    "column_name": "muscle_group_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_muscles",
+    "column_name": "is_primary",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "exercise_equipment",
+    "column_name": "exercise_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_equipment",
+    "column_name": "equipment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_variations",
+    "column_name": "exercise_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_variations",
+    "column_name": "variation_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "progress_snapshots",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "progress_snapshots",
     "column_name": "user_id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "user_meal_tracking",
-    "column_name": "date",
+    "table_name": "progress_snapshots",
+    "column_name": "type",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "progress_snapshots",
+    "column_name": "snapshot_date",
     "data_type": "date"
   },
   {
-    "table_name": "user_meal_tracking",
-    "column_name": "calories",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_meal_tracking",
-    "column_name": "protein",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_meal_tracking",
-    "column_name": "carbs",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_meal_tracking",
-    "column_name": "fats",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "user_meal_tracking",
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone"
-  },
-  {
-    "table_name": "activity_logs",
-    "column_name": "id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "activity_logs",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "activity_logs",
-    "column_name": "metadata_json",
+    "table_name": "progress_snapshots",
+    "column_name": "data",
     "data_type": "jsonb"
   },
   {
-    "table_name": "activity_logs",
+    "table_name": "progress_snapshots",
     "column_name": "created_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "activity_tracking_state",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "activity_tracking_state",
-    "column_name": "latest_activity_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "activity_tracking_state",
-    "column_name": "unread_activity_count",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "water_logs",
+    "table_name": "achievements",
     "column_name": "id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "water_logs",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "water_logs",
-    "column_name": "intake_amount",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "water_logs",
+    "table_name": "achievements",
     "column_name": "created_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "water_goals",
+    "table_name": "user_achievements",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "user_achievements",
+    "column_name": "achievement_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "user_achievements",
+    "column_name": "unlocked_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_milestones",
     "column_name": "id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "water_goals",
+    "table_name": "user_milestones",
     "column_name": "user_id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "water_goals",
-    "column_name": "daily_goal",
-    "data_type": "integer"
+    "table_name": "user_milestones",
+    "column_name": "date",
+    "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "water_goals",
-    "column_name": "generated_by_ai",
-    "data_type": "smallint"
+    "table_name": "ai_conversations",
+    "column_name": "id",
+    "data_type": "uuid"
   },
   {
-    "table_name": "water_goals",
+    "table_name": "ai_conversations",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_conversations",
+    "column_name": "started_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "ai_conversations",
+    "column_name": "ended_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "ai_conversations",
     "column_name": "created_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "water_goals",
+    "table_name": "ai_conversations",
     "column_name": "updated_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "daily_hydration_progress",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_hydration_progress",
-    "column_name": "date",
-    "data_type": "date"
-  },
-  {
-    "table_name": "daily_hydration_progress",
-    "column_name": "total_consumed",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_hydration_progress",
-    "column_name": "daily_goal",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_hydration_progress",
-    "column_name": "completion_percentage",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_hydration_progress",
-    "column_name": "last_updated",
-    "data_type": "timestamp with time zone"
-  },
-  {
-    "table_name": "weekly_progress",
+    "table_name": "ai_messages",
     "column_name": "id",
-    "data_type": "integer"
+    "data_type": "uuid"
   },
   {
-    "table_name": "weekly_progress",
-    "column_name": "user_id",
-    "data_type": "integer"
+    "table_name": "ai_messages",
+    "column_name": "conversation_id",
+    "data_type": "uuid"
   },
   {
-    "table_name": "weekly_progress",
-    "column_name": "date",
-    "data_type": "date"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "workouts_completed",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "exercises_completed",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "calories_burned",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "workout_duration",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "hydration_completion",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "diet_completion",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "streak_value",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "weekly_progress",
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone"
-  },
-  {
-    "table_name": "daily_fitness_stats",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_fitness_stats",
-    "column_name": "daily_progress_percentage",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_fitness_stats",
-    "column_name": "active_minutes",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_fitness_stats",
-    "column_name": "completed_goals",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "daily_fitness_stats",
-    "column_name": "updated_at",
-    "data_type": "timestamp with time zone"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "user_id",
-    "data_type": "integer"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "date",
-    "data_type": "date"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "data_json",
+    "table_name": "ai_messages",
+    "column_name": "tool_calls",
     "data_type": "jsonb"
   },
   {
-    "table_name": "ai_chat_logs",
+    "table_name": "ai_messages",
     "column_name": "created_at",
     "data_type": "timestamp with time zone"
   },
   {
-    "table_name": "session",
-    "column_name": "sess",
-    "data_type": "json"
+    "table_name": "ai_tool_executions",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "conversation_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "input_payload",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "output_payload",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "latency_ms",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercise_alternatives",
+    "column_name": "exercise_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_alternatives",
+    "column_name": "alternative_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "value",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "is_active",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "sleep_hours",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "stress_level",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "soreness_level",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "energy_level",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "readiness_score",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "recovery_logs",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "target_value",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "current_value",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "target_date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "recommendations",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "recommendations",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "recommendations",
+    "column_name": "is_read",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "recommendations",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "tier",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "interval",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "status",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "current_period_start",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "current_period_end",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "cancel_at_period_end",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "canceled_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "subscription_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "amount_paid",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "status",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "paid_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "payload",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "processed_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "usage_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "reset_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
   },
   {
     "table_name": "users",
@@ -1205,6 +1480,456 @@
     "data_type": "integer"
   },
   {
+    "table_name": "chatbot_generated_diets",
+    "column_name": "fats",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "chatbot_generated_diets",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "chatbot_generated_diets",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "workout_plan_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "diet_plan_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "active",
+    "data_type": "smallint"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "calories",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "protein",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "carbs",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "fats",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "metadata_json",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "activity_tracking_state",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "activity_tracking_state",
+    "column_name": "latest_activity_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "activity_tracking_state",
+    "column_name": "unread_activity_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "intake_amount",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "daily_goal",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "generated_by_ai",
+    "data_type": "smallint"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "total_consumed",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "daily_goal",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "completion_percentage",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_hydration_progress",
+    "column_name": "last_updated",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "workouts_completed",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "exercises_completed",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "calories_burned",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "workout_duration",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "hydration_completion",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "diet_completion",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "streak_value",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "weekly_progress",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "daily_fitness_stats",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_fitness_stats",
+    "column_name": "daily_progress_percentage",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_fitness_stats",
+    "column_name": "active_minutes",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_fitness_stats",
+    "column_name": "completed_goals",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "daily_fitness_stats",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "user_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "data_json",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "session",
+    "column_name": "sess",
+    "data_type": "json"
+  },
+  {
+    "table_name": "session",
+    "column_name": "expire",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "level",
+    "data_type": "USER-DEFINED"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "height_cm",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "target_weight_kg",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "push_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "email_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "weekly_reports_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "member_settings",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "member_settings",
+    "column_name": "start_of_week",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "member_settings",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "member_settings",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "exercise_tags_map",
+    "column_name": "exercise_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "exercise_tags_map",
+    "column_name": "tag_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "progress_statistics",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "progress_statistics",
+    "column_name": "workout_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "progress_statistics",
+    "column_name": "lifetime_volume_kg",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "progress_statistics",
+    "column_name": "total_training_time_seconds",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "progress_statistics",
+    "column_name": "current_streak",
+    "data_type": "integer"
+  },
+  {
     "table_name": "users",
     "column_name": "google_id",
     "data_type": "character varying"
@@ -1245,174 +1970,49 @@
     "data_type": "character varying"
   },
   {
-    "table_name": "workout_progress",
-    "column_name": "exercise_name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "data_type",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_progress",
-    "column_name": "reps_done",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "water_logs",
-    "column_name": "intake_type",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "water_logs",
-    "column_name": "source",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "water_goals",
-    "column_name": "goal_reason",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "nutrition_logs",
-    "column_name": "food_item",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "memberships",
-    "column_name": "status",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "chatbot_generated_plans",
-    "column_name": "raw_json",
+    "table_name": "invoices",
+    "column_name": "currency",
     "data_type": "text"
   },
   {
-    "table_name": "chatbot_generated_diets",
+    "table_name": "chatbot_generated_workouts",
     "column_name": "plan_id",
     "data_type": "character varying"
   },
   {
-    "table_name": "ai_chat_logs",
-    "column_name": "data_key",
-    "data_type": "character varying"
+    "table_name": "exercise_categories",
+    "column_name": "name",
+    "data_type": "text"
   },
   {
-    "table_name": "progress",
-    "column_name": "workout_name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "chatbot_generated_diets",
+    "table_name": "chatbot_generated_workouts",
     "column_name": "title",
     "data_type": "character varying"
   },
   {
-    "table_name": "session",
-    "column_name": "sid",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "template_diet_plans",
-    "column_name": "name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_logs",
-    "column_name": "exercise_name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_logs",
-    "column_name": "workout_name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "template_diet_plans",
+    "table_name": "exercise_categories",
     "column_name": "description",
     "data_type": "text"
   },
   {
-    "table_name": "workout_logs",
-    "column_name": "reps_done",
+    "table_name": "chatbot_generated_workouts",
+    "column_name": "duration",
     "data_type": "character varying"
   },
   {
-    "table_name": "template_workout_plans",
-    "column_name": "name",
+    "table_name": "chatbot_generated_workouts",
+    "column_name": "difficulty",
     "data_type": "character varying"
   },
   {
-    "table_name": "daily_plans",
-    "column_name": "workout_plan",
+    "table_name": "ai_messages",
+    "column_name": "tool_call_id",
     "data_type": "text"
   },
   {
-    "table_name": "daily_plans",
-    "column_name": "diet_plan",
+    "table_name": "user_goals",
+    "column_name": "goal_type",
     "data_type": "text"
-  },
-  {
-    "table_name": "template_workout_plans",
-    "column_name": "description",
-    "data_type": "text"
-  },
-  {
-    "table_name": "_migrations",
-    "column_name": "name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_logs",
-    "column_name": "notes",
-    "data_type": "text"
-  },
-  {
-    "table_name": "fitness_profiles",
-    "column_name": "goal",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "template_workout_plans",
-    "column_name": "tier",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "template_diet_plans",
-    "column_name": "tier",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "ai_chat_logs",
-    "column_name": "source",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "fitness_profiles",
-    "column_name": "diet_type",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "fitness_profiles",
-    "column_name": "activity_level",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "allowed_users",
-    "column_name": "email",
-    "data_type": "text"
-  },
-  {
-    "table_name": "fitness_profiles",
-    "column_name": "notes",
-    "data_type": "text"
-  },
-  {
-    "table_name": "activity_logs",
-    "column_name": "activity_type",
-    "data_type": "character varying"
   },
   {
     "table_name": "user_badges",
@@ -1420,43 +2020,23 @@
     "data_type": "character varying"
   },
   {
-    "table_name": "activity_logs",
-    "column_name": "activity_title",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "admins",
-    "column_name": "email",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_plans",
-    "column_name": "focus",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "workout_plans",
-    "column_name": "duration",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "admins",
+    "table_name": "muscle_groups",
     "column_name": "name",
-    "data_type": "character varying"
-  },
-  {
-    "table_name": "progress_logs",
-    "column_name": "notes",
     "data_type": "text"
   },
   {
-    "table_name": "workout_plans",
-    "column_name": "difficulty",
+    "table_name": "progress",
+    "column_name": "workout_name",
     "data_type": "character varying"
   },
   {
-    "table_name": "workout_plans",
-    "column_name": "raw_prompt",
+    "table_name": "muscle_groups",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "event_type",
     "data_type": "text"
   },
   {
@@ -1475,9 +2055,154 @@
     "data_type": "text"
   },
   {
-    "table_name": "admins",
-    "column_name": "role",
+    "table_name": "chatbot_generated_diets",
+    "column_name": "plan_id",
     "data_type": "character varying"
+  },
+  {
+    "table_name": "invoices",
+    "column_name": "invoice_pdf",
+    "data_type": "text"
+  },
+  {
+    "table_name": "chatbot_generated_diets",
+    "column_name": "title",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "daily_plans",
+    "column_name": "workout_plan",
+    "data_type": "text"
+  },
+  {
+    "table_name": "daily_plans",
+    "column_name": "diet_plan",
+    "data_type": "text"
+  },
+  {
+    "table_name": "equipment",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "equipment",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "achievements",
+    "column_name": "key",
+    "data_type": "text"
+  },
+  {
+    "table_name": "fitness_profiles",
+    "column_name": "goal",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "achievements",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "movement_patterns",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "data_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "fitness_profiles",
+    "column_name": "diet_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "fitness_profiles",
+    "column_name": "activity_level",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "data_key",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "fitness_profiles",
+    "column_name": "notes",
+    "data_type": "text"
+  },
+  {
+    "table_name": "movement_patterns",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_chat_logs",
+    "column_name": "source",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "achievements",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "session",
+    "column_name": "sid",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "workout_plans",
+    "column_name": "focus",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "workout_plans",
+    "column_name": "duration",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "achievements",
+    "column_name": "icon_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercise_types",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "workout_plans",
+    "column_name": "difficulty",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "workout_plans",
+    "column_name": "raw_prompt",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercise_types",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "email",
+    "data_type": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "full_name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "avatar_url",
+    "data_type": "text"
   },
   {
     "table_name": "workout_sessions",
@@ -1485,13 +2210,88 @@
     "data_type": "character varying"
   },
   {
-    "table_name": "chatbot_generated_workouts",
-    "column_name": "plan_id",
+    "table_name": "template_workout_plans",
+    "column_name": "name",
     "data_type": "character varying"
   },
   {
-    "table_name": "activity_logs",
-    "column_name": "activity_description",
+    "table_name": "template_workout_plans",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "meal_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "template_workout_plans",
+    "column_name": "tier",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "column_name": "food_item",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "timezone",
+    "data_type": "text"
+  },
+  {
+    "table_name": "allowed_users",
+    "column_name": "email",
+    "data_type": "text"
+  },
+  {
+    "table_name": "feature_usage",
+    "column_name": "feature_key",
+    "data_type": "text"
+  },
+  {
+    "table_name": "workout_progress",
+    "column_name": "exercise_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "tool_name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "workout_progress",
+    "column_name": "reps_done",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "admins",
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "admins",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "admins",
+    "column_name": "role",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "exercise_tags",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "user_goals",
+    "column_name": "status",
+    "data_type": "text"
+  },
+  {
+    "table_name": "chatbot_generated_plans",
+    "column_name": "raw_json",
     "data_type": "text"
   },
   {
@@ -1500,28 +2300,228 @@
     "data_type": "character varying"
   },
   {
-    "table_name": "chatbot_generated_workouts",
+    "table_name": "payment_events",
+    "column_name": "status",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "name",
+    "data_type": "text"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "activity_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "activity_title",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "workout_logs",
+    "column_name": "exercise_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "workout_logs",
+    "column_name": "workout_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "activity_logs",
+    "column_name": "activity_description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "workout_logs",
+    "column_name": "reps_done",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "primary_goal",
+    "data_type": "text"
+  },
+  {
+    "table_name": "v2_fitness_profiles",
+    "column_name": "medical_conditions",
+    "data_type": "ARRAY"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "slug",
+    "data_type": "text"
+  },
+  {
+    "table_name": "workout_logs",
+    "column_name": "notes",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "memberships",
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "instructions",
+    "data_type": "ARRAY"
+  },
+  {
+    "table_name": "user_preferences",
+    "column_name": "unit_system",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "status",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "column_name": "error_message",
+    "data_type": "text"
+  },
+  {
+    "table_name": "template_diet_plans",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "template_diet_plans",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "intake_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "progress_logs",
+    "column_name": "notes",
+    "data_type": "text"
+  },
+  {
+    "table_name": "template_diet_plans",
+    "column_name": "tier",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "water_logs",
+    "column_name": "source",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "user_milestones",
+    "column_name": "type",
+    "data_type": "text"
+  },
+  {
+    "table_name": "user_milestones",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "video_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "exercises",
+    "column_name": "thumbnail_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "member_settings",
+    "column_name": "theme",
+    "data_type": "text"
+  },
+  {
+    "table_name": "water_goals",
+    "column_name": "goal_reason",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "stripe_customer_id",
+    "data_type": "text"
+  },
+  {
+    "table_name": "subscriptions",
+    "column_name": "stripe_subscription_id",
+    "data_type": "text"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "error_message",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_conversations",
     "column_name": "title",
-    "data_type": "character varying"
+    "data_type": "text"
   },
   {
-    "table_name": "user_meal_tracking",
-    "column_name": "meal_type",
-    "data_type": "character varying"
+    "table_name": "recommendations",
+    "column_name": "type",
+    "data_type": "text"
   },
   {
-    "table_name": "chatbot_generated_workouts",
-    "column_name": "duration",
-    "data_type": "character varying"
+    "table_name": "recommendations",
+    "column_name": "message",
+    "data_type": "text"
   },
   {
-    "table_name": "chatbot_generated_workouts",
-    "column_name": "difficulty",
-    "data_type": "character varying"
+    "table_name": "ai_conversations",
+    "column_name": "status",
+    "data_type": "text"
   },
   {
-    "table_name": "user_meal_tracking",
+    "table_name": "invoices",
+    "column_name": "stripe_invoice_id",
+    "data_type": "text"
+  },
+  {
+    "table_name": "nutrition_logs",
     "column_name": "food_item",
     "data_type": "character varying"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "category",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_memory",
+    "column_name": "key",
+    "data_type": "text"
+  },
+  {
+    "table_name": "payment_events",
+    "column_name": "event_id",
+    "data_type": "text"
+  },
+  {
+    "table_name": "_migrations",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "ai_messages",
+    "column_name": "role",
+    "data_type": "text"
+  },
+  {
+    "table_name": "ai_messages",
+    "column_name": "content",
+    "data_type": "text"
   }
 ]

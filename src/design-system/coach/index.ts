@@ -1,12 +1,15 @@
 /**
- * STRIVA v4 Design System - AI Coach Barrel Export
+ * STRIVA V2 Design System - TRINETRA AI Coach Primitive Exports
  */
 
+export * from './TrinetraEmptyState';
+export * from './TrinetraMessageList';
+export * from './TrinetraComposer';
+export * from './TrinetraConversationList';
+export * from './TrinetraCoachLayout';
+export * from './DeleteConversationModal';
+
 export * from './MinimalCoachHero';
-export * from './TrinityRecommendation';
-export * from './TrinityQuickQuestions';
-export * from './MinimalChatExperience';
-export * from './TrinityInput';
 export * from './CoachGreeting';
 export * from './CoachStatus';
 export * from './SuggestionChips';

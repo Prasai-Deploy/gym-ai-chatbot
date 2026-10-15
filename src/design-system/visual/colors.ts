@@ -29,7 +29,7 @@ export const visualColors = {
 
   // Brand Accents
   primary: {
-    DEFAULT: '#F97316', // STRIVA Hyper Orange (Primary CTA, focus, active navigation)
+    DEFAULT: '#F97316', // STRIVA Hyper Orange (Primary brand color)
     hover: '#EA580C',
     active: '#C2410C',
     subtle: 'rgba(249, 115, 22, 0.10)',
@@ -37,14 +37,45 @@ export const visualColors = {
     glow: 'rgba(249, 115, 22, 0.20)',
   },
 
+  brand: {
+    DEFAULT: '#F97316', // STRIVA Brand Identity
+    hover: '#EA580C',
+    active: '#C2410C',
+    subtle: 'rgba(249, 115, 22, 0.10)',
+    border: 'rgba(249, 115, 22, 0.28)',
+    glow: 'rgba(249, 115, 22, 0.20)',
+  },
+
+  // Primary Fitness Action (Figma Athletic Lime)
+  action: {
+    DEFAULT: '#84CC16', // Restrained athletic lime for fitness primary CTAs
+    hover: '#65A30D',
+    active: '#4D7C0F',
+    bright: '#A3E635',
+    subtle: 'rgba(132, 204, 22, 0.10)',
+    border: 'rgba(132, 204, 22, 0.28)',
+    glow: 'rgba(132, 204, 22, 0.20)',
+  },
+
   // AI Intelligence Accent
   ai: {
-    DEFAULT: '#6366F1', // Trinity AI Indigo (AI coaching & intelligence surfaces)
+    DEFAULT: '#6366F1', // TRINETRA AI Indigo / Violet (AI surfaces)
     hover: '#4F46E5',
     active: '#4338CA',
     subtle: 'rgba(99, 102, 241, 0.10)',
     border: 'rgba(99, 102, 241, 0.28)',
     glow: 'rgba(99, 102, 241, 0.20)',
+  },
+
+  // Performance / Energy Accent (Restrained Lime)
+  lime: {
+    DEFAULT: '#84CC16', // Restrained athletic lime
+    hover: '#65A30D',
+    active: '#4D7C0F',
+    bright: '#A3E635',
+    subtle: 'rgba(132, 204, 22, 0.10)',
+    border: 'rgba(132, 204, 22, 0.28)',
+    glow: 'rgba(132, 204, 22, 0.20)',
   },
 
   // Status & Telemetry

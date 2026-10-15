@@ -47,18 +47,17 @@ export const billingApi = {
     return res.data;
   },
 
-  createRazorpayCheckout: async (tier: 'free' | 'pro' | 'elite', interval: 'monthly' | 'yearly' = 'monthly'): Promise<RazorpayCheckoutData> => {
+  createRazorpayCheckout: async (interval: 'monthly' | 'yearly' = 'monthly', tier: string = 'pro'): Promise<RazorpayCheckoutData> => {
     const res = await httpClient.post<any>('/billing/razorpay/checkout', { tier, interval });
     return res.data;
   },
 
-  verifyRazorpayPayment: async (payload: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string; tier: string; interval: string }): Promise<any> => {
-    const res = await httpClient.post<any>('/billing/razorpay/verify', payload);
-    return res.data;
-  },
-
-  updateSubscription: async (tier: 'free' | 'pro' | 'elite', interval: 'monthly' | 'yearly'): Promise<any> => {
-    const res = await httpClient.patch<any>('/billing/subscription', { tier, interval });
+  verifyRazorpayPayment: async (payload: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string; tier?: string; interval?: string }): Promise<any> => {
+    const res = await httpClient.post<any>('/billing/razorpay/verify', {
+      ...payload,
+      tier: payload.tier || 'pro',
+      interval: payload.interval || 'monthly',
+    });
     return res.data;
   },
 

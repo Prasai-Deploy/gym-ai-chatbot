@@ -30,7 +30,7 @@ export const OwnerTrinityAdvisor: React.FC<OwnerTrinityAdvisorProps> = React.mem
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-indigo-400" />
             <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-300 font-sans">
-              TRINITY BUSINESS OS
+              TRINETRA BUSINESS OS
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed font-sans">

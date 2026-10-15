@@ -1,0 +1,434 @@
+[
+  {
+    "table_name": "ai_agent_memories",
+    "constraint_name": "ai_agent_memories_organization_id_fkey",
+    "fk_columns": "{organization_id}",
+    "foreign_table_name": "organizations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "ai_messages",
+    "constraint_name": "ai_messages_conversation_id_fkey",
+    "fk_columns": "{conversation_id}",
+    "foreign_table_name": "ai_conversations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "constraint_name": "ai_tool_executions_conversation_id_fkey",
+    "fk_columns": "{conversation_id}",
+    "foreign_table_name": "ai_conversations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "ai_tool_executions",
+    "constraint_name": "ai_tool_executions_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "attendance_logs",
+    "constraint_name": "attendance_logs_location_id_fkey",
+    "fk_columns": "{location_id}",
+    "foreign_table_name": "organization_locations",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "chatbot_generated_diets",
+    "constraint_name": "chatbot_generated_diets_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "chatbot_generated_plans",
+    "constraint_name": "chatbot_generated_plans_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "chatbot_generated_workouts",
+    "constraint_name": "chatbot_generated_workouts_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "exercise_alternatives",
+    "constraint_name": "exercise_alternatives_alternative_id_fkey",
+    "fk_columns": "{alternative_id}",
+    "foreign_table_name": "exercises",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "exercise_equipment",
+    "constraint_name": "exercise_equipment_equipment_id_fkey",
+    "fk_columns": "{equipment_id}",
+    "foreign_table_name": "equipment",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "exercise_tags_map",
+    "constraint_name": "exercise_tags_map_tag_id_fkey",
+    "fk_columns": "{tag_id}",
+    "foreign_table_name": "exercise_tags",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "exercise_variations",
+    "constraint_name": "exercise_variations_variation_id_fkey",
+    "fk_columns": "{variation_id}",
+    "foreign_table_name": "exercises",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "exercises",
+    "constraint_name": "exercises_created_by_fkey",
+    "fk_columns": "{created_by}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "invoices",
+    "constraint_name": "invoices_subscription_id_fkey",
+    "fk_columns": "{subscription_id}",
+    "foreign_table_name": "subscriptions",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "memberships",
+    "constraint_name": "memberships_assigned_by_fkey",
+    "fk_columns": "{assigned_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "memberships",
+    "constraint_name": "memberships_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "membership_plans",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "memberships",
+    "constraint_name": "memberships_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_audit_logs",
+    "constraint_name": "organization_audit_logs_organization_id_fkey",
+    "fk_columns": "{organization_id}",
+    "foreign_table_name": "organizations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_invitations",
+    "constraint_name": "organization_invitations_invited_by_fkey",
+    "fk_columns": "{invited_by}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_invitations",
+    "constraint_name": "organization_invitations_location_id_fkey",
+    "fk_columns": "{location_id}",
+    "foreign_table_name": "organization_locations",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_invoices",
+    "constraint_name": "organization_invoices_subscription_id_fkey",
+    "fk_columns": "{subscription_id}",
+    "foreign_table_name": "organization_subscriptions",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_locations",
+    "constraint_name": "organization_locations_organization_id_fkey",
+    "fk_columns": "{organization_id}",
+    "foreign_table_name": "organizations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_members",
+    "constraint_name": "organization_members_location_id_fkey",
+    "fk_columns": "{location_id}",
+    "foreign_table_name": "organization_locations",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_roles",
+    "constraint_name": "organization_roles_organization_id_fkey",
+    "fk_columns": "{organization_id}",
+    "foreign_table_name": "organizations",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_staff",
+    "constraint_name": "organization_staff_location_id_fkey",
+    "fk_columns": "{location_id}",
+    "foreign_table_name": "organization_locations",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "organization_subscriptions",
+    "constraint_name": "organization_subscriptions_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "organization_subscription_plans",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "progress",
+    "constraint_name": "progress_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "pt_assignments",
+    "constraint_name": "pt_assignments_assigned_by_fkey",
+    "fk_columns": "{assigned_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "pt_assignments",
+    "constraint_name": "pt_assignments_trainer_id_fkey",
+    "fk_columns": "{trainer_id}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "push_subscriptions",
+    "constraint_name": "push_subscriptions_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "recommendations",
+    "constraint_name": "recommendations_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "template_diet_plans",
+    "constraint_name": "template_diet_plans_created_by_fkey",
+    "fk_columns": "{created_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "template_workout_plans",
+    "constraint_name": "template_workout_plans_created_by_fkey",
+    "fk_columns": "{created_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "trainer_member_assignments",
+    "constraint_name": "trainer_member_assignments_member_user_id_fkey",
+    "fk_columns": "{member_user_id}",
+    "foreign_table_name": "profiles",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "trainer_member_assignments",
+    "constraint_name": "trainer_member_assignments_trainer_user_id_fkey",
+    "fk_columns": "{trainer_user_id}",
+    "foreign_table_name": "profiles",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_achievements",
+    "constraint_name": "user_achievements_achievement_id_fkey",
+    "fk_columns": "{achievement_id}",
+    "foreign_table_name": "achievements",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_diet_assignments",
+    "constraint_name": "user_diet_assignments_assigned_by_fkey",
+    "fk_columns": "{assigned_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_diet_assignments",
+    "constraint_name": "user_diet_assignments_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "template_diet_plans",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_diet_assignments",
+    "constraint_name": "user_diet_assignments_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "constraint_name": "user_fitness_plans_diet_plan_id_fkey",
+    "fk_columns": "{diet_plan_id}",
+    "foreign_table_name": "chatbot_generated_diets",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "constraint_name": "user_fitness_plans_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_fitness_plans",
+    "constraint_name": "user_fitness_plans_workout_plan_id_fkey",
+    "fk_columns": "{workout_plan_id}",
+    "foreign_table_name": "chatbot_generated_workouts",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_goals",
+    "constraint_name": "user_goals_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_meal_tracking",
+    "constraint_name": "user_meal_tracking_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_milestones",
+    "constraint_name": "user_milestones_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "auth.users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_workout_assignments",
+    "constraint_name": "user_workout_assignments_assigned_by_fkey",
+    "fk_columns": "{assigned_by}",
+    "foreign_table_name": "admins",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_workout_assignments",
+    "constraint_name": "user_workout_assignments_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "template_workout_plans",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "user_workout_assignments",
+    "constraint_name": "user_workout_assignments_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "v2_workout_sessions",
+    "constraint_name": "v2_workout_sessions_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "v2_workout_plans",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "workout_logs",
+    "constraint_name": "workout_logs_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "workout_plans",
+    "delete_rule": "SET NULL",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "workout_logs",
+    "constraint_name": "workout_logs_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "workout_progress",
+    "constraint_name": "workout_progress_session_id_fkey",
+    "fk_columns": "{session_id}",
+    "foreign_table_name": "workout_sessions",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "workout_sessions",
+    "constraint_name": "workout_sessions_plan_id_fkey",
+    "fk_columns": "{plan_id}",
+    "foreign_table_name": "workout_plans",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  },
+  {
+    "table_name": "workout_sessions",
+    "constraint_name": "workout_sessions_user_id_fkey",
+    "fk_columns": "{user_id}",
+    "foreign_table_name": "users",
+    "delete_rule": "CASCADE",
+    "update_rule": "NO ACTION"
+  }
+]

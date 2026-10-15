@@ -16,12 +16,13 @@ const STORES = {
   QUEUE: 'pendingQueue',
 } as const;
 
-interface QueuedRequest {
+export interface QueuedRequest {
   id?: number;
   url: string;
   method: string;
   body: string;
   timestamp: number;
+  clientRequestId?: string;
 }
 
 // ── Database Connection ──────────────────────────────────────────────────────
@@ -108,24 +109,48 @@ export async function getCachedPlans(): Promise<any[] | null> {
 
 // ── Public API: Offline Queue ────────────────────────────────────────────────
 
-export async function queueRequest(url: string, method: string, body: any): Promise<void> {
+export async function queueRequest(url: string, method: string, body: any, clientRequestId?: string): Promise<boolean> {
   try {
     const db = await openDB();
+    const serializedBody = typeof body === 'string' ? body : JSON.stringify(body);
     const tx = db.transaction(STORES.QUEUE, 'readwrite');
     const store = tx.objectStore(STORES.QUEUE);
+
+    // Deduplication check: inspect existing items in queue to prevent duplicate submissions
+    const allReq = store.getAll();
+    const existingItems: QueuedRequest[] = await new Promise((resolve, reject) => {
+      allReq.onsuccess = () => resolve(allReq.result);
+      allReq.onerror = () => reject(allReq.error);
+    });
+
+    const isDuplicate = existingItems.some((item) => {
+      if (clientRequestId && item.clientRequestId === clientRequestId) return true;
+      return item.url === url && item.method === method && item.body === serializedBody;
+    });
+
+    if (isDuplicate) {
+      console.log('[Offline] Suppressed duplicate queued request:', method, url);
+      db.close();
+      return false;
+    }
+
     store.add({
       url,
       method,
-      body: JSON.stringify(body),
+      body: serializedBody,
       timestamp: Date.now(),
+      clientRequestId: clientRequestId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}`),
     } as QueuedRequest);
+
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => { db.close(); resolve(); };
       tx.onerror = () => { db.close(); reject(tx.error); };
     });
     console.log('[Offline] Queued request:', method, url);
+    return true;
   } catch (e) {
     console.warn('[Offline] Failed to queue request:', e);
+    return false;
   }
 }
 
@@ -145,11 +170,17 @@ export async function replayQueue(): Promise<number> {
 
     for (const item of items) {
       try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (item.clientRequestId) {
+          headers['X-Client-Request-Id'] = item.clientRequestId;
+        }
+
         const response = await fetch(item.url, {
           method: item.method,
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: item.body,
         });
+
         if (response.ok) {
           // Remove from queue after successful replay
           const db2 = await openDB();
@@ -159,9 +190,21 @@ export async function replayQueue(): Promise<number> {
             delTx.oncomplete = () => { db2.close(); resolve(); };
           });
           replayed++;
+        } else if (response.status >= 400 && response.status < 500) {
+          // Permanent client rejection (validation failure, 401/403/422). Discard to avoid infinite failed loops.
+          console.warn(`[Offline] Dropping permanently rejected queued request (${response.status}):`, item.url);
+          const db2 = await openDB();
+          const delTx = db2.transaction(STORES.QUEUE, 'readwrite');
+          delTx.objectStore(STORES.QUEUE).delete(item.id!);
+          await new Promise<void>((resolve) => {
+            delTx.oncomplete = () => { db2.close(); resolve(); };
+          });
+        } else {
+          // Transient 5xx or gateway timeout - leave in queue and retry next time
+          break;
         }
       } catch {
-        // Still offline or server error — leave in queue
+        // Still offline or network error — leave in queue
         break;
       }
     }

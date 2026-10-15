@@ -30,6 +30,19 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class SubscriptionRequiredError extends AppError {
+  public readonly code: string = 'SUBSCRIPTION_REQUIRED';
+  public readonly entitlementState: string;
+
+  constructor(
+    message: string = 'An active STRIVA subscription is required to access this feature.',
+    entitlementState: string = 'EXPIRED'
+  ) {
+    super(message, 403);
+    this.entitlementState = entitlementState;
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message: string = 'Resource not found') {
     super(message, 404);
@@ -41,3 +54,17 @@ export class BusinessError extends AppError {
     super(message, 422);
   }
 }
+
+export class ConflictError extends AppError {
+  constructor(message: string = 'Conflict') {
+    super(message, 409);
+  }
+}
+
+export class DatabaseError extends AppError {
+  constructor(message: string = 'Database operation failed') {
+    super(message, 500);
+  }
+}
+
+

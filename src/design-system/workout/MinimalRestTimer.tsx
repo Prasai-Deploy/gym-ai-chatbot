@@ -54,7 +54,7 @@ export const MinimalRestTimer: React.FC<MinimalRestTimerProps> = React.memo(({
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#F97316"
+            stroke="#84CC16"
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             animate={{ strokeDashoffset }}
@@ -97,7 +97,7 @@ export const MinimalRestTimer: React.FC<MinimalRestTimerProps> = React.memo(({
         </Button>
 
         <Button
-          variant="primary"
+          variant="lime"
           size="md"
           className="flex-1 font-bold"
           leftIcon={<Play className="w-4 h-4 fill-current" />}

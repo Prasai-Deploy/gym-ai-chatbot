@@ -11,6 +11,14 @@ export class ProgressAnalyticsService {
     return this.repository.getStatsByUserId(userId);
   }
 
+  public async getSnapshots(userId: string): Promise<Result<any[], AppError>> {
+    return this.repository.getSnapshotsByUserId(userId);
+  }
+
+  public async getHistory(userId: string): Promise<Result<any[], AppError>> {
+    return this.repository.getHistoryByUserId(userId);
+  }
+
   public async incrementWorkoutCount(userId: string): Promise<Result<ProgressStatistics, AppError>> {
     const statsRes = await this.repository.getStatsByUserId(userId);
     if (statsRes.isFailure()) return statsRes as Result<any, AppError>;

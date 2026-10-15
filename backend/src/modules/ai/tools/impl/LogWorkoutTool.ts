@@ -23,7 +23,8 @@ export class LogWorkoutTool extends BaseTool<z.infer<typeof LogWorkoutSchema>, a
     super();
   }
 
-  protected async executeImpl(input: z.infer<typeof LogWorkoutSchema>, userId: string): Promise<Result<any, AppError>> {
+  protected async executeImpl(input: z.infer<typeof LogWorkoutSchema>, context: any): Promise<Result<any, AppError>> {
+    const userId = typeof context === 'string' ? context : context.userId;
     return this.workoutService.transitionSessionState(input.sessionId, userId, {
       state: input.state,
       notes: input.notes

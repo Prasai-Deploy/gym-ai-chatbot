@@ -13,14 +13,14 @@ export const ExerciseTips: React.FC<ExerciseTipsProps> = React.memo(({
     'Keep your shoulder blades retracted and depressed throughout the press.',
     'Exhale explosively on the concentric upward press.',
   ],
-  coachNote = "Trinity AI Suggestion: Increase working weight +2.5kg if set 1 feels below RPE 8.",
+  coachNote = "TRINETRA AI Suggestion: Increase working weight +2.5kg if set 1 feels below RPE 8.",
   className,
 }) => {
   return (
     <div className={`p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex flex-col gap-2 text-xs select-none ${className}`}>
       <div className="flex items-center gap-2">
         <Bot className="w-4 h-4 text-indigo-400" />
-        <span className="font-bold text-white uppercase tracking-wider">Trinity AI Form Cues</span>
+        <span className="font-bold text-white uppercase tracking-wider">TRINETRA AI Form Cues</span>
       </div>
 
       <ul className="flex flex-col gap-1 text-slate-300 list-disc list-inside">

@@ -34,8 +34,14 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_status_created
 CREATE INDEX IF NOT EXISTS idx_invoices_user_status 
     ON public.invoices (user_id, status, paid_at);
 
-CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_time 
-    ON public.workout_sessions (user_id, started_at, state);
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'workout_sessions' AND column_name = 'started_at'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_time ON public.workout_sessions (user_id, started_at, state);
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_nutrition_logs_user_date 
     ON public.nutrition_logs (user_id, date);
@@ -43,14 +49,27 @@ CREATE INDEX IF NOT EXISTS idx_nutrition_logs_user_date
 CREATE INDEX IF NOT EXISTS idx_recovery_logs_user_date 
     ON public.recovery_logs (user_id, date);
 
-CREATE INDEX IF NOT EXISTS idx_organization_staff_org_role 
-    ON public.organization_staff (organization_id, role_key);
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'organization_staff'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_organization_staff_org_role ON public.organization_staff (organization_id, role_key);
+    END IF;
+END $$;
 
 -- 3. ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.attendance_logs ENABLE ROW LEVEL SECURITY;
 
 -- 4. FAIL-CLOSED MULTI-TENANT RLS POLICIES (NO STATIC FALLBACK)
-CREATE POLICY "Tenant attendance logs access policy"
-    ON public.attendance_logs FOR ALL
-    USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
-    WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'attendance_logs' AND policyname = 'Tenant attendance logs access policy'
+    ) THEN
+        CREATE POLICY "Tenant attendance logs access policy"
+            ON public.attendance_logs FOR ALL
+            USING (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID)
+            WITH CHECK (organization_id = NULLIF(current_setting('app.current_organization_id', true), '')::UUID);
+    END IF;
+END $$;

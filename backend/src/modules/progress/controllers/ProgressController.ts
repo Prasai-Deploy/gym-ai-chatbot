@@ -21,6 +21,28 @@ export class ProgressController {
     }
   };
 
+  public getSnapshots = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user.id;
+      const result = await this.analyticsService.getSnapshots(userId);
+      if (result.isFailure()) throw result.error;
+      return res.status(200).json({ success: true, data: result.value });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public getHistory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user.id;
+      const result = await this.analyticsService.getHistory(userId);
+      if (result.isFailure()) throw result.error;
+      return res.status(200).json({ success: true, data: result.value });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   public getAchievements = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user.id;

@@ -1,43 +1,59 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { AppShell } from '../../design-system/shell/AppShell';
-import { WorkoutLayout } from '../../design-system/workout/WorkoutLayout';
+import { PageContainer } from '../../design-system/shell/PageContainer';
+import { useEntitlement } from '../../hooks/useEntitlement';
 import { useWorkoutData } from '../../hooks/useStrivaApi';
+import { SubscriptionRequired } from '../../design-system/billing/SubscriptionRequired';
 import { LoadingSkeleton } from '../../design-system/components/LoadingSkeleton';
+import { isSubscriptionRequiredError } from '../../utils/errorUtils';
+import { WorkoutLayout } from '../../design-system/workout/WorkoutLayout';
 
 export const V3WorkoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const { data: workoutData, isLoading } = useWorkoutData();
-  const userName = user?.name || user?.email?.split('@')[0] || 'Athlete';
+  const { hasAccess, state, loading: isEntitlementLoading } = useEntitlement();
+  const workoutQuery = useWorkoutData();
+
+  if (isEntitlementLoading || (hasAccess && workoutQuery.isLoading)) {
+    return (
+      <PageContainer
+        title="Workout"
+        subtitle="Training Execution Workspace"
+      >
+        <div className="w-full max-w-4xl mx-auto py-8 space-y-4">
+          <LoadingSkeleton height="60px" variant="card" />
+          <LoadingSkeleton height="360px" variant="card" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const isSubscriptionGate =
+    (!hasAccess && (state === 'EXPIRED' || state === 'CANCELLED')) ||
+    isSubscriptionRequiredError(workoutQuery.error);
+
+  if (isSubscriptionGate) {
+    return (
+      <PageContainer
+        title="Workout"
+        subtitle="Training Execution Workspace"
+      >
+        <SubscriptionRequired featureName="Workout Execution" />
+      </PageContainer>
+    );
+  }
+
+  const activeSession = workoutQuery.data?.activeSession;
+  const latestPlan = workoutQuery.data?.latestPlan;
+
+  const routineTitle = activeSession?.title || latestPlan?.title || latestPlan?.name || 'Upper Body Push & Core';
+  const category = latestPlan?.description || 'Hypertrophy • Push Cycle';
 
   return (
-    <AppShell
-      currentPath="/v3/workout"
-      showRightSidebar={false}
-      onNavigate={(path) => navigate(path)}
-      onLogout={() => logout?.()}
-      user={{
-        name: userName,
-        email: user?.email || 'athlete@striva.app',
-        role: 'PRO Member',
-      }}
-    >
-      {isLoading ? (
-        <div className="w-full max-w-xl mx-auto px-4 py-8 space-y-6">
-          <LoadingSkeleton height="40px" width="180px" />
-          <LoadingSkeleton height="240px" variant="card" />
-          <LoadingSkeleton height="180px" variant="card" />
-        </div>
-      ) : (
-        <WorkoutLayout
-          routineTitle={workoutData?.workoutTitle || "Upper Body Push & Core"}
-          category="Hypertrophy • Push Cycle"
-          onFinishWorkoutComplete={() => navigate('/v3/dashboard')}
-          onOpenCoach={() => navigate('/v3/coach')}
-        />
-      )}
-    </AppShell>
+    <WorkoutLayout
+      routineTitle={routineTitle}
+      category={category}
+      onFinishWorkoutComplete={() => navigate('/v3/dashboard')}
+      onOpenCoach={() => navigate('/v3/coach')}
+    />
   );
 };

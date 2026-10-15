@@ -132,7 +132,7 @@ export class AnalyticsRepository {
 
     try {
       const { data, error } = await this.supabase
-        .from('workout_sessions')
+        .from('v2_workout_sessions')
         .select('*')
         .in('user_id', userIds)
         .gte('created_at', period.from)
@@ -151,37 +151,25 @@ export class AnalyticsRepository {
   }
 
   /**
-   * Fetches exercise sessions and sets for given session IDs.
+   * Fetches exercise sets for given session IDs.
    */
   public async getExerciseSetsForSessions(sessionIds: string[]): Promise<any[]> {
     if (!sessionIds || sessionIds.length === 0) return [];
 
     try {
-      // Find exercise session ids
-      const { data: exSessions, error: exErr } = await this.supabase
-        .from('exercise_sessions')
-        .select('id, workout_session_id, exercise_id')
-        .in('workout_session_id', sessionIds);
-
-      if (exErr || !exSessions || exSessions.length === 0) return [];
-
-      const exSessionIds = exSessions.map((es: any) => es.id);
       const { data: sets, error: setsErr } = await this.supabase
         .from('exercise_sets')
         .select('*')
-        .in('exercise_session_id', exSessionIds);
+        .in('session_id', sessionIds);
 
-      if (setsErr) return [];
+      if (setsErr) {
+        logger.error({ err: setsErr.message }, '[AnalyticsRepository] getExerciseSetsForSessions error');
+        return [];
+      }
 
-      return (sets || []).map((s: any) => {
-        const es = exSessions.find((item: any) => item.id === s.exercise_session_id);
-        return {
-          ...s,
-          exercise_id: es?.exercise_id,
-          workout_session_id: es?.workout_session_id,
-        };
-      });
+      return sets || [];
     } catch (err: any) {
+      logger.error({ err: err.message }, '[AnalyticsRepository] getExerciseSetsForSessions exception');
       return [];
     }
   }
@@ -207,7 +195,7 @@ export class AnalyticsRepository {
 
     try {
       const { data, error } = await this.supabase
-        .from('nutrition_logs')
+        .from('v2_nutrition_logs')
         .select('*')
         .in('user_id', userIds)
         .gte('date', period.from)

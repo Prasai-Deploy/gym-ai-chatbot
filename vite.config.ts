@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api/v1': 'http://localhost:5000',
         '/api': 'http://localhost:5000',
+        '/auth': 'http://localhost:5000',
+        '/health': 'http://localhost:5000',
       },
       hmr: process.env.DISABLE_HMR !== 'true',
     },

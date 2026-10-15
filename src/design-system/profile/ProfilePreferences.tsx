@@ -1,23 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sliders, Sun, Moon, Bell } from '../icons';
 import { useTheme } from '../ThemeProvider';
 import { cn } from '../tokens';
 
 export interface ProfilePreferencesProps {
+  initialUnitSystem?: 'metric' | 'imperial';
+  initialNotifications?: boolean;
+  onSavePreferences?: (unitSystem: 'metric' | 'imperial', notifications: boolean) => void;
   className?: string;
 }
 
-export const ProfilePreferences: React.FC<ProfilePreferencesProps> = React.memo(({ className }) => {
+export const ProfilePreferences: React.FC<ProfilePreferencesProps> = React.memo(({
+  initialUnitSystem = 'metric',
+  initialNotifications = true,
+  onSavePreferences,
+  className,
+}) => {
   const { theme, toggleTheme } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [units, setUnits] = useState<'metric' | 'imperial'>(initialUnitSystem);
+
+  useEffect(() => {
+    setUnits(initialUnitSystem);
+  }, [initialUnitSystem]);
+
+  useEffect(() => {
+    setNotifications(initialNotifications);
+  }, [initialNotifications]);
+
+  const handleUnitChange = (newUnit: 'metric' | 'imperial') => {
+    setUnits(newUnit);
+    onSavePreferences?.(newUnit, notifications);
+  };
+
+  const handleNotificationChange = () => {
+    const nextVal = !notifications;
+    setNotifications(nextVal);
+    onSavePreferences?.(units, nextVal);
+  };
 
   return (
     <div className={cn('w-full rounded-2xl bg-[#11141D] border border-white/[0.07] p-5 sm:p-6 flex flex-col gap-4 select-none shadow-sm', className)}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.12em] font-sans flex items-center gap-1.5">
           <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-          PREFERENCES
+          PREFERENCES & UNITS
         </span>
       </div>
 
@@ -47,7 +74,7 @@ export const ProfilePreferences: React.FC<ProfilePreferencesProps> = React.memo(
           <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
             <button
               type="button"
-              onClick={() => setUnits('metric')}
+              onClick={() => handleUnitChange('metric')}
               className={cn(
                 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
                 units === 'metric' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
@@ -57,7 +84,7 @@ export const ProfilePreferences: React.FC<ProfilePreferencesProps> = React.memo(
             </button>
             <button
               type="button"
-              onClick={() => setUnits('imperial')}
+              onClick={() => handleUnitChange('imperial')}
               className={cn(
                 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
                 units === 'imperial' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
@@ -72,11 +99,11 @@ export const ProfilePreferences: React.FC<ProfilePreferencesProps> = React.memo(
         <div className="flex items-center justify-between py-2.5 min-h-[44px]">
           <div className="flex flex-col">
             <span className="text-xs font-medium text-white">Daily Workout & Hydration Alerts</span>
-            <span className="text-[11px] text-slate-400">Push reminders from Trinity</span>
+            <span className="text-[11px] text-slate-400">Push reminders from TRINETRA</span>
           </div>
           <button
             type="button"
-            onClick={() => setNotifications(!notifications)}
+            onClick={handleNotificationChange}
             className={cn(
               'px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
               notifications

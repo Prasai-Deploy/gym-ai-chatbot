@@ -7,6 +7,7 @@ import {
   WhatsAppProvider,
 } from './notification.types';
 import { logger } from '@logger/index';
+import { notificationRepository } from './notification.repository';
 
 export class MockEmailProvider implements EmailProvider {
   async sendEmail(to: string, subject: string, bodyHtml: string): Promise<boolean> {
@@ -49,7 +50,22 @@ export class NotificationDispatcher {
       try {
         switch (channel) {
           case 'in_app':
-            // In-app notifications handled by Supabase Realtime & DB table
+            if (event.organizationId) {
+              await notificationRepository.upsertDeduplicatedNotification({
+                organization_id: event.organizationId,
+                recipient_user_id: event.userId,
+                type: event.category || 'system',
+                severity: event.metadata?.severity || 'info',
+                title: event.title,
+                message: event.message,
+                action_path: event.metadata?.actionPath,
+                action_label: event.metadata?.actionLabel,
+                resource_type: event.metadata?.resourceType,
+                resource_id: event.metadata?.resourceId,
+                deduplication_key: event.metadata?.deduplicationKey,
+                metadata: event.metadata || {},
+              });
+            }
             break;
           case 'email':
             await this.emailProvider.sendEmail(

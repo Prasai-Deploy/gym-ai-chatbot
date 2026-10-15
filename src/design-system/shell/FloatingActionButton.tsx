@@ -31,7 +31,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = React.m
               }}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#181C28] text-indigo-300 text-xs font-bold shadow-xl border border-indigo-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              <span>Trinity Coach</span>
+              <span>TRINETRA Coach</span>
               <Bot className="w-4 h-4 text-indigo-400" />
             </button>
 

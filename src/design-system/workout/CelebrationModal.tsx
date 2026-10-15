@@ -44,7 +44,7 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = React.memo(({
             Phenomenal Performance! 🔥
           </h2>
           <p className="text-xs text-slate-300">
-            You crushed your Hypertrophy Chest & Triceps routine. Trinity AI has logged your progress.
+            You crushed your Hypertrophy Chest & Triceps routine. TRINETRA AI has logged your progress.
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dumbbell, Edit3, Check } from '../icons';
 import { cn } from '../tokens';
 
@@ -28,6 +28,12 @@ export const FitnessProfileSection: React.FC<FitnessProfileSectionProps> = React
   const [experience, setExperience] = useState(initialExperience);
   const [frequency, setFrequency] = useState(initialFrequency);
 
+  useEffect(() => {
+    if (initialHeightCm) setHeight(initialHeightCm);
+    if (initialWeightKg) setWeight(initialWeightKg);
+    if (initialExperience) setExperience(initialExperience);
+  }, [initialHeightCm, initialWeightKg, initialExperience]);
+
   const handleSave = () => {
     setIsEditing(false);
     onSaveProfile?.({ height, weight, age, experience, frequency });
@@ -37,14 +43,14 @@ export const FitnessProfileSection: React.FC<FitnessProfileSectionProps> = React
     <div className={cn('w-full rounded-2xl bg-[#11141D] border border-white/[0.07] p-5 sm:p-6 flex flex-col gap-4 select-none shadow-sm', className)}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.12em] font-sans flex items-center gap-1.5">
-          <Dumbbell className="w-3.5 h-3.5 text-orange-400" />
-          FITNESS PROFILE
+          <Dumbbell className="w-3.5 h-3.5 text-lime-400" />
+          FITNESS PROFILE & BIOMETRICS
         </span>
 
         <button
           type="button"
           onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-          className="text-xs font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+          className="text-xs font-semibold text-lime-400 hover:text-lime-300 flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 rounded"
         >
           {isEditing ? (
             <>
@@ -68,7 +74,9 @@ export const FitnessProfileSection: React.FC<FitnessProfileSectionProps> = React
               type="number"
               value={height}
               onChange={(e) => setHeight(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
+              min="50"
+              max="250"
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -77,25 +85,31 @@ export const FitnessProfileSection: React.FC<FitnessProfileSectionProps> = React
               type="number"
               value={weight}
               onChange={(e) => setWeight(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
+              min="30"
+              max="300"
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-slate-400">Experience</label>
-            <input
-              type="text"
-              value={experience}
-              onChange={(e) => setExperience(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
-            />
+            <label className="text-[11px] font-semibold text-slate-400">Experience Level</label>
+            <select
+              value={experience.toLowerCase()}
+              onChange={(e) => setExperience(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))}
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+              <option value="elite">Elite</option>
+            </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-slate-400">Frequency</label>
+            <label className="text-[11px] font-semibold text-slate-400">Training Frequency</label>
             <input
               type="text"
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-orange-500"
+              className="w-full px-3 py-2 rounded-xl bg-[#181C28] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-lime-500"
             />
           </div>
         </div>
@@ -106,12 +120,12 @@ export const FitnessProfileSection: React.FC<FitnessProfileSectionProps> = React
             <span className="text-sm font-bold text-white font-display tabular-nums">{height} cm</span>
           </div>
           <div className="flex items-center justify-between py-2.5 min-h-[44px]">
-            <span className="text-xs text-slate-400">Weight</span>
+            <span className="text-xs text-slate-400">Target Weight</span>
             <span className="text-sm font-bold text-white font-display tabular-nums">{weight} kg</span>
           </div>
           <div className="flex items-center justify-between py-2.5 min-h-[44px]">
             <span className="text-xs text-slate-400">Experience Level</span>
-            <span className="text-sm font-bold text-white">{experience}</span>
+            <span className="text-sm font-bold text-white capitalize">{experience}</span>
           </div>
           <div className="flex items-center justify-between py-2.5 min-h-[44px]">
             <span className="text-xs text-slate-400">Training Frequency</span>

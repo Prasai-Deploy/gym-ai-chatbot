@@ -28,7 +28,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
 
   const commands: CommandItem[] = [
     { id: '1', category: 'Navigation', title: 'Dashboard', subtitle: 'View workout metrics & health overview', icon: <Dumbbell className="w-4 h-4 text-orange-400" />, path: '/v3/dashboard' },
-    { id: '2', category: 'AI Coach', title: 'Trinity AI Fitness Coach', subtitle: 'Get personalized workout plan & advice', icon: <Bot className="w-4 h-4 text-indigo-400" />, path: '/v3/coach' },
+    { id: '2', category: 'AI Coach', title: 'TRINETRA AI Fitness Coach', subtitle: 'Get personalized workout plan & advice', icon: <Bot className="w-4 h-4 text-indigo-400" />, path: '/v3/coach' },
     { id: '3', category: 'Navigation', title: 'Workouts & Exercises', subtitle: 'Log routines, sets, and reps', icon: <Flame className="w-4 h-4 text-amber-400" />, path: '/v3/workout' },
     { id: '4', category: 'Navigation', title: 'Nutrition & Macros', subtitle: 'Track calories, protein, and meal plans', icon: <PieChart className="w-4 h-4 text-emerald-400" />, path: '/v3/nutrition' },
     { id: '5', category: 'Navigation', title: 'Progress & Analytics', subtitle: 'Strength progression graphs and trends', icon: <Sparkles className="w-4 h-4 text-cyan-400" />, path: '/v3/progress' },

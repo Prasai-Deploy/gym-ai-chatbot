@@ -17,7 +17,25 @@
   
   /* Brand Accents */
   --accent-primary: #F97316;
+  --accent-brand: #F97316;
+  --accent-brand-hover: #EA580C;
+  --accent-brand-subtle: rgba(249, 115, 22, 0.10);
+  --accent-brand-border: rgba(249, 115, 22, 0.28);
+
+  /* Primary Fitness Action Accent (Figma Athletic Lime) */
+  --accent-action: #84CC16;
+  --accent-action-hover: #65A30D;
+  --accent-action-bright: #A3E635;
+  --accent-action-subtle: rgba(132, 204, 22, 0.10);
+  --accent-action-border: rgba(132, 204, 22, 0.28);
+
+  /* TRINETRA AI Intelligence Accent */
   --accent-ai: #6366F1;
+  --accent-ai-hover: #4F46E5;
+  --accent-ai-subtle: rgba(99, 102, 241, 0.10);
+  --accent-ai-border: rgba(99, 102, 241, 0.28);
+
+  /* Status Accents */
   --accent-success: #10B981;
   --accent-warning: #F59E0B;
   --accent-danger: #EF4444;
@@ -27,7 +45,8 @@
   --border-subtle: rgba(255, 255, 255, 0.07);
   --border-medium: rgba(255, 255, 255, 0.12);
   --border-strong: rgba(255, 255, 255, 0.18);
-  --border-focus: rgba(249, 115, 22, 0.45);
+  --border-focus: rgba(132, 204, 22, 0.45);
+  --border-focus-brand: rgba(249, 115, 22, 0.45);
   
   /* Text */
   --text-primary: #FFFFFF;
@@ -37,6 +56,7 @@
 
   /* Restrained Glows */
   --glow-primary: 0 0 24px rgba(249, 115, 22, 0.18);
+  --glow-action: 0 0 24px rgba(132, 204, 22, 0.20);
   --glow-ai: 0 0 24px rgba(99, 102, 241, 0.18);
   --glow-success: 0 0 20px rgba(16, 185, 129, 0.18);
   --glow-warning: 0 0 20px rgba(245, 158, 11, 0.18);
@@ -58,6 +78,13 @@
   --text-secondary: #475569;
   --text-muted: #94A3B8;
   --text-technical: #334155;
+
+  --accent-brand: #EA580C;
+  --accent-action: #65A30D;
+  --accent-action-hover: #4D7C0F;
+  --accent-action-bright: #84CC16;
+  --accent-action-subtle: rgba(101, 163, 13, 0.12);
+  --accent-action-border: rgba(101, 163, 13, 0.30);
 }
 
 body {
@@ -141,6 +168,31 @@ body {
   box-shadow: var(--glow-ai);
 }
 
+.v3-glow-lime {
+  box-shadow: var(--glow-action);
+}
+
+/* Safe Area Inset Support for Mobile PWA */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+
+.pt-safe {
+  padding-top: max(0px, env(safe-area-inset-top, 0px));
+}
+
+/* Accessibility: Prefers-Reduced-Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom Scrollbars */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -157,5 +209,5 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+  background: var(--accent-action);
 }

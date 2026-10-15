@@ -6,7 +6,7 @@ export interface ProgressRingProps {
   value: number; // 0 to 100
   size?: number;
   strokeWidth?: number;
-  variant?: 'primary' | 'ai' | 'success' | 'warning' | 'danger';
+  variant?: 'primary' | 'action' | 'lime' | 'ai' | 'success' | 'warning' | 'danger';
   label?: string;
   className?: string;
 }
@@ -26,6 +26,8 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   const colors = {
     primary: '#F97316',
+    action: '#84CC16',
+    lime: '#84CC16',
     ai: '#6366F1',
     success: '#10B981',
     warning: '#F59E0B',

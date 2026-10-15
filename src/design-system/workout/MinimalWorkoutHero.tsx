@@ -33,7 +33,7 @@ export const MinimalWorkoutHero: React.FC<MinimalWorkoutHeroProps> = React.memo(
             {durationMinutes} min
           </span>
           <span>•</span>
-          <span className="uppercase tracking-wider text-[11px] font-bold text-orange-400">
+          <span className="uppercase tracking-wider text-[11px] font-bold text-[#84CC16]">
             {category}
           </span>
         </div>
@@ -49,9 +49,9 @@ export const MinimalWorkoutHero: React.FC<MinimalWorkoutHeroProps> = React.memo(
 
         {/* Dominant Primary Action */}
         <Button
-          variant="primary"
+          variant="lime"
           size="lg"
-          className="w-full sm:w-64 font-bold text-sm tracking-wide mt-2 shadow-md shadow-orange-500/20"
+          className="w-full sm:w-64 font-bold text-sm tracking-wide mt-2 shadow-lg shadow-[#84CC16]/20"
           leftIcon={<Play className="w-4 h-4 fill-current" />}
           onClick={onStartWorkout}
         >

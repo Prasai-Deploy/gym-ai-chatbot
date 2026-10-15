@@ -34,7 +34,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = React.memo(({
           </span>
           <span className="text-slate-600 hidden sm:inline">/</span>
           <span className="text-xs font-bold text-white font-sans tracking-tight">
-            {currentPageTitle || 'SYSTEM OPERATING SYSTEM'}
+            {currentPageTitle || 'OVERVIEW'}
           </span>
         </div>
       </div>
@@ -48,7 +48,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = React.memo(({
         >
           <div className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-slate-500 group-hover:text-orange-400 transition-colors" />
-            <span className="text-[11px] font-medium text-slate-400">Search commands & telemetry...</span>
+            <span className="text-[11px] font-medium text-slate-400">Search workouts, plans & commands...</span>
           </div>
           <kbd className="px-1.5 py-0.5 text-[9px] font-bold text-slate-500 bg-white/[0.05] border border-white/[0.08] rounded-md uppercase tracking-wider font-mono">
             ⌘K
@@ -74,15 +74,15 @@ export const TopNavigation: React.FC<TopNavigationProps> = React.memo(({
           <SyncStatusIndicator />
         </div>
 
-        {/* Trinity AI Status Pill Control */}
+        {/* TRINETRA AI Status Pill Control */}
         <button
           type="button"
           onClick={() => onNavigate?.('/v3/coach')}
-          aria-label="Trinity AI Coach Control"
+          aria-label="TRINETRA AI Coach Control"
           className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-indigo-500/[0.08] hover:bg-indigo-500/[0.14] border border-indigo-500/25 hover:border-indigo-500/40 text-indigo-300 transition-all text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 group shadow-sm select-none"
         >
           <Bot className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-105 transition-transform" />
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em]">TRINITY</span>
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em]">TRINETRA</span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
         </button>
 

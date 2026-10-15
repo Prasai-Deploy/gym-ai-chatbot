@@ -40,7 +40,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = React.memo(({
           Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">{userName}</span> 👋
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-          Your body is <span className="text-white font-bold">{readinessScore}% primed</span> for optimal performance today. Trinity AI has prepared your hyper-trophy mission.
+          Your body is <span className="text-white font-bold">{readinessScore}% primed</span> for optimal performance today. TRINETRA AI has prepared your hyper-trophy mission.
         </p>
       </div>
 

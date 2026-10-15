@@ -12,18 +12,20 @@ import { logger } from '@logger/index';
 export class AdminService {
   constructor(private readonly repository: AdminRepository) {}
 
-  public async getDashboardStats(): Promise<Result<AdminDashboardStats, AppError>> {
-    return this.repository.getDashboardStats();
+  public async getDashboardStats(organizationId?: string): Promise<Result<AdminDashboardStats, AppError>> {
+    return this.repository.getDashboardStats(organizationId);
   }
 
   public async getMembers(params?: {
     limit?: number;
     offset?: number;
     search?: string;
+    organizationId?: string;
   }): Promise<Result<Member[], AppError>> {
-    const { limit = 50, offset = 0, search } = params ?? {};
-    return this.repository.getMembers(limit, offset, search);
+    const { limit = 50, offset = 0, search, organizationId } = params ?? {};
+    return this.repository.getMembers(limit, offset, search, organizationId);
   }
+
 
   public async getMembershipPlans(): Promise<Result<MembershipPlan[], AppError>> {
     return this.repository.getMembershipPlans();

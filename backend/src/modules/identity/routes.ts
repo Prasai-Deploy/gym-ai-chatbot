@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { IdentityController } from './controllers/IdentityController';
 import { IdentityService } from './services/IdentityService';
 import { IdentityRepository } from './repositories/IdentityRepository';
-import { supabase } from '@database/supabase';
+import { supabaseAdmin } from '@database/supabase';
 import { requireAuth } from '@middleware/auth';
 
 const router = Router();
 
 // Dependency Injection wiring
-const repository = new IdentityRepository(supabase);
+const repository = new IdentityRepository(supabaseAdmin);
 const service = new IdentityService(repository);
 const controller = new IdentityController(service);
 
@@ -21,6 +21,9 @@ router.patch('/profile/fitness', requireAuth, controller.updateFitnessProfile);
 
 router.get('/profile/preferences', requireAuth, controller.getPreferences);
 router.patch('/profile/preferences', requireAuth, controller.updatePreferences);
+
+router.get('/profile/settings', requireAuth, controller.getSettings);
+router.patch('/profile/settings', requireAuth, controller.updateSettings);
 
 // Demo user reset endpoint
 router.post('/demo/reset', requireAuth, controller.resetDemoData);

@@ -43,6 +43,7 @@ export {
   Trash2,
   Edit3,
   Filter,
+  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   RefreshCw,
@@ -64,4 +65,8 @@ export {
   Utensils,
   Droplets,
   Target,
+  Loader2,
+  MessageSquare,
+  ShieldCheck,
+  LineChart,
 } from 'lucide-react';

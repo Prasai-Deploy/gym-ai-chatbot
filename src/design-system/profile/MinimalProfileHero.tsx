@@ -14,7 +14,7 @@ export interface MinimalProfileHeroProps {
 export const MinimalProfileHero: React.FC<MinimalProfileHeroProps> = React.memo(({
   userName = 'Athlete',
   email = 'athlete@striva.app',
-  role = 'PRO Member',
+  role = 'STRIVA Member',
   memberSinceYear = 2026,
   avatarUrl,
   className,

@@ -70,6 +70,9 @@ import { billingRouter } from '../modules/billing/routes';
 import { organizationRouter } from '../modules/organization';
 import { integrationRouter } from '../modules/integrations';
 import { analyticsRouter } from '../modules/analytics';
+import { nutritionRouter } from '../modules/nutrition/routes';
+import { attendanceRouter } from '../modules/attendance';
+import { trainerRouter } from '../modules/trainer';
 
 // Domain Routes
 app.use('/api/v1/identity', identityRouter);
@@ -77,6 +80,7 @@ app.use('/api/v1/exercises', exerciseRouter);
 app.use('/api/v1/admin/exercises', adminExerciseRouter);
 app.use('/api/v1/workouts', workoutRouter);
 app.use('/api/v1/admin/workouts', adminWorkoutRouter);
+app.use('/api/v1/nutrition', nutritionRouter);
 app.use('/api/v1/progress', progressRouter);
 app.use('/api/v1/intelligence', intelligenceRouter);
 app.use('/api/v1/ai', aiRouter);
@@ -85,6 +89,10 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/organizations', organizationRouter);
 app.use('/api/v1/integrations', integrationRouter);
 app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/attendance', attendanceRouter);
+app.use('/api/v1/trainers', trainerRouter);
+
+
 
 // Production Frontend Static Serving & SPA Fallback
 const possibleDistPaths = [

@@ -4,11 +4,17 @@ import { SubscriptionTier, BillingInterval } from '../domain/BillingSchemas';
 import { env } from '@config/env';
 import { logger } from '@logger/index';
 
-// INR Pricing Structure (Paise = Amount * 100)
-const RAZORPAY_PRICING: Record<SubscriptionTier, Record<BillingInterval, number>> = {
+// Canonical STRIVA Consumer Pricing Structure (Paise = Amount * 100)
+export const STRIVA_PRICING: Record<BillingInterval, number> = {
+  monthly: 799, // ₹799/month
+  yearly: 6999, // ₹6,999/year (~₹583/mo, save ~27%)
+};
+
+// Legacy mapping for DB backwards compatibility
+export const RAZORPAY_PRICING: Record<SubscriptionTier, Record<BillingInterval, number>> = {
   free: { monthly: 0, yearly: 0 },
-  pro: { monthly: 1499, yearly: 14990 }, // ₹1,499/mo or ₹14,990/yr
-  elite: { monthly: 3999, yearly: 39990 }, // ₹3,999/mo or ₹39,990/yr
+  pro: { monthly: 799, yearly: 6999 },
+  elite: { monthly: 799, yearly: 6999 }, // Single plan model: Pro and Elite resolve to canonical STRIVA pricing
 };
 
 export class RazorpayProvider implements IPaymentProvider {
@@ -18,9 +24,26 @@ export class RazorpayProvider implements IPaymentProvider {
   private readonly baseUrl: string = 'https://api.razorpay.com/v1';
 
   constructor(keyId?: string, keySecret?: string, webhookSecret?: string) {
-    this.keyId = keyId || env.RAZORPAY_KEY_ID || '';
-    this.keySecret = keySecret || env.RAZORPAY_KEY_SECRET || '';
-    this.webhookSecret = webhookSecret || env.RAZORPAY_WEBHOOK_SECRET || '';
+    this.keyId = keyId || '';
+    this.keySecret = keySecret || '';
+    this.webhookSecret = webhookSecret || '';
+  }
+
+  public getKeyId(): string {
+    return this.keyId || env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
+  }
+
+  public getKeySecret(): string {
+    return this.keySecret || env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
+  }
+
+  public getWebhookSecret(): string {
+    return this.webhookSecret || env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_WEBHOOK_SECRET || '';
+  }
+
+  public hasWebhookSecret(): boolean {
+    const sec = this.getWebhookSecret();
+    return Boolean(sec && sec.trim() !== '');
   }
 
   /**
@@ -29,18 +52,26 @@ export class RazorpayProvider implements IPaymentProvider {
    */
   public async createSubscription(
     userId: string,
-    tier: SubscriptionTier,
+    tier: SubscriptionTier = 'pro',
     interval: BillingInterval = 'monthly'
   ): Promise<CheckoutSessionResult> {
-    if (!this.keyId || !this.keySecret) {
+    const keyId = this.getKeyId();
+    const keySecret = this.getKeySecret();
+    if (!keyId || !keySecret) {
       logger.error('[RazorpayProvider] Missing Razorpay API credentials');
       throw new Error('Razorpay API credentials unconfigured in server environment');
     }
 
-    const amountInRupees = RAZORPAY_PRICING[tier][interval];
+    // Canonical Server-Side Price Resolution: ₹799 monthly, ₹6,999 annual
+    const amountInRupees = STRIVA_PRICING[interval] || 799;
     const amountInPaise = amountInRupees * 100;
 
-    const authHeader = `Basic ${Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')}`;
+    const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`;
+
+    const planId =
+      process.env[`RAZORPAY_PLAN_STRIVA_${interval.toUpperCase()}`] ||
+      process.env[`RAZORPAY_PLAN_${tier.toUpperCase()}_${interval.toUpperCase()}`] ||
+      (interval === 'yearly' ? 'plan_striva_annual' : 'plan_striva_monthly');
 
     try {
       const response = await fetch(`${this.baseUrl}/subscriptions`, {
@@ -50,7 +81,7 @@ export class RazorpayProvider implements IPaymentProvider {
           Authorization: authHeader,
         },
         body: JSON.stringify({
-          plan_id: process.env[`RAZORPAY_PLAN_${tier.toUpperCase()}_${interval.toUpperCase()}`] || `plan_${tier}_${interval}`,
+          plan_id: planId,
           total_count: interval === 'yearly' ? 1 : 12,
           quantity: 1,
           customer_notify: 1,
@@ -76,7 +107,7 @@ export class RazorpayProvider implements IPaymentProvider {
         provider: 'razorpay',
         subscriptionId: data.id,
         orderId: data.order_id || `order_${data.id}`,
-        keyId: this.keyId,
+        keyId,
         amount: amountInPaise,
         currency: data.currency || 'INR',
       };
@@ -91,14 +122,15 @@ export class RazorpayProvider implements IPaymentProvider {
    * Signature payload: `${paymentId}|${subscriptionId}`
    */
   public verifyPaymentSignature(paymentId: string, subscriptionId: string, signature: string): boolean {
-    if (!signature || !paymentId || !subscriptionId || !this.keySecret) {
+    const keySecret = this.getKeySecret();
+    if (!signature || !paymentId || !subscriptionId || !keySecret) {
       return false;
     }
 
     try {
       const payload = `${paymentId}|${subscriptionId}`;
       const expectedSignature = crypto
-        .createHmac('sha256', this.keySecret)
+        .createHmac('sha256', keySecret)
         .update(payload)
         .digest('hex');
 
@@ -112,13 +144,14 @@ export class RazorpayProvider implements IPaymentProvider {
    * Cryptographically verifies Razorpay webhook signature using HMAC SHA-256 over raw request body.
    */
   public verifyWebhookSignature(rawBody: string, signature: string): boolean {
-    if (!signature || !rawBody || !this.webhookSecret) {
+    const webhookSecret = this.getWebhookSecret();
+    if (!signature || !rawBody || !webhookSecret) {
       return false;
     }
 
     try {
       const expectedSignature = crypto
-        .createHmac('sha256', this.webhookSecret)
+        .createHmac('sha256', webhookSecret)
         .update(rawBody)
         .digest('hex');
 
@@ -133,12 +166,14 @@ export class RazorpayProvider implements IPaymentProvider {
    * Fails closed if Razorpay API call fails or returns error.
    */
   public async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd: boolean = true): Promise<boolean> {
-    if (!this.keyId || !this.keySecret || !subscriptionId) {
+    const keyId = this.getKeyId();
+    const keySecret = this.getKeySecret();
+    if (!keyId || !keySecret || !subscriptionId) {
       logger.error('[RazorpayProvider] Cannot cancel subscription: missing credentials or subscriptionId');
       return false;
     }
 
-    const authHeader = `Basic ${Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')}`;
+    const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`;
 
     try {
       const response = await fetch(`${this.baseUrl}/subscriptions/${subscriptionId}/cancel`, {

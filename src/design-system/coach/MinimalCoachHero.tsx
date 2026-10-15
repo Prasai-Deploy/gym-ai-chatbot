@@ -37,7 +37,7 @@ export const MinimalCoachHero: React.FC<MinimalCoachHeroProps> = React.memo(({
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/[0.08] border border-indigo-500/20 text-indigo-400">
         <Sparkles className="w-3.5 h-3.5" />
         <span className="text-[11px] font-bold uppercase tracking-[0.14em] font-sans">
-          TRINITY
+          TRINETRA
         </span>
       </div>
 

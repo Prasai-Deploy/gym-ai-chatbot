@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { cn } from '../tokens';
 
-export type ProgressVariant = 'primary' | 'ai' | 'success' | 'warning' | 'danger';
+export type ProgressVariant = 'primary' | 'ai' | 'success' | 'warning' | 'danger' | 'lime';
 
 export interface ProgressProps {
   value: number; // 0 to 100
@@ -31,6 +31,7 @@ export const Progress: React.FC<ProgressProps> = ({
 
   const variantStyles: Record<ProgressVariant, string> = {
     primary: 'bg-orange-500 shadow-sm shadow-orange-500/25',
+    lime: 'bg-[#84CC16] shadow-sm shadow-[#84CC16]/25',
     ai: 'bg-indigo-500 shadow-sm shadow-indigo-500/25',
     success: 'bg-emerald-500 shadow-sm shadow-emerald-500/25',
     warning: 'bg-amber-500 shadow-sm shadow-amber-500/25',

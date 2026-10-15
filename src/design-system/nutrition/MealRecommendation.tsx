@@ -33,7 +33,7 @@ export const MealRecommendation: React.FC<MealRecommendationProps> = React.memo(
     <Card variant="nutrition" className={`p-6 flex flex-col justify-between gap-5 relative overflow-hidden select-none ${className}`}>
       <div className="flex items-center justify-between">
         <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-          TRINITY AI RECOMMENDED NEXT MEAL
+          TRINETRA AI RECOMMENDED NEXT MEAL
         </Badge>
         <span className="text-xs font-mono font-bold text-emerald-400">Prep: {prepTimeMin} min</span>
       </div>

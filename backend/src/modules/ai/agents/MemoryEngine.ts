@@ -1,5 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AgentId, MemoryRecord } from './agent.types';
+import { MemoryCandidate, StructuredMemoryRecord, MemoryValuePayload } from './memory.types';
+import { memoryPolicy } from './MemoryPolicy';
+import { MemoryRetriever } from './MemoryRetriever';
 import { supabaseAdmin } from '@database/supabase';
 import { Result, ok, fail } from '@shared/core/Result';
 import { AppError, ValidationError } from '@errors/AppError';
@@ -9,7 +12,114 @@ export class MemoryEngine {
   constructor(private readonly supabase: SupabaseClient = supabaseAdmin) {}
 
   /**
-   * Persists or updates a long-term memory for a user, organization, and agent.
+   * Persists a validated memory candidate following Phase 6B safety and conflict rules.
+   */
+  public async persistCandidate(
+    candidate: MemoryCandidate,
+    callerUserId: string,
+    callerOrgId: string
+  ): Promise<Result<StructuredMemoryRecord, AppError>> {
+    try {
+      const validationRes = memoryPolicy.validateCandidate(candidate, callerUserId, callerOrgId);
+      if (validationRes.isFailure()) {
+        return fail(validationRes.error);
+      }
+
+      const agentId = candidate.agentId || 'trinetra';
+      const dbMemoryKey = `${candidate.category}:${candidate.key}`;
+      const nowIso = new Date().toISOString();
+
+      const valuePayload: MemoryValuePayload = {
+        category: candidate.category,
+        key: candidate.key,
+        value: candidate.value,
+        confidence: candidate.confidence,
+        source: candidate.source,
+        last_confirmed_at: candidate.lastConfirmedAt || nowIso,
+        active: true,
+      };
+
+      const dbPayload = {
+        user_id: candidate.userId,
+        organization_id: candidate.organizationId,
+        agent_id: agentId,
+        memory_key: dbMemoryKey,
+        memory_value: JSON.stringify(valuePayload),
+        updated_at: nowIso,
+      };
+
+      const { data, error } = await this.supabase
+        .from('ai_agent_memories')
+        .upsert(dbPayload, { onConflict: 'user_id,organization_id,agent_id,memory_key' })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error(
+          { err: error.message, userId: candidate.userId, key: dbMemoryKey },
+          '[MemoryEngine] Failed to persist candidate to ai_agent_memories'
+        );
+        return fail(new AppError(`Database persistence failure for AI memory: ${error.message}`, 500));
+      }
+
+      const record: StructuredMemoryRecord = {
+        id: data.id,
+        userId: data.user_id,
+        organizationId: data.organization_id,
+        agentId: data.agent_id,
+        category: candidate.category,
+        key: candidate.key,
+        value: candidate.value,
+        confidence: candidate.confidence,
+        source: candidate.source,
+        active: true,
+        expiresAt: data.expires_at,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        lastConfirmedAt: valuePayload.last_confirmed_at,
+      };
+
+      return ok(record);
+    } catch (err: any) {
+      logger.error({ err: err.message }, '[MemoryEngine] Error in persistCandidate()');
+      return fail(new AppError(err.message || 'Failed to persist candidate', 500));
+    }
+  }
+
+  /**
+   * Deactivates a specific memory key for a user without deleting history if supported.
+   */
+  public async deactivateMemory(
+    userId: string,
+    key: string,
+    organizationId: string,
+    agentId: string = 'trinetra'
+  ): Promise<Result<void, AppError>> {
+    try {
+      if (!userId || !organizationId) {
+        return fail(new ValidationError('User ID and Organization ID required to deactivate memory'));
+      }
+
+      const { error } = await this.supabase
+        .from('ai_agent_memories')
+        .update({ expires_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('organization_id', organizationId)
+        .eq('agent_id', agentId)
+        .eq('memory_key', key);
+
+      if (error) {
+        return fail(new AppError(`Failed to deactivate memory: ${error.message}`, 500));
+      }
+
+      return ok(undefined);
+    } catch (err: any) {
+      return fail(new AppError(err.message || 'Error deactivating memory', 500));
+    }
+  }
+
+  /**
+   * Persists or updates a long-term memory for a user, organization, and agent (Legacy/compat API).
    */
   public async remember(
     userId: string,
@@ -17,7 +127,7 @@ export class MemoryEngine {
     value: string,
     ttlDays: number = 30,
     organizationId?: string,
-    agentId: AgentId | string = 'fitness_coach'
+    agentId: AgentId | string = 'trinetra'
   ): Promise<Result<MemoryRecord, AppError>> {
     try {
       if (!userId || userId.trim() === '') {
@@ -30,7 +140,6 @@ export class MemoryEngine {
         return fail(new ValidationError('Memory key is required'));
       }
 
-      // Calculate expiration timestamp
       let expiresAt: string | null = null;
       if (ttlDays && ttlDays > 0) {
         const expDate = new Date();
@@ -58,8 +167,6 @@ export class MemoryEngine {
         logger.error({ err: error.message, userId, agentId, key }, '[MemoryEngine] Failed to persist memory to database');
         return fail(new AppError(`Database persistence failure for AI memory: ${error.message}`, 500));
       }
-
-      logger.info({ userId, agentId, key, expiresAt }, '[MemoryEngine] Successfully persisted AI memory');
 
       const record: MemoryRecord = {
         id: data.id,
@@ -110,7 +217,6 @@ export class MemoryEngine {
       const { data, error } = await query;
 
       if (error) {
-        logger.error({ err: error.message, userId, key }, '[MemoryEngine] Failed to query memory from database');
         return fail(new AppError(`Database query failure for AI memory recall: ${error.message}`, 500));
       }
 
@@ -127,48 +233,35 @@ export class MemoryEngine {
 
       return ok(validRecords[0].memory_value);
     } catch (err: any) {
-      logger.error({ err: err.message, userId, key }, '[MemoryEngine] Unexpected error in recall()');
       return fail(new AppError(err.message || 'Failed to recall memory', 500));
     }
   }
 
   /**
    * Builds the formatted long-term memory context summary block for prompt injection.
-   * Expired memories are strictly filtered out and never injected into AI prompts.
    */
   public async buildContextSummary(
     userId: string,
     agentId: AgentId | string,
-    organizationId?: string
+    organizationId?: string,
+    promptText?: string
   ): Promise<string> {
     try {
       if (!userId) return '';
+      const orgId = organizationId || '';
 
-      let query = this.supabase
-        .from('ai_agent_memories')
-        .select('memory_key, memory_value, expires_at')
-        .eq('user_id', userId)
-        .eq('agent_id', agentId);
+      const retriever = new MemoryRetriever(this.supabase);
+      const memories = await retriever.getRelevantMemories(userId, orgId, String(agentId), promptText);
 
-      if (organizationId) {
-        query = query.eq('organization_id', organizationId);
-      }
+      if (!memories || memories.length === 0) return '';
 
-      const { data, error } = await query;
+      const lines = memories.map((m) => {
+        if (m.key.includes(':')) {
+          return `- [${m.category}] ${m.key}: ${m.value} (source: ${m.source}, confidence: ${m.confidence})`;
+        }
+        return `- ${m.key}: ${m.value}`;
+      }).join('\n');
 
-      if (error) {
-        logger.warn({ err: error.message, userId, agentId }, '[MemoryEngine] Failed to fetch memories for context summary');
-        return '';
-      }
-
-      if (!data || data.length === 0) return '';
-
-      const now = new Date().toISOString();
-      const validRecords = data.filter((r: any) => !r.expires_at || r.expires_at > now);
-
-      if (validRecords.length === 0) return '';
-
-      const lines = validRecords.map((r: any) => `- ${r.memory_key}: ${r.memory_value}`).join('\n');
       return `\n\n[Long-term Memory for Agent: ${agentId}]\n${lines}`;
     } catch (err: any) {
       logger.error({ err: err.message, userId, agentId }, '[MemoryEngine] Error in buildContextSummary');

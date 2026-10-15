@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '@middleware/auth';
 import { tenantMiddleware } from '@middleware/tenant.middleware';
+import { ForbiddenError } from '@errors/AppError';
 import { PROVIDER_MAP } from './OAuthProvider';
 import { syncEngine } from './SyncEngine';
 import { webhookReceiver } from './WebhookReceiver';
@@ -47,7 +48,8 @@ integrationRouter.get('/callback/:provider', async (req, res, next) => {
   try {
     const { provider } = req.params;
     const { code, state: userId } = req.query as { code: string; state: string };
-    const orgId = req.organizationContext?.organizationId || '00000000-0000-0000-0000-000000000001';
+    const orgId = req.organizationContext?.organizationId;
+    if (!orgId) throw new ForbiddenError('Organization tenant context is required');
 
     const oauthProvider = PROVIDER_MAP[provider];
     if (!oauthProvider) return res.status(404).json({ success: false, error: `Provider ${provider} not found` });

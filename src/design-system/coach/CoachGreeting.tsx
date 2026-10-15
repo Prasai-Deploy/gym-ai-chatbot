@@ -28,7 +28,7 @@ export const CoachGreeting: React.FC<CoachGreetingProps> = React.memo(({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Badge variant="ai" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            TRINITY AI 400B
+            TRINETRA AI ENGINE
           </Badge>
           <Badge variant="success" size="sm" icon={<Activity className="w-3.5 h-3.5" />}>
             {readinessScore}% READINESS

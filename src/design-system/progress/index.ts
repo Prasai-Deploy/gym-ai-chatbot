@@ -7,6 +7,7 @@ export * from './ProgressTrend';
 export * from './ProgressHighlights';
 export * from './GoalProgress';
 export * from './ProgressTrinityCard';
+export { ProgressTrinityCard as ProgressTrinetraCard } from './ProgressTrinityCard';
 export * from './SecondaryProgressDetails';
 export * from './HealthScoreCard';
 export * from './StrengthChart';

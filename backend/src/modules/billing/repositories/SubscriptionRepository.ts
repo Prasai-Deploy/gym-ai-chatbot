@@ -47,6 +47,43 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
     }
   }
 
+  /**
+   * Strictly read-only subscription lookup for entitlement evaluation.
+   * Does NOT auto-provision default free rows and never mutates the database.
+   */
+  public async findSubscriptionByUserId(userId: string): Promise<Result<Subscription | null, AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return ok((data as Subscription) || null);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
+
+  /**
+   * Look up subscription by Razorpay or legacy Stripe subscription ID.
+   */
+  public async findSubscriptionByRazorpaySubId(subId: string): Promise<Result<Subscription | null, AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('subscriptions')
+        .select('*')
+        .or(`razorpay_subscription_id.eq.${subId},stripe_subscription_id.eq.${subId}`)
+        .maybeSingle();
+
+      if (error) throw error;
+      return ok((data as Subscription) || null);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
+
   public async upsertSubscription(userId: string, data: Partial<Subscription>): Promise<Result<Subscription, AppError>> {
     try {
       const payload = { ...data, user_id: userId };
@@ -73,6 +110,52 @@ export class SubscriptionRepository extends BaseRepository<Subscription> {
 
       if (error) throw error;
       return ok(data as Invoice[]);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
+
+  public async createInvoice(invoiceData: Partial<Invoice>): Promise<Result<Invoice, AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('invoices')
+        .insert({
+          user_id: invoiceData.user_id,
+          subscription_id: invoiceData.subscription_id,
+          stripe_invoice_id: invoiceData.stripe_invoice_id,
+          amount_paid: invoiceData.amount_paid ?? 0,
+          currency: invoiceData.currency || 'inr',
+          status: invoiceData.status || 'paid',
+          invoice_pdf: invoiceData.invoice_pdf || null,
+          paid_at: invoiceData.paid_at || new Date().toISOString(),
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          // Idempotent duplicate invoice
+          return ok(invoiceData as Invoice);
+        }
+        throw error;
+      }
+      return ok(data as Invoice);
+    } catch (err: any) {
+      return fail(new AppError(err.message, 500));
+    }
+  }
+
+  public async isPaymentEventProcessed(eventId: string): Promise<Result<boolean, AppError>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('payment_events')
+        .select('id')
+        .eq('event_id', eventId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return ok(Boolean(data));
     } catch (err: any) {
       return fail(new AppError(err.message, 500));
     }

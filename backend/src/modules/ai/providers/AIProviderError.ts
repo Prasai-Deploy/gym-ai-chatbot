@@ -34,3 +34,27 @@ export class AIProviderNetworkError extends AIProviderError {
     super(message, 503, provider, 'NETWORK_ERROR');
   }
 }
+
+export class AIModelNotFoundError extends AIProviderError {
+  constructor(message: string = 'Requested AI model was not found', provider: string = 'groq') {
+    super(message, 404, provider, 'MODEL_NOT_FOUND_ERROR');
+  }
+}
+
+export class AIContextExceededError extends AIProviderError {
+  constructor(message: string = 'Context window length exceeded', provider: string = 'groq') {
+    super(message, 400, provider, 'CONTEXT_EXCEEDED_ERROR');
+  }
+}
+
+export class AIServiceUnavailableError extends AIProviderError {
+  constructor(message: string = 'AI Service temporarily unavailable', provider: string = 'groq') {
+    super(message, 503, provider, 'SERVICE_UNAVAILABLE_ERROR');
+  }
+}
+
+export class AIProviderTimeoutError extends AIProviderError {
+  constructor(message: string = 'AI Provider request timed out', provider: string = 'groq') {
+    super(message, 504, provider, 'TIMEOUT_ERROR');
+  }
+}

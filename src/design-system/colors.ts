@@ -8,7 +8,10 @@ import { visualColors } from './visual/colors';
 export const colors = {
   // Brand Accents
   primary: visualColors.primary,
+  brand: visualColors.brand,
+  action: visualColors.action,
   ai: visualColors.ai,
+  lime: visualColors.lime,
   
   // Status / Feedback
   success: visualColors.success,

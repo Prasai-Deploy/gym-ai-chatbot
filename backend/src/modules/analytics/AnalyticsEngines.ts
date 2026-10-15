@@ -547,7 +547,7 @@ export class NutritionAnalyticsEngine {
     const dateUserMap: Record<string, Set<string>> = {};
 
     for (const log of logs) {
-      const cals = log.calories_consumed || 0;
+      const cals = log.calories ?? log.calories_consumed ?? 0;
       const protein = log.protein_g || 0;
       totalCalories += cals;
       totalProtein += protein;

@@ -46,8 +46,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
           id={inputId}
           disabled={disabled}
           className={cn(
-            'w-full bg-[#11141D] text-white placeholder-slate-500 text-sm rounded-xl border px-4 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/40 disabled:opacity-40 disabled:cursor-not-allowed',
-            error ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30' : 'border-white/[0.08] hover:border-white/[0.14] focus:border-orange-500/80',
+            'w-full min-h-[44px] bg-[#11141D] text-white placeholder-slate-500 text-sm rounded-xl border px-4 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 disabled:opacity-40 disabled:cursor-not-allowed',
+            error 
+              ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30' 
+              : 'border-white/[0.08] hover:border-white/[0.14] focus:border-lime-500/70 focus:ring-lime-500/25',
             leftIcon ? 'pl-10' : '',
             rightIcon ? 'pr-10' : '',
             className

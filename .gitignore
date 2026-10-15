@@ -10,3 +10,6 @@ coverage/
 *.db
 *.js
 !server.js
+backups/
+*.dump
+*.sql.bak

@@ -47,3 +47,59 @@ export interface PushProvider {
 export interface WhatsAppProvider {
   sendWhatsAppMessage(toPhone: string, templateName: string, params: Record<string, any>): Promise<boolean>;
 }
+
+// ============================================================================
+// STRIVA V2 - Phase 8I: Canonical Organization Notifications & Attention Types
+// ============================================================================
+
+export type OrgNotificationSeverity = 'info' | 'warning' | 'critical';
+
+export type OrgNotificationType =
+  | 'billing_past_due'
+  | 'billing_pending_setup'
+  | 'trainer_unassigned_members'
+  | 'attendance_unclosed'
+  | 'staff_pending_invitations'
+  | 'system_no_locations'
+  | string;
+
+export interface OrgNotification {
+  id: string;
+  organization_id: string;
+  recipient_user_id?: string | null;
+  recipient_role?: string;
+  type: OrgNotificationType;
+  severity: OrgNotificationSeverity;
+  title: string;
+  message: string;
+  resource_type?: string | null;
+  resource_id?: string | null;
+  action_path?: string | null;
+  action_label?: string | null;
+  is_read: boolean;
+  read_at?: string | null;
+  deduplication_key?: string | null;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrgAttentionItem {
+  id: string;
+  severity: OrgNotificationSeverity;
+  title: string;
+  message: string;
+  actionPath?: string;
+  actionLabel?: string;
+  resourceType?: string;
+  resourceId?: string;
+  createdAt: string;
+  deduplicationKey?: string;
+}
+
+export interface NotificationListQuery {
+  unread_only?: boolean;
+  limit?: number;
+  offset?: number;
+}
+

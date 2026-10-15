@@ -1,7 +1,7 @@
 import { IRepository } from '@shared/database/interfaces/IRepository';
 import { Result } from '@shared/core/Result';
 import { AppError } from '@errors/AppError';
-import { FitnessProfile, UserPreferences } from '../domain/IdentitySchemas';
+import { FitnessProfile, UserPreferences, MemberSettings } from '../domain/IdentitySchemas';
 
 export interface IIdentityRepository extends IRepository<any> {
   findByAuthId(authId: string): Promise<Result<any, AppError>>;
@@ -10,6 +10,9 @@ export interface IIdentityRepository extends IRepository<any> {
   
   findPreferences(userId: string): Promise<Result<UserPreferences | null, AppError>>;
   updatePreferences(userId: string, data: Partial<UserPreferences>): Promise<Result<UserPreferences, AppError>>;
+
+  findSettings(userId: string): Promise<Result<MemberSettings | null, AppError>>;
+  updateSettings(userId: string, data: Partial<MemberSettings>): Promise<Result<MemberSettings, AppError>>;
 
   resetDemoData(userId: string): Promise<Result<void, AppError>>;
 }

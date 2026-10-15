@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { httpClient } from '../../../api/httpClient';
+import { isRetryableNetworkError } from '../../../utils/errorUtils';
 import { useDashboard } from '../hooks/useDashboard';
 import { useDashboardCharts } from '../hooks/useDashboardCharts';
 import { useWorkoutSummary } from '../hooks/useWorkoutSummary';
@@ -36,8 +37,14 @@ export default function DashboardPage() {
     fetchWeeklyProgress: dashboard.fetchWeeklyProgress
   });
 
+  const [logError, setLogError] = useState<string | null>(null);
+  const [isSubmittingLog, setIsSubmittingLog] = useState(false);
+
   const handleSubmitProgress = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLogError(null);
+    setIsSubmittingLog(true);
+
     const { format } = await import('date-fns');
     const { queueRequest } = await import('../../../services/offlineStorage');
     const payload = {
@@ -49,29 +56,77 @@ export default function DashboardPage() {
       water: Number(dashboard.formData.water) || 0,
       date: format(new Date(), 'MMM dd')
     };
-    
-    // Optimistic UI for chart
-    const today = new Date().toISOString().split('T')[0];
-    dashboard.setWeeklyChartData((prev: any[]) => prev.map(d => 
-      d.date.includes(today) ? { ...d, calories_burned: (d.calories_burned || 0) + (payload.calories || 0) } : d
-    ));
 
     try {
-      await httpClient.post('/intelligence/nutrition/log', {
-        calories: payload.calories,
-        protein_g: payload.protein,
-        carbs_g: payload.carbs,
-        fat_g: payload.fats,
-        water_ml: payload.water * 1000,
-        notes: payload.workout_name || undefined,
-      });
+      // 1. Post canonical meal entry if calories or macros are provided
+      if (payload.calories > 0 || payload.protein > 0 || payload.carbs > 0 || payload.fats > 0) {
+        await httpClient.post('/nutrition/meals', {
+          food_name: payload.workout_name || 'Quick Log',
+          meal_type: 'snack',
+          calories: payload.calories,
+          protein_g: payload.protein,
+          carbs_g: payload.carbs,
+          fats_g: payload.fats,
+        });
+      }
+
+      // 2. Post canonical hydration entry if water is provided (converted from liters to ml)
+      if (payload.water > 0) {
+        await httpClient.post('/nutrition/water', {
+          amount_ml: Math.round(payload.water * 1000),
+        });
+      }
+
+      // Online success: advance chart and refresh summaries
+      const today = new Date().toISOString().split('T')[0];
+      dashboard.setWeeklyChartData((prev: any[]) => prev.map(d => 
+        d.date.includes(today) ? { ...d, calories_burned: (d.calories_burned || 0) + (payload.calories || 0) } : d
+      ));
       dashboard.fetchWeeklyProgress();
-    } catch {
-      await queueRequest('/api/v1/intelligence/nutrition/log', 'POST', payload);
+      dashboard.fetchTodayWater?.();
+
+      dashboard.setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
+      dashboard.setShowForm(false);
+      dashboard.fetchProgress();
+    } catch (err: any) {
+      if (isRetryableNetworkError(err)) {
+        // Legitimate offline/network disconnection: enqueue with unique client request ID
+        console.warn('[DashboardPage] Network unavailable, enqueuing offline request:', err);
+        const clientReqId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `log-${Date.now()}`;
+
+        if (payload.calories > 0 || payload.protein > 0 || payload.carbs > 0 || payload.fats > 0) {
+          await queueRequest('/api/v1/nutrition/meals', 'POST', {
+            food_name: payload.workout_name || 'Quick Log',
+            meal_type: 'snack',
+            calories: payload.calories,
+            protein_g: payload.protein,
+            carbs_g: payload.carbs,
+            fats_g: payload.fats,
+          }, `${clientReqId}-meal`);
+        }
+        if (payload.water > 0) {
+          await queueRequest('/api/v1/nutrition/water', 'POST', {
+            amount_ml: Math.round(payload.water * 1000),
+          }, `${clientReqId}-water`);
+        }
+
+        // Offline queued: update chart optimistically and dismiss form
+        const today = new Date().toISOString().split('T')[0];
+        dashboard.setWeeklyChartData((prev: any[]) => prev.map(d => 
+          d.date.includes(today) ? { ...d, calories_burned: (d.calories_burned || 0) + (payload.calories || 0) } : d
+        ));
+        dashboard.setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
+        dashboard.setShowForm(false);
+      } else {
+        // Definitive application/validation rejection (HTTP 400, 401, 403, 404, 409, 422, 500)
+        // DO NOT queue, DO NOT close form, DO NOT claim success, show error message
+        const msg = err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Server rejected request. Please check your input.';
+        console.warn('[DashboardPage] API rejected logging request:', msg);
+        setLogError(`Validation / Server Error: ${msg}`);
+      }
+    } finally {
+      setIsSubmittingLog(false);
     }
-    dashboard.setFormData({ workout_name: '', calories: '', protein: '', carbs: '', fats: '', water: '' });
-    dashboard.setShowForm(false);
-    dashboard.fetchProgress();
   };
 
   const handleSavePlan = async (e: React.FormEvent) => {
@@ -194,10 +249,15 @@ export default function DashboardPage() {
 
       <DashboardDialogs 
         showForm={dashboard.showForm}
-        setShowForm={dashboard.setShowForm}
+        setShowForm={(show) => {
+          if (show) setLogError(null);
+          dashboard.setShowForm(show);
+        }}
         formData={dashboard.formData}
         setFormData={dashboard.setFormData}
         onSubmitProgress={handleSubmitProgress}
+        logError={logError}
+        isSubmitting={isSubmittingLog}
         
         showPlanForm={dashboard.showPlanForm}
         setShowPlanForm={dashboard.setShowPlanForm}
