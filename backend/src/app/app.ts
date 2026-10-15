@@ -45,6 +45,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Infrastructure Routes
 app.use('/', healthRouter);
+app.use('/api/v1/health', healthRouter);
 
 // OAuth Direct Fallback Endpoints
 app.get('/auth/google', (req, res) => {

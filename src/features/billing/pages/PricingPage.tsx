@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { billingApi } from '../../../api/billingApi';
 import { useEntitlement } from '../../../hooks/useEntitlement';
+import { useAuth } from '../../../context/AuthContext';
 import { Check, ArrowLeft, ShieldCheck, CreditCard, Sparkles, AlertCircle } from 'lucide-react';
 
 declare global {
@@ -12,12 +13,18 @@ declare global {
 
 export const PricingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { isTrial, isActive, isExpired, daysRemaining } = useEntitlement();
   const [interval, setInterval] = useState<'monthly' | 'yearly'>('yearly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCheckout = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: '/pricing' } } });
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -77,6 +84,8 @@ export const PricingPage: React.FC = () => {
 
   const ctaLabel = isLoading
     ? 'Preparing Checkout...'
+    : !user
+    ? 'Start with 14 Days Free'
     : isActive
     ? 'Active Membership'
     : isExpired
@@ -92,10 +101,10 @@ export const PricingPage: React.FC = () => {
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <button 
-            onClick={() => navigate('/v3/billing')} 
+            onClick={() => navigate(user ? '/v3/billing' : '/')} 
             className="inline-flex items-center text-xs font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Billing
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> {user ? 'Back to Billing' : 'Back to Home'}
           </button>
           
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 text-[11px] font-medium">

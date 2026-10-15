@@ -3,9 +3,10 @@ import { Dumbbell, ArrowRight, Sparkles, Shield } from '../design-system/icons';
 import { Button } from '../design-system/components/Button';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LOGIN_BACKGROUND_VIDEO } from '../config/loginBackground';
+import { ArrowLeft } from 'lucide-react';
 
 export function Login() {
   const [demoLoading, setDemoLoading] = useState(false);
@@ -13,6 +14,8 @@ export function Login() {
   const [videoError, setVideoError] = useState(false);
   const { user, loading, setUser, rehydrate } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || '/v3/dashboard';
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -35,13 +38,13 @@ export function Login() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050608] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#84CC16]/20 border-t-[#84CC16] rounded-full animate-spin" />
       </div>
     );
   }
 
   if (user) {
-    return <Navigate to="/v3/dashboard" replace />;
+    return <Navigate to={from} replace />;
   }
 
   // Google login via Supabase OAuth flow
@@ -97,7 +100,7 @@ export function Login() {
         throw new Error('Failed to load demo profile.');
       }
 
-      navigate('/v3/dashboard', { replace: true });
+      navigate(from, { replace: true });
     } catch (error: any) {
       console.error('[Login] Demo login error:', error);
       alert(error.message || 'Demo login failed. Please try again.');
@@ -136,7 +139,7 @@ export function Login() {
         className="max-w-md w-full relative z-10 flex flex-col items-center gap-6"
       >
         {/* Brand Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-[#11141D] border border-white/[0.08] shadow-lg flex items-center justify-center text-orange-400">
+        <div className="w-16 h-16 rounded-2xl bg-[#11141D] border border-[#84CC16]/20 shadow-lg flex items-center justify-center text-[#84CC16]">
           <Dumbbell className="w-8 h-8" />
         </div>
 
@@ -183,6 +186,15 @@ export function Login() {
             Instant 1-click test access with complete telemetry.
           </span>
         </div>
+
+        {/* Back to Public Home */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors cursor-pointer py-1 px-3 rounded-lg hover:bg-white/[0.04]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to STRIVA Home</span>
+        </Link>
 
         {/* Footer */}
         <div className="flex items-center gap-1.5 text-xs text-slate-500">

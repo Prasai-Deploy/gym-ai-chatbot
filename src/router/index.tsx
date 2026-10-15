@@ -19,6 +19,7 @@ const V3ProfilePage = lazy(() => import('../v3/pages/V3ProfilePage').then(module
 const V3NotFoundPage = lazy(() => import('../v3/pages/V3NotFoundPage').then(module => ({ default: module.V3NotFoundPage })));
 
 // Legacy & Auth Top-Level Routes
+const LandingPage = lazy(() => import('../pages/LandingPage').then(module => ({ default: module.LandingPage })));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const AuthCallback = lazy(() => import('../pages/AuthCallback').then(module => ({ default: module.AuthCallback })));
 const MembershipRequired = lazy(() => import('../pages/MembershipRequired').then(module => ({ default: module.MembershipRequired })));
@@ -42,8 +43,10 @@ export const AppRouter: React.FC = () => {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<PublicLayout />}>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/membership-required" element={<MembershipRequired />} />
+          <Route path="/pricing" element={<PricingPage />} />
         </Route>
 
         <Route element={<AuthLayout />}>
@@ -62,8 +65,7 @@ export const AppRouter: React.FC = () => {
           <Route path="/v3/*" element={<V3NotFoundPage />} />
         </Route>
 
-        {/* Supporting Billing Routes */}
-        <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+        {/* Supporting Protected Billing Routes */}
         <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccessPage /></ProtectedRoute>} />
         <Route path="/checkout/cancel" element={<ProtectedRoute><CheckoutCancelPage /></ProtectedRoute>} />
 
@@ -104,7 +106,7 @@ export const AppRouter: React.FC = () => {
 
         {/* Default Route Pointer to Canonical Home */}
         <Route path="/dashboard" element={<Navigate to="/v3/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/v3/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
